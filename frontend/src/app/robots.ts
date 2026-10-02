@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: ["/", "/sobre", "/servicos", "/setores", "/eventos", "/contato", "/transparencia", "/acessibilidade", "/privacidade"],
       disallow: [
         "/login", "/dashboard", "/configuracao", "/monitoramento", "/auditoria", "/perfil", "/busca", "/mercurio", "/blog",
-        "/wiki", "/agenda", "/diretorio", "/arquivos", "/signum", "/tramite", "/gestao", "/exemplos", "/verificar/",
+        "/wiki", "/agenda", "/diretorio", "/arquivos", "/signum", "/tramite", "/atlas", "/gestao", "/exemplos", "/verificar/",
       ],
     },
     sitemap: `${APP_URL}/sitemap.xml`,

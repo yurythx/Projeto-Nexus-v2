@@ -604,8 +604,8 @@ export default function AtlasPage() {
                   onChange={(e) => setChatInput(e.target.value)}
                   disabled={chatLoading}
                 />
-                <Button type="submit" disabled={chatLoading || !chatInput.trim()}>
-                  <Send className="h-4 w-4" />
+                <Button type="submit" aria-label="Enviar pergunta" disabled={chatLoading || !chatInput.trim()}>
+                  <Send className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </form>
             </div>

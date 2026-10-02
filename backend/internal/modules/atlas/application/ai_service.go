@@ -77,6 +77,15 @@ func (s *AIService) AskProceduralQuestion(ctx context.Context, req ProceduralCha
 		}
 	}
 
+	if len(matchedWorkflows) == 0 {
+		return &ProceduralChatResponse{
+			Answer:      ai.CanonicalRefusalMessage,
+			Score:       func() float64 { if len(results) > 0 { return results[0].Score }; return 0.0 }(),
+			Refused:     true,
+			GeneratedAt: time.Now(),
+		}, nil
+	}
+
 	// 3. Geração de resposta estrita via LLM (temperatura 0.05)
 	answer, err := s.llmClient.GenerateProceduralAnswer(ctx, query, matchedWorkflows)
 	if err != nil {

@@ -145,9 +145,27 @@ describe("Módulo Atlas (Frontend)", () => {
 
     const input = screen.getByPlaceholderText(/Pergunte sobre como tramitar um processo/);
     await userEvent.type(input, "Como tramitar Pregão?");
-    await userEvent.click(screen.getByRole("button", { name: "" })); // Botão de envio (ícone Send)
+    await userEvent.click(screen.getByRole("button", { name: "Enviar pergunta" }));
 
     expect(await screen.findByText("Orientação para Pregão Eletrônico: instruir com DFD, ETP e TR.")).toBeInTheDocument();
     expect(screen.getByText("Relevância Factual:")).toBeInTheDocument();
+  });
+
+  it("permite abrir e inspecionar o modal de novo procedimento para gestores", async () => {
+    mockBackend({
+      ...identityRoutes({ permissions: ["atlas:manage"] }),
+      "GET v1/atlas/workflows": { data: MOCK_WORKFLOWS },
+      "GET v1/atlas/ttdd": { data: MOCK_TTDD },
+    });
+
+    renderApp(<AtlasPage />);
+
+    const newBtn = await screen.findByRole("button", { name: /Novo Procedimento/ });
+    expect(newBtn).toBeInTheDocument();
+    await userEvent.click(newBtn);
+
+    expect(await screen.findByText("Cadastrar Novo Procedimento Canônico")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Código Processual/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Título do Procedimento/)).toBeInTheDocument();
   });
 });
