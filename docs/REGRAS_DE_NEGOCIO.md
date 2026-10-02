@@ -170,6 +170,9 @@ O que **não** exige permissão, só estar autenticado:
   próprias e compartilhadas) e o Diretório;
 - criar envelopes no Signum e usar a Busca.
 
+Sem login nenhum: consultar os procedimentos ativos e a Tabela de
+Temporalidade do Atlas (o assistente do Atlas exige `atlas:read`).
+
 ### 3.2. Perfis
 
 Um perfil é um **conjunto nomeado de permissões**. Perfis de sistema (vêm
@@ -540,22 +543,46 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 - Endpoints públicos, sem login: dados da plataforma, módulos ativos,
   conjuntos de dados e estatística de ações da auditoria.
 
-### Atlas (Catálogo Procedural SEI, TTDD & IA)
-- **Princípio de Isolamento Total:** O Atlas funciona como repositório canônico e fonte da verdade procedural; **não bloqueia nem intercepta** as rotinas operacionais do Trâmite ou do Protocolo Geral.
-- **Padrão SEI de Processo Administrativo Eletrônico:**
-  - Procedimentos portadores de NUP e vinculados estritamente ao código da TTDD.
-  - Distinção rígida de peças autuadas: `NATO_DIGITAL` (geradas no sistema e assinadas digitalmente) e `EXTERNO_DIGITALIZADO` (exigem obrigatoriamente atesto de autenticidade / conferência de cópia).
-  - Assinaturas documentais: `INDIVIDUAL`, `CONJUNTA_MULTINIVEL` (ordem hierárquica) e `EM_BLOCO`.
-  - Regra de tramitação `manter_aberto_apos_remessa`: permite que a unidade de origem envie o processo mantendo uma cópia aberta para acompanhamento em sua mesa virtual.
-- **Tabela de Temporalidade (TTDD / CCPAD - Rondonópolis):**
-  - Mapeamento das Funções (2.0.01 a 2.0.08), subfunções e itens documentais.
-  - Prazos legais em **Arquivo Corrente** (anos) e **Arquivo Intermediário** (anos).
-  - **Destinação Final:** estritamente `GUARDA_PERMANENTE` ou `ELIMINACAO`.
-- **Assistente Procedural com Grounding Estrito de IA:**
-  - Busca Híbrida via Typesense (`alpha = 0.6` ponderando vetorial e lexical) com fallback no PostgreSQL.
-  - Limiar de segurança estrito (`0.65`): consultas com relevância abaixo de 0.65 retornam deterministicamente a mensagem oficial de recusa contra alucinações.
-  - LLM calibrada com temperatura `0.05` e proibição absoluta de inferir prazos, setores ou exigências ausentes no documento canônico.
-- **Transactional Outbox e Auditoria:** criação de novos workflows registra o evento `atlas.workflow.created` no Outbox e salva o registro na cadeia imutável de auditoria na mesma transação.
+### Atlas (procedimentos SEI, TTDD e assistente)
+- **Fonte de consulta, não de execução:** o Atlas descreve como cada tipo
+  de processo deve tramitar; **não bloqueia nem intercepta** o Trâmite.
+- **Consulta pública** (sem login, limite por IP): Tabela de Temporalidade
+  e procedimentos **ativos**. Desativado some da consulta e da Busca
+  Global, mas continua na gestão.
+- **Gestão (`atlas:manage`, concessão global):** cadastra, ativa e
+  desativa procedimentos. Cada procedimento tem código
+  (`ADM.LIC.001` — segmentos alfanuméricos com ponto, gravado em caixa
+  alta) e versão; código + versão é único (repetir → 409).
+- **Regras de cadastro:**
+  - título, objetivo, público-alvo e classificação TTDD **existente**;
+  - nível de acesso sugerido para o processo (`PUBLICO`, `RESTRITO`,
+    `SIGILOSO`); restrito ou sigiloso **exige a hipótese legal**;
+  - de 1 a 50 etapas com ordem única (≥ 1), sigla da unidade, setor,
+    atribuições e prazo de 0 a 3650 dias; regra SEI
+    `manter_aberto_apos_remessa`;
+  - peças: `NATO_DIGITAL` ou `EXTERNO_DIGITALIZADO`; assinatura
+    `INDIVIDUAL`, `CONJUNTA_MULTINIVEL` ou `EM_BLOCO`; modelo de minuta só
+    como endereço `http(s)` completo;
+  - transições apontam para outra etapa existente; devolução em diligência
+    exige a descrição da diligência.
+- **TTDD:** prazos em anos na fase corrente e na intermediária (≥ 0) e
+  destinação final `GUARDA_PERMANENTE` ou `ELIMINACAO`.
+- **Assistente (`atlas:read`, limite por pessoa — padrão 10 por minuto):**
+  - só responde quando um procedimento homologado cobre a pergunta:
+    relevância ≥ **0,65** (fração dos termos da pergunta presentes no
+    procedimento, sem acentos e sem palavras vazias, com bônus para o
+    código exato e o título); usa até 3 procedimentos;
+  - abaixo do limiar: **recusa padronizada**, sem chamar o modelo;
+  - com IA configurada (`ATLAS_AI_ENDPOINT`): o modelo redige a resposta
+    só com os procedimentos encontrados (temperatura 0,05); sem IA, ou se
+    ela falhar, a resposta é a **síntese canônica** dos dados homologados;
+  - a resposta informa o modo (`ia`, `sintese`, `recusada`), a relevância
+    e as fontes;
+  - cada consulta é auditada **sem o texto da pergunta** (modo,
+    relevância, fontes e tamanho), por minimização (LGPD).
+- **Outbox e auditoria:** `atlas.workflow.created`, `.activated` e
+  `.deactivated`, na mesma transação da mudança; repetir o estado atual
+  não gera evento.
 
 
 ---

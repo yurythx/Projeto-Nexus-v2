@@ -18,3 +18,5 @@ Toda mudança de contrato de API, RBAC, auditoria ou middleware exige um ADR
 | [012](012-estrutura-desativada-nao-concede.md) | Estrutura desativada deixa de conceder perfis e de receber processos; unidade-mãe com subunidades não é excluída | Aceito |
 | [013](013-permissao-com-escopo-e-heranca.md) | Permissão com escopo e herança: as permissões de gestão valem onde foram concedidas (e abaixo); unidade dona do conteúdo; administração delegada do IAM | Aceito e implementado |
 | [014](014-publico-alvo.md) | Público-alvo: Blog, Wiki e Agenda publicados só para secretarias e/ou unidades | Aceito |
+| [015](015-atlas-padronizado.md) | Atlas alinhado ao padrão dos plug-ins: sem tenant, busca full-text nativa (sem Typesense), rotas pública/assistente/gestão, grounding determinístico e IA opcional | Aceito e implementado |
+| [016](016-camada-de-aplicacao-e-transacoes.md) | A camada de aplicação delimita a transação com pgx (escrita + outbox + auditoria); domínio nunca importa o driver | Aceito |

@@ -8,12 +8,12 @@ Ele fornece um **Core System (Kernel)** robusto com infraestrutura pronta de seg
 
 ## 🏛️ Conformidade Governamental (SGD/MGI) & Recursos Globais
 
-O Projeto Nexus atende integralmente aos 5 módulos de conformidade exigidos pela Secretaria de Governo Digital (SGD/MGI):
+O Projeto Nexus foi construído sobre os 5 eixos de conformidade da Secretaria de Governo Digital (SGD/MGI). O estado de cada requisito, com a evidência (código, teste ou pendência), está no [Dossiê de Conformidade](docs/DOSSIE_CONFORMIDADE.md) e no [Roadmap](docs/ROADMAP_CONFORMIDADE.md); a declaração de acessibilidade, no [VPAT](docs/VPAT.md). Conformidade formal depende de avaliação do órgão contratante.
 
 1. **Módulo 1: Segurança HTTP & Headers Defensivos (Go):** Headers OWASP (`HSTS`, `CSP com Nonce`, `X-Frame DENY`, `X-Content-Type nosniff`), rate-limiting e timeouts de servidor anti-DoS.
 2. **Módulo 2: Privacidade & LGPD (Go):** Mascaramento nativo de PII (`slog.LogValuer` em CPF, e-mail, telefone) e rastreabilidade correlacionada (`X-Request-ID`).
 3. **Módulo 3: IAM Keycloak + RS256 (Go + Next.js):** OIDC com Keycloak apartado (JWKS com cache e rotação), federação LDAP/LDAPS com o Active Directory, mapeamento de grupos do AD para Perfis e escopos (Entidade, Unidade, Departamento) e fallback local RS256.
-4. **Módulo 4: Acessibilidade Digital e-MAG (Next.js):** Conformidade e-MAG 2.0 / WCAG 2.1 AA com barra de atalhos por teclado (Alt+1..4), VLibras nativo, alto contraste e-MAG e redimensionamento de fonte (A+/A-/A).
+4. **Módulo 4: Acessibilidade Digital e-MAG (Next.js):** Recursos voltados ao e-MAG 2.0 / WCAG 2.1 AA com barra de atalhos por teclado (Alt+1..4), VLibras nativo, alto contraste e-MAG e redimensionamento de fonte (A+/A-/A).
 5. **Módulo 5: Identidade Visual Governamental DSGov (Next.js):** Design System oficial GovBR-DS, rodapé unificado com canais de atendimento, LGPD/LAI e suporte White-Label dinâmico.
 
 ---
@@ -21,7 +21,7 @@ O Projeto Nexus atende integralmente aos 5 módulos de conformidade exigidos pel
 ## 🏗️ Arquitetura Microkernel e Recursos Prontos
 
 - **Arquitetura Microkernel (Core System + Plug-ins):** O Kernel central (`internal/platform`) gerencia a infraestrutura, resiliência e segurança, enquanto novos módulos de negócio (`internal/modules/`) funcionam como plug-ins isolados e desacoplados.
-- **Clean Architecture nos Módulos:** Módulos de negócio com separação estrita de camadas (`domain`, `application`, `infrastructure`, `transport`).
+- **Clean Architecture nos Módulos:** Módulos de negócio em camadas (`domain`, `application`, `infrastructure`, `transport`); o domínio não conhece o banco e a aplicação só delimita a transação (escrita + outbox + auditoria) — [ADR 016](docs/adr/016-camada-de-aplicacao-e-transacoes.md).
 - **Módulo Modelo Template (`example`):** Blueprint prático e de referência para novos plug-ins.
 - **Autenticação Dupla:** Keycloak SSO (OIDC + AD) e autenticação local com chaves RSA, Argon2id, rate limiting e lockout progressivo.
 - **Estrutura organizacional multi-entidade:** Entidade > Unidade (com subunidades) > Departamento, perfis e lotações (manuais ou por grupo do AD).
@@ -88,7 +88,7 @@ O Projeto Nexus atende integralmente aos 5 módulos de conformidade exigidos pel
 | Busca Global | Plug-in | `/busca` (campo `#global-search`, Alt+3) | — |
 | Signum | Plug-in | `/signum` | `/verificar/{id}` |
 | Trâmite | Plug-in | `/tramite` | — |
-| Atlas | Plug-in | `/atlas` (Catálogo SEI, TTDD e Assistente IA) | `/atlas` (Consulta pública) |
+| Atlas | Plug-in | `/atlas` (procedimentos SEI, TTDD, assistente procedural com `atlas:read`, gestão com `atlas:manage`) | API pública `GET /api/v1/atlas/ttdd` e `/workflows` |
 
 Os plug-ins são ativados e desativados em runtime em **Configurações → Módulos**: o menu, as páginas públicas e o sitemap acompanham o estado do Kernel. A tela mostra o grafo de dependências (hoje, **Trâmite depende de Signum**): desligar um módulo pede para desligar antes quem depende dele, e ligar pede para ligar antes as dependências.
 
@@ -131,6 +131,9 @@ make seed-admin
 
 ### Regras de negócio
 Estrutura organizacional (entidades, unidades, departamentos), perfis, lotações, onde o escopo vale, o público-alvo e as regras de cada módulo: [`docs/REGRAS_DE_NEGOCIO.md`](docs/REGRAS_DE_NEGOCIO.md). As decisões estão nos ADRs ([`docs/adr/`](docs/adr/README.md)) — em especial o [013](docs/adr/013-permissao-com-escopo-e-heranca.md) (escopo) e o [014](docs/adr/014-publico-alvo.md) (público-alvo).
+
+### Serviços obrigatórios e opcionais
+A stack mínima (`docker-compose.yml`) é PostgreSQL, RabbitMQ, Redis, MinIO, API, worker e frontend — a busca de todos os módulos (inclusive o Atlas) é a full-text do PostgreSQL. São **opcionais**, por overlay no `COMPOSE_FILE`: Keycloak de teste (`docker-compose.keycloak.yml`), HTTPS com Caddy (`docker-compose.https.yml`, recomendado em qualquer rede) e IA local do assistente do Atlas (`docker-compose.atlas.yml`, Ollama). Sem Keycloak vale o login local; sem IA o assistente responde com a síntese canônica dos procedimentos.
 
 ### Deploy em servidor
 `./scripts/deploy.sh <ip-ou-dns>` gera `.env` com segredos fortes, a chave RSA e sobe a stack em produção; depois `make prod-seed-admin`. HTTPS com o Caddy como única entrada (`scripts/enable-https.sh`), Keycloak de teste com uma prefeitura fictícia (`make demo-keycloak`, `make demo-popular`), cenários ponta a ponta (`make demo-test`) e backup diário (`scripts/backup.sh`): ordem completa em [`docs/DEPLOY.md`](docs/DEPLOY.md).

@@ -9,6 +9,7 @@ opcionais, ligadas pelo `COMPOSE_FILE` do `.env`:
 | `docker-compose.yml` | a stack | sempre |
 | `docker-compose.keycloak.yml` | Keycloak **de teste** com usuários fictícios | `make demo-keycloak` |
 | `docker-compose.https.yml` | Caddy com HTTPS (CA interna) como única entrada | `scripts/enable-https.sh` |
+| `docker-compose.atlas.yml` | (opcional) Ollama — IA local do assistente do Atlas | acrescentar ao `COMPOSE_FILE` (ver "Atlas" abaixo) |
 
 ## Pré-requisitos
 
@@ -95,7 +96,7 @@ Idempotente. Coloca o Caddy (`docker-compose.https.yml`,
 
 A porta 80 só serve a CA e redireciona o resto para https.
 
-**Só TLS 1.3.** O Caddy recusa TLS 1.2 ou anterior (navegadores e sistemas atuais já usam 1.3; um cliente muito antigo não conecta).
+**TLS 1.2 e 1.3.** O Caddy recusa TLS 1.1 ou anterior e, no 1.2, só oferece cifras modernas. O 1.2 continua aceito porque o Windows 10 (TLS do sistema) não tem 1.3; para exigir só 1.3, troque `protocols tls1.2 tls1.3` por `protocols tls1.3` em `deploy/caddy/Caddyfile` e rode `make deploy`.
 
 **O Caddy é a única entrada.** O script define `HOST_BIND=127.0.0.1`: as
 portas diretas (3010/8010/9010/9011/8180) só escutam no próprio servidor —
@@ -138,6 +139,35 @@ volumes do Keycloak de teste e da CA do Caddy (se existirem), `.env` +
 `CONFIG_ENCRYPTION_KEY`): numa máquina nova, copie `<dir>/config/.env` e
 `<dir>/config/secrets` antes de restaurar. Os backups ficam no mesmo disco —
 copie-os para fora do servidor.
+
+## Atlas — assistente procedural com IA (opcional)
+
+Sem configuração nenhuma, o assistente do Atlas já funciona: responde com
+a **síntese canônica** dos procedimentos homologados (sem modelo de
+linguagem). Para respostas redigidas por IA:
+
+- **IA local (Ollama)** — acrescente o overlay e baixe o modelo uma vez:
+
+  ```bash
+  # .env
+  COMPOSE_FILE=docker-compose.yml:docker-compose.atlas.yml   # (+ os overlays que já usa, separados por ":")
+  ATLAS_AI_MODEL=llama3.2
+  ```
+  ```bash
+  make deploy && make atlas-modelo
+  ```
+  O Ollama não publica porta; só a API o alcança pela rede interna. Conte
+  com 4–8 GB de RAM a mais, conforme o modelo.
+- **Provedor externo** compatível com a API de chat da OpenAI (vLLM,
+  LiteLLM, OpenAI): `ATLAS_AI_ENDPOINT` (URL base, http/https, sem
+  credenciais na URL), `ATLAS_AI_API_KEY` e `ATLAS_AI_MODEL` no `.env`.
+  Atenção: a pergunta e os procedimentos encontrados saem para esse
+  provedor.
+
+Se o provedor falhar ou estourar `ATLAS_AI_TIMEOUT` (padrão 20s), a
+resposta cai na síntese canônica. Quem usa o assistente precisa da
+permissão `atlas:read` (limite de `ATLAS_CHAT_RATE_LIMIT_MAX` consultas por
+minuto por pessoa, padrão 10).
 
 ## Modelar a organização
 
