@@ -1,122 +1,115 @@
+// Package transport expõe a API HTTP do Atlas.
 package transport
 
 import (
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 
 	apperrors "github.com/yurythx/projeto-nexus/internal/domain/errors"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/application"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/domain"
+	"github.com/yurythx/projeto-nexus/internal/platform/auth"
+	"github.com/yurythx/projeto-nexus/internal/platform/httpserver"
 	"github.com/yurythx/projeto-nexus/pkg/httputil"
 )
 
+// Handlers da API do Atlas.
 type Handlers struct {
-	service   *application.Service
-	aiService *application.AIService
-	logger    *slog.Logger
+	svc         *application.Service
+	logger      *slog.Logger
+	maxPageSize int
 }
 
-func NewHandlers(service *application.Service, aiService *application.AIService, logger *slog.Logger) *Handlers {
-	return &Handlers{
-		service:   service,
-		aiService: aiService,
-		logger:    logger,
-	}
+// NewHandlers cria os handlers.
+func NewHandlers(svc *application.Service, logger *slog.Logger, maxPageSize int) *Handlers {
+	return &Handlers{svc: svc, logger: logger, maxPageSize: maxPageSize}
+}
+
+// RegisterPublicRoutes: consulta anônima (transparência ativa) — só
+// procedimentos ativos. O módulo aplica o limite por IP.
+func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
+	r.Get("/atlas/ttdd", h.ListTTDD)
+	r.Get("/atlas/ttdd/{codigo}", h.GetTTDD)
+	r.Get("/atlas/workflows", h.ListPublic)
+	r.Get("/atlas/workflows/{id}", h.GetPublic)
+}
+
+// RegisterRoutes: assistente (atlas:read + limite próprio por identidade,
+// pois cada consulta pode acionar o modelo de linguagem) e gestão
+// (atlas:manage, concessão global — o catálogo é institucional).
+func (h *Handlers) RegisterRoutes(r chi.Router, chatLimiter httpserver.Limiter) {
+	r.With(auth.RequirePermission(h.logger, auth.PermAtlasRead), httpserver.RateLimit(h.logger, chatLimiter, identityKey)).
+		Post("/atlas/chat", h.Chat)
+	r.Group(func(r chi.Router) {
+		r.Use(auth.RequirePermission(h.logger, auth.PermAtlasManage))
+		r.Get("/atlas/admin/workflows", h.ListAdmin)
+		r.Post("/atlas/admin/workflows", h.Create)
+		r.Get("/atlas/admin/workflows/{id}", h.GetAdmin)
+		r.Post("/atlas/admin/workflows/{id}/ativar", h.Ativar)
+		r.Post("/atlas/admin/workflows/{id}/desativar", h.Desativar)
+	})
+}
+
+// identityKey limita por identidade: RequirePermission, antes do limite,
+// garante que ela existe.
+func identityKey(r *http.Request) string {
+	identity, _ := auth.IdentityFromContext(r.Context())
+	return "atlas-chat:" + identity.Subject
 }
 
 func (h *Handlers) fail(w http.ResponseWriter, r *http.Request, err error) {
-	httputil.WriteError(w, r, h.logger, err)
+	httputil.WriteError(w, r, h.logger, application.MapError(err))
 }
 
-// -----------------------------------------------------------------------------
-// TTDD (Tabela de Temporalidade e Destinação de Documentos)
-// -----------------------------------------------------------------------------
-
 func (h *Handlers) ListTTDD(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query().Get("q")
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-
-	resp, err := h.service.ListTTDD(r.Context(), application.ListTTDDRequest{
-		Query:  q,
-		Limit:  limit,
-		Offset: offset,
-	})
+	p := httputil.Page(r, h.maxPageSize)
+	items, total, err := h.svc.ListTTDD(r.Context(), httputil.Query(r, "q", 200), p)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
-
-	httputil.WriteOKWithMeta(w, resp.Items, map[string]any{
-		"total":  resp.Total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	httputil.WritePage(w, items, p, total)
 }
 
 func (h *Handlers) GetTTDD(w http.ResponseWriter, r *http.Request) {
-	codigo := chi.URLParam(r, "codigo")
-	if strings.TrimSpace(codigo) == "" {
-		h.fail(w, r, apperrors.BadRequest("código TTDD obrigatório"))
+	codigo := strings.TrimSpace(chi.URLParam(r, "codigo"))
+	if codigo == "" || len(codigo) > 32 {
+		h.fail(w, r, apperrors.BadRequest("código TTDD inválido"))
 		return
 	}
-
-	item, err := h.service.GetTTDDByCodigo(r.Context(), codigo)
+	c, err := h.svc.GetTTDD(r.Context(), codigo)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
-	httputil.WriteOK(w, item)
+	httputil.WriteOK(w, c)
 }
 
-// -----------------------------------------------------------------------------
-// Workflows e Procedimentos SEI
-// -----------------------------------------------------------------------------
-
-func (h *Handlers) ListWorkflows(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query().Get("q")
-	codigoTTDD := r.URL.Query().Get("codigo_ttdd")
-	tenantID := r.URL.Query().Get("tenant_id")
-	if tenantID == "" {
-		tenantID = "nexus"
-	}
-
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
-
-	resp, err := h.service.ListWorkflows(r.Context(), application.ListWorkflowsRequest{
-		TenantID:   tenantID,
-		Query:      q,
-		CodigoTTDD: codigoTTDD,
-		Limit:      limit,
-		Offset:     offset,
-	})
+func (h *Handlers) list(w http.ResponseWriter, r *http.Request, incluirInativos bool) {
+	p := httputil.Page(r, h.maxPageSize)
+	items, total, err := h.svc.List(r.Context(), domain.Filter{
+		Query: httputil.Query(r, "q", 200), CodigoTTDD: httputil.Query(r, "codigo_ttdd", 32), IncluirInativos: incluirInativos,
+	}, p)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
-
-	httputil.WriteOKWithMeta(w, resp.Items, map[string]any{
-		"total":  resp.Total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	httputil.WritePage(w, items, p, total)
 }
 
-func (h *Handlers) GetWorkflow(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := uuid.Parse(idStr)
+func (h *Handlers) ListPublic(w http.ResponseWriter, r *http.Request) { h.list(w, r, false) }
+func (h *Handlers) ListAdmin(w http.ResponseWriter, r *http.Request)  { h.list(w, r, true) }
+
+func (h *Handlers) get(w http.ResponseWriter, r *http.Request, incluirInativo bool) {
+	id, err := httputil.UUIDParam(r, "id")
 	if err != nil {
-		h.fail(w, r, apperrors.BadRequest("ID de workflow inválido"))
+		h.fail(w, r, err)
 		return
 	}
-
-	wf, err := h.service.GetWorkflowByID(r.Context(), id)
+	wf, err := h.svc.Get(r.Context(), id, incluirInativo)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -124,14 +117,79 @@ func (h *Handlers) GetWorkflow(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteOK(w, wf)
 }
 
-func (h *Handlers) CreateWorkflow(w http.ResponseWriter, r *http.Request) {
-	var req application.CreateWorkflowRequest
+func (h *Handlers) GetPublic(w http.ResponseWriter, r *http.Request) { h.get(w, r, false) }
+func (h *Handlers) GetAdmin(w http.ResponseWriter, r *http.Request)  { h.get(w, r, true) }
+
+type documentoRequest struct {
+	NomeDocumento         string `json:"nome_documento" validate:"required,max=150"`
+	Obrigatorio           bool   `json:"obrigatorio"`
+	Formato               string `json:"formato" validate:"required,oneof=NATO_DIGITAL EXTERNO_DIGITALIZADO"`
+	TipoAssinatura        string `json:"tipo_assinatura" validate:"required,oneof=INDIVIDUAL CONJUNTA_MULTINIVEL EM_BLOCO"`
+	ExigeConferenciaCopia bool   `json:"exige_conferencia_copia"`
+	ModeloMinutaPadraoURL string `json:"modelo_minuta_padrao_url" validate:"omitempty,max=2000"`
+}
+
+type transicaoRequest struct {
+	DestinoOrdem          int    `json:"destino_ordem" validate:"required,min=1"`
+	CondicaoTransicao     string `json:"condicao_transicao" validate:"required,max=255"`
+	IsDevolucaoDiligencia bool   `json:"is_devolucao_diligencia"`
+	DescricaoDiligencia   string `json:"descricao_diligencia" validate:"max=2000"`
+}
+
+type etapaRequest struct {
+	Ordem                   int                `json:"ordem" validate:"required,min=1"`
+	UnidadeAdministrativa   string             `json:"unidade_administrativa" validate:"required,max=64"`
+	NomeSetor               string             `json:"nome_setor" validate:"required,max=150"`
+	AtribuicoesSetor        string             `json:"atribuicoes_setor" validate:"required,max=5000"`
+	PrazoSLAEmDias          int                `json:"prazo_sla_em_dias" validate:"min=0,max=3650"`
+	ManterAbertoAposRemessa bool               `json:"manter_aberto_apos_remessa"`
+	Documentos              []documentoRequest `json:"documentos" validate:"max=30,dive"`
+	Transicoes              []transicaoRequest `json:"transicoes" validate:"max=10,dive"`
+}
+
+type createRequest struct {
+	CodigoProcessual string         `json:"codigo_processual" validate:"required,max=64"`
+	Versao           int            `json:"versao" validate:"omitempty,min=1"`
+	Titulo           string         `json:"titulo" validate:"required,max=255"`
+	Objetivo         string         `json:"objetivo" validate:"required,max=5000"`
+	PublicoAlvo      string         `json:"publico_alvo" validate:"required,max=255"`
+	NivelAcesso      string         `json:"nivel_acesso" validate:"required,oneof=PUBLICO RESTRITO SIGILOSO"`
+	HipoteseLegal    string         `json:"hipotese_legal_restricao" validate:"max=255"`
+	CodigoTTDD       string         `json:"codigo_ttdd" validate:"required,max=32"`
+	Etapas           []etapaRequest `json:"etapas" validate:"required,min=1,max=50,dive"`
+}
+
+func (req createRequest) toDomain() domain.Workflow {
+	w := domain.Workflow{
+		CodigoProcessual: req.CodigoProcessual, Versao: req.Versao, Titulo: req.Titulo, Objetivo: req.Objetivo,
+		PublicoAlvo: req.PublicoAlvo, NivelAcesso: domain.NivelAcesso(req.NivelAcesso), HipoteseLegal: req.HipoteseLegal,
+		CodigoTTDD: req.CodigoTTDD,
+	}
+	for _, e := range req.Etapas {
+		etapa := domain.Etapa{Ordem: e.Ordem, UnidadeAdministrativa: e.UnidadeAdministrativa, NomeSetor: e.NomeSetor,
+			AtribuicoesSetor: e.AtribuicoesSetor, PrazoSLAEmDias: e.PrazoSLAEmDias, ManterAbertoAposRemessa: e.ManterAbertoAposRemessa}
+		for _, d := range e.Documentos {
+			etapa.Documentos = append(etapa.Documentos, domain.EtapaDocumento{NomeDocumento: d.NomeDocumento, Obrigatorio: d.Obrigatorio,
+				Formato: domain.FormatoDocumento(d.Formato), TipoAssinatura: domain.TipoAssinatura(d.TipoAssinatura),
+				ExigeConferenciaCopia: d.ExigeConferenciaCopia, ModeloMinutaPadraoURL: d.ModeloMinutaPadraoURL})
+		}
+		for _, t := range e.Transicoes {
+			etapa.Transicoes = append(etapa.Transicoes, domain.EtapaTransicao{DestinoOrdem: t.DestinoOrdem,
+				CondicaoTransicao: t.CondicaoTransicao, IsDevolucaoDiligencia: t.IsDevolucaoDiligencia, DescricaoDiligencia: t.DescricaoDiligencia})
+		}
+		w.Etapas = append(w.Etapas, etapa)
+	}
+	return w
+}
+
+func (h *Handlers) Create(w http.ResponseWriter, r *http.Request) {
+	var req createRequest
 	if err := httputil.Bind(w, r, &req); err != nil {
 		h.fail(w, r, err)
 		return
 	}
-
-	wf, err := h.service.CreateWorkflow(r.Context(), req)
+	identity, _ := auth.IdentityFromContext(r.Context())
+	wf, err := h.svc.Create(r.Context(), identity, req.toDomain())
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -139,35 +197,37 @@ func (h *Handlers) CreateWorkflow(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteCreated(w, wf)
 }
 
-// -----------------------------------------------------------------------------
-// Assistente Procedural IA (Grounding Estrito)
-// -----------------------------------------------------------------------------
+func (h *Handlers) setAtivo(w http.ResponseWriter, r *http.Request, ativo bool) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	wf, err := h.svc.SetAtivo(r.Context(), id, ativo)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, wf)
+}
 
-func (h *Handlers) ChatProcedural(w http.ResponseWriter, r *http.Request) {
-	var req application.ProceduralChatRequest
+func (h *Handlers) Ativar(w http.ResponseWriter, r *http.Request)    { h.setAtivo(w, r, true) }
+func (h *Handlers) Desativar(w http.ResponseWriter, r *http.Request) { h.setAtivo(w, r, false) }
+
+type chatRequest struct {
+	Query string `json:"query" validate:"required,min=3,max=500"`
+}
+
+func (h *Handlers) Chat(w http.ResponseWriter, r *http.Request) {
+	var req chatRequest
 	if err := httputil.Bind(w, r, &req); err != nil {
 		h.fail(w, r, err)
 		return
 	}
-
-	resp, err := h.aiService.AskProceduralQuestion(r.Context(), req)
+	resp, err := h.svc.Perguntar(r.Context(), req.Query)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
-
 	httputil.WriteOK(w, resp)
-}
-
-// SearchProviders implementa o provedor de busca textual do Atlas para a Busca Global
-func (h *Handlers) SearchWorkflows(ctx context.Context, tenantID, query string) ([]domain.Workflow, error) {
-	resp, err := h.service.ListWorkflows(ctx, application.ListWorkflowsRequest{
-		TenantID: tenantID,
-		Query:    query,
-		Limit:    10,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
 }

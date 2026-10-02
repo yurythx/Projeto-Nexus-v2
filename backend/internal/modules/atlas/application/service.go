@@ -1,243 +1,277 @@
+// Package application contém os casos de uso do Atlas.
 package application
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	apperrors "github.com/yurythx/projeto-nexus/internal/domain/errors"
-	"github.com/yurythx/projeto-nexus/internal/domain/events"
+	"github.com/yurythx/projeto-nexus/internal/domain/pagination"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/domain"
-	"github.com/yurythx/projeto-nexus/internal/modules/atlas/infra/typesense"
 	"github.com/yurythx/projeto-nexus/internal/platform/audit"
+	"github.com/yurythx/projeto-nexus/internal/platform/auth"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
 )
 
+// Eventos emitidos.
 const (
-	EventWorkflowCreated = "atlas.workflow.created"
-	EventWorkflowUpdated = "atlas.workflow.updated"
-	EventTTDDCreated     = "atlas.ttdd.created"
+	EventWorkflowCreated     = "atlas.workflow.created"
+	EventWorkflowActivated   = "atlas.workflow.activated"
+	EventWorkflowDeactivated = "atlas.workflow.deactivated"
 )
 
+// Grounding: quantos candidatos o índice entrega e quantos procedimentos,
+// no máximo, sustentam uma resposta.
+const (
+	maxCandidatos = 10
+	maxFontes     = 3
+)
+
+// Service implementa os casos de uso.
 type Service struct {
-	pool            *pgxpool.Pool
-	repo            domain.Repository
-	outbox          *outbox.Writer
-	typesenseClient *typesense.Client
-	logger          *slog.Logger
+	pool       *pgxpool.Pool
+	repo       domain.Repository
+	outbox     *outbox.Writer
+	assistente domain.Assistente // nil = síntese canônica, sem IA
+	logger     *slog.Logger
+	now        func() time.Time
 }
 
-func NewService(pool *pgxpool.Pool, repo domain.Repository, ob *outbox.Writer, ts *typesense.Client, logger *slog.Logger) *Service {
-	return &Service{
-		pool:            pool,
-		repo:            repo,
-		outbox:          ob,
-		typesenseClient: ts,
-		logger:          logger,
-	}
+// NewService cria o serviço. assistente pode ser nil (IA desligada).
+func NewService(pool *pgxpool.Pool, repo domain.Repository, ob *outbox.Writer, assistente domain.Assistente, logger *slog.Logger) *Service {
+	return &Service{pool: pool, repo: repo, outbox: ob, assistente: assistente, logger: logger, now: time.Now}
 }
 
-// MapError traduz erros de domínio e invariantes para respostas padronizadas da API
+// MapError traduz erros de domínio.
 func MapError(err error) error {
+	var inv domain.InvalidError
 	switch {
-	case errors.Is(err, domain.ErrWorkflowNotFound):
-		return apperrors.NotFound("procedimento processual não encontrado")
-	case errors.Is(err, domain.ErrClassificacaoNotFound):
+	case errors.As(err, &inv):
+		return apperrors.Validation(inv.Msg)
+	case errors.Is(err, domain.ErrNotFound):
+		return apperrors.NotFound("procedimento não encontrado")
+	case errors.Is(err, domain.ErrTTDDNotFound):
 		return apperrors.NotFound("classificação TTDD não encontrada")
-	case errors.Is(err, domain.ErrEtapaNotFound):
-		return apperrors.NotFound("etapa de tramitação não encontrada")
-	case errors.Is(err, domain.ErrInvalidWorkflowVersion):
-		return apperrors.Conflict("versão de workflow já existente para este código")
-	case errors.Is(err, domain.ErrInvalidInput):
-		return apperrors.Validation(err.Error())
+	case errors.Is(err, domain.ErrDuplicate):
+		return apperrors.Conflict("já existe procedimento com este código e versão")
 	}
 	return err
 }
 
-func (s *Service) ListTTDD(ctx context.Context, req ListTTDDRequest) (*ListTTDDResponse, error) {
-	items, total, err := s.repo.ListClassificacoes(ctx, s.pool, req.Query, req.Limit, req.Offset)
-	if err != nil {
-		return nil, MapError(err)
-	}
-	return &ListTTDDResponse{
-		Total: total,
-		Items: items,
-	}, nil
+// ListTTDD lista a Tabela de Temporalidade.
+func (s *Service) ListTTDD(ctx context.Context, query string, p pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
+	items, total, err := s.repo.ListTTDD(ctx, s.pool, query, p)
+	return items, total, MapError(err)
 }
 
-func (s *Service) GetTTDDByCodigo(ctx context.Context, codigo string) (*domain.ClassificacaoTTDD, error) {
-	c, err := s.repo.GetClassificacaoByCodigo(ctx, s.pool, codigo)
-	if err != nil {
-		return nil, MapError(err)
-	}
-	return c, nil
+// GetTTDD devolve uma classificação.
+func (s *Service) GetTTDD(ctx context.Context, codigo string) (domain.ClassificacaoTTDD, error) {
+	c, err := s.repo.GetTTDD(ctx, s.pool, codigo)
+	return c, MapError(err)
 }
 
-func (s *Service) ListWorkflows(ctx context.Context, req ListWorkflowsRequest) (*ListWorkflowsResponse, error) {
-	items, total, err := s.repo.ListWorkflows(ctx, s.pool, req.TenantID, req.Query, req.CodigoTTDD, req.Limit, req.Offset)
-	if err != nil {
-		return nil, MapError(err)
-	}
-	return &ListWorkflowsResponse{
-		Total: total,
-		Items: items,
-	}, nil
+// List lista procedimentos (inativos só com f.IncluirInativos — a rota de
+// gestão exige atlas:manage).
+func (s *Service) List(ctx context.Context, f domain.Filter, p pagination.Params) ([]domain.Workflow, int64, error) {
+	items, total, err := s.repo.List(ctx, s.pool, f, p)
+	return items, total, MapError(err)
 }
 
-func (s *Service) GetWorkflowByID(ctx context.Context, id uuid.UUID) (*domain.Workflow, error) {
-	wf, err := s.repo.GetWorkflowByID(ctx, s.pool, id)
-	if err != nil {
-		return nil, MapError(err)
+// Get devolve o procedimento completo. Desativado só aparece para a gestão.
+func (s *Service) Get(ctx context.Context, id uuid.UUID, incluirInativo bool) (domain.Workflow, error) {
+	w, err := s.repo.Get(ctx, s.pool, id, false)
+	if err == nil && !w.Ativo && !incluirInativo {
+		err = domain.ErrNotFound
 	}
-	return wf, nil
+	return w, MapError(err)
 }
 
-// CreateWorkflow grava o workflow, emite o evento no Transactional Outbox e registra
-// a trilha de auditoria encadeada com SHA-256 na MESMA transação atômica.
-func (s *Service) CreateWorkflow(ctx context.Context, req CreateWorkflowRequest) (*domain.Workflow, error) {
-	if strings.TrimSpace(req.TenantID) == "" {
-		req.TenantID = "nexus"
-	}
+// Search alimenta a Busca Global.
+func (s *Service) Search(ctx context.Context, query string, limit int) ([]domain.Workflow, []float64, error) {
+	return s.repo.Search(ctx, s.pool, query, limit)
+}
 
-	ttdd, err := s.repo.GetClassificacaoByCodigo(ctx, s.pool, req.CodigoTTDD)
-	if err != nil {
-		return nil, fmt.Errorf("código TTDD inválido: %w", err)
+// Create cadastra um procedimento (atlas:manage exigido na rota) com
+// evento e auditoria na mesma transação.
+func (s *Service) Create(ctx context.Context, identity auth.Identity, w domain.Workflow) (domain.Workflow, error) {
+	w.Normalize()
+	if w.Versao == 0 {
+		w.Versao = 1
 	}
-
-	wf := &domain.Workflow{
-		ID:               uuid.New(),
-		TenantID:         req.TenantID,
-		CodigoProcessual: strings.TrimSpace(req.CodigoProcessual),
-		Titulo:           strings.TrimSpace(req.Titulo),
-		Objetivo:         strings.TrimSpace(req.Objetivo),
-		PublicoAlvo:      strings.TrimSpace(req.PublicoAlvo),
-		Versao:           1,
-		Ativo:            true,
-		NivelAcesso:      req.NivelAcesso,
-		HipoteseLegal:    strings.TrimSpace(req.HipoteseLegal),
-		CodigoTTDD:       req.CodigoTTDD,
-		Classificacao:    ttdd,
+	if err := w.Validate(); err != nil {
+		return domain.Workflow{}, MapError(err)
 	}
-
-	if err := wf.Validate(); err != nil {
-		return nil, MapError(err)
+	w.ID, w.Ativo = uuid.New(), true
+	if identity.UserID != uuid.Nil {
+		uid := identity.UserID
+		w.CreatedBy = &uid
 	}
-
-	etapaIDsByOrdem := make(map[int]uuid.UUID)
-	for _, eReq := range req.Etapas {
-		etapaIDsByOrdem[eReq.Ordem] = uuid.New()
-	}
-
-	var etapas []domain.Etapa
-	for _, eReq := range req.Etapas {
-		etapaID := etapaIDsByOrdem[eReq.Ordem]
-		e := domain.Etapa{
-			ID:                     etapaID,
-			WorkflowID:             wf.ID,
-			Ordem:                  eReq.Ordem,
-			UnidadeAdministrativa:  eReq.UnidadeAdministrativa,
-			NomeSetor:              eReq.NomeSetor,
-			AtribuicoesSetor:       eReq.AtribuicoesSetor,
-			PrazoSLAEmDias:         eReq.PrazoSLAEmDias,
-			ManterAbertoAposRemessa: eReq.ManterAbertoAposRemessa,
+	for i := range w.Etapas {
+		w.Etapas[i].ID = uuid.New()
+		for j := range w.Etapas[i].Documentos {
+			w.Etapas[i].Documentos[j].ID = uuid.New()
 		}
-
-		for _, dReq := range eReq.Documentos {
-			e.Documentos = append(e.Documentos, domain.EtapaDocumento{
-				ID:                    uuid.New(),
-				EtapaID:               etapaID,
-				NomeDocumento:         dReq.NomeDocumento,
-				Obrigatorio:           dReq.Obrigatorio,
-				Formato:               dReq.Formato,
-				TipoAssinatura:        dReq.TipoAssinatura,
-				ExigeConferenciaCopia: dReq.ExigeConferenciaCopia,
-				ModeloMinutaPadraoURL: dReq.ModeloMinutaPadraoURL,
-			})
+		for j := range w.Etapas[i].Transicoes {
+			w.Etapas[i].Transicoes[j].ID = uuid.New()
 		}
-
-		for _, tReq := range eReq.Transicoes {
-			destinoID := etapaIDsByOrdem[tReq.DestinoEtapaOrdem]
-			e.Transicoes = append(e.Transicoes, domain.EtapaTransicao{
-				ID:                    uuid.New(),
-				OrigemEtapaID:         etapaID,
-				DestinoEtapaID:        destinoID,
-				CondicaoTransicao:     tReq.CondicaoTransicao,
-				IsDevolucaoDiligencia: tReq.IsDevolucaoDiligencia,
-				DescricaoDiligencia:   tReq.DescricaoDiligencia,
-			})
-		}
-
-		etapas = append(etapas, e)
 	}
-
-	wf.Etapas = etapas
-
-	// Commit atômico: Workflow + Outbox + Trilha de Auditoria Imutável
-	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
-		if err := s.repo.SaveWorkflow(ctx, tx, wf); err != nil {
+	var out domain.Workflow
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		ok, err := s.repo.LockTTDD(ctx, tx, w.CodigoTTDD)
+		if err != nil {
 			return err
 		}
-
-		payload := map[string]any{
-			"id":                wf.ID.String(),
-			"codigo_processual": wf.CodigoProcessual,
-			"titulo":            wf.Titulo,
-			"codigo_ttdd":       wf.CodigoTTDD,
-			"nivel_acesso":      wf.NivelAcesso,
+		if !ok {
+			return domain.InvalidError{Msg: "código TTDD inexistente na Tabela de Temporalidade: " + w.CodigoTTDD}
 		}
-
-		if s.outbox != nil {
-			if err := s.outbox.Write(ctx, tx, EventWorkflowCreated, "atlas_workflow", wf.ID.String(), uuid.Nil, payload); err != nil {
-				return fmt.Errorf("outbox write: %w", err)
-			}
+		if err := s.repo.Insert(ctx, tx, w); err != nil {
+			return err
 		}
-
-		meta := audit.Meta(ctx, EventWorkflowCreated, "atlas_workflow", wf.ID.String(), nil, wf)
-		return audit.NewWriter(tx).Record(ctx, meta)
+		if out, err = s.repo.Get(ctx, tx, w.ID, false); err != nil {
+			return err
+		}
+		if err := s.event(ctx, tx, EventWorkflowCreated, out); err != nil {
+			return err
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventWorkflowCreated, "atlas_workflow", out.ID.String(), nil, summary(out)))
 	})
-
-	if err != nil {
-		return nil, MapError(err)
-	}
-
-	s.logger.InfoContext(ctx, "workflow atlas cadastrado com outbox e auditoria",
-		"id", wf.ID, "codigo_processual", wf.CodigoProcessual, "titulo", wf.Titulo)
-
-	return wf, nil
+	return out, MapError(err)
 }
 
-// IndexWorkflowEvent processa o evento assíncrono emitido pelo Outbox e indexa no Typesense
-func (s *Service) IndexWorkflowEvent(ctx context.Context, ev events.Event) error {
-	var payload struct {
-		ID string `json:"id"`
-	}
-	if err := json.Unmarshal(ev.Payload, &payload); err != nil {
-		return fmt.Errorf("unmarshal atlas event payload: %w", err)
-	}
+// SetAtivo ativa ou desativa um procedimento (atlas:manage na rota).
+// Repetir o estado atual não regrava nem emite evento.
+func (s *Service) SetAtivo(ctx context.Context, id uuid.UUID, ativo bool) (domain.Workflow, error) {
+	var out domain.Workflow
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		before, err := s.repo.Get(ctx, tx, id, true)
+		if err != nil {
+			return err
+		}
+		if before.Ativo == ativo {
+			out = before
+			return nil
+		}
+		if err := s.repo.SetAtivo(ctx, tx, id, ativo); err != nil {
+			return err
+		}
+		if out, err = s.repo.Get(ctx, tx, id, false); err != nil {
+			return err
+		}
+		event := EventWorkflowDeactivated
+		if ativo {
+			event = EventWorkflowActivated
+		}
+		if err := s.event(ctx, tx, event, out); err != nil {
+			return err
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, event, "atlas_workflow", id.String(),
+			map[string]any{"ativo": before.Ativo}, map[string]any{"ativo": out.Ativo}))
+	})
+	return out, MapError(err)
+}
 
-	id, err := uuid.Parse(payload.ID)
+func (s *Service) event(ctx context.Context, tx pgx.Tx, eventType string, w domain.Workflow) error {
+	return s.outbox.Write(ctx, tx, eventType, "atlas_workflow", w.ID.String(), uuid.Nil, summary(w))
+}
+
+func summary(w domain.Workflow) map[string]any {
+	return map[string]any{"id": w.ID.String(), "codigo_processual": w.CodigoProcessual, "versao": w.Versao,
+		"titulo": w.Titulo, "codigo_ttdd": w.CodigoTTDD, "nivel_acesso": w.NivelAcesso, "ativo": w.Ativo, "etapas": len(w.Etapas)}
+}
+
+// Fonte é um procedimento que sustentou a resposta do assistente.
+type Fonte struct {
+	ID               uuid.UUID `json:"id"`
+	CodigoProcessual string    `json:"codigo_processual"`
+	Titulo           string    `json:"titulo"`
+	Relevancia       float64   `json:"relevancia"`
+}
+
+// Modos de resposta do assistente.
+const (
+	ModoIA       = "ia"       // redigida pelo modelo de linguagem
+	ModoSintese  = "sintese"  // síntese canônica (IA desligada ou indisponível)
+	ModoRecusada = "recusada" // nenhum procedimento acima do limiar
+)
+
+// Resposta do assistente procedural.
+type Resposta struct {
+	Answer      string    `json:"answer"`
+	Score       float64   `json:"score"`
+	Refused     bool      `json:"refused"`
+	Mode        string    `json:"mode"`
+	Sources     []Fonte   `json:"sources"`
+	GeneratedAt time.Time `json:"generated_at"`
+}
+
+// Perguntar responde com grounding estrito: só procedimentos homologados
+// com relevância >= domain.LimiarRelevancia sustentam a resposta; abaixo
+// disso, a recusa canônica. Exige atlas:read (na rota).
+func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, error) {
+	pergunta = strings.TrimSpace(pergunta)
+	resp := Resposta{Sources: []Fonte{}, GeneratedAt: s.now()}
+
+	candidatos, err := s.repo.Candidatos(ctx, s.pool, pergunta, maxCandidatos)
 	if err != nil {
-		return fmt.Errorf("parse workflow id %q: %w", payload.ID, err)
+		return resp, MapError(err)
 	}
-
-	wf, err := s.repo.GetWorkflowByID(ctx, s.pool, id)
-	if err != nil {
-		return fmt.Errorf("obter workflow para indexação: %w", err)
+	type scored struct {
+		w     domain.Workflow
+		score float64
 	}
-
-	if s.typesenseClient != nil {
-		if err := s.typesenseClient.IndexWorkflow(ctx, wf); err != nil {
-			s.logger.WarnContext(ctx, "falha na indexação Typesense", "error", err, "wf_id", wf.ID)
+	var hits []scored
+	for _, w := range candidatos {
+		if r := domain.Relevancia(w, pergunta); r > 0 {
+			hits = append(hits, scored{w, r})
 		}
 	}
-	return nil
-}
+	sort.SliceStable(hits, func(i, j int) bool { return hits[i].score > hits[j].score })
+	if len(hits) > 0 {
+		resp.Score = hits[0].score
+	}
 
+	var contexto []domain.Workflow
+	for _, h := range hits {
+		if h.score < domain.LimiarRelevancia || len(contexto) == maxFontes {
+			break
+		}
+		contexto = append(contexto, h.w)
+		resp.Sources = append(resp.Sources, Fonte{ID: h.w.ID, CodigoProcessual: h.w.CodigoProcessual, Titulo: h.w.Titulo, Relevancia: h.score})
+	}
+
+	switch {
+	case len(contexto) == 0:
+		resp.Answer, resp.Refused, resp.Mode = domain.MensagemRecusa, true, ModoRecusada
+	case s.assistente == nil:
+		resp.Answer, resp.Mode = domain.SinteseCanonica(contexto[0]), ModoSintese
+	default:
+		answer, err := s.assistente.Responder(ctx, pergunta, contexto)
+		if err != nil {
+			s.logger.WarnContext(ctx, "atlas: assistente de IA indisponível, usando a síntese canônica", "error", err)
+			resp.Answer, resp.Mode = domain.SinteseCanonica(contexto[0]), ModoSintese
+		} else {
+			resp.Answer, resp.Mode = answer, ModoIA
+		}
+	}
+
+	// Trilha da consulta sem o texto da pergunta (minimização, LGPD art.
+	// 6º III): ela pode trazer dados pessoais de terceiros.
+	codigos := make([]string, len(resp.Sources))
+	for i, f := range resp.Sources {
+		codigos[i] = f.CodigoProcessual
+	}
+	if err := audit.NewWriter(s.pool).Record(ctx, audit.Meta(ctx, "atlas.assistente.consulta", "atlas_assistente", "", nil,
+		map[string]any{"modo": resp.Mode, "relevancia": resp.Score, "fontes": codigos, "tamanho_pergunta": len([]rune(pergunta))})); err != nil {
+		return Resposta{}, err
+	}
+	return resp, nil
+}

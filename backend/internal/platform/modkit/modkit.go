@@ -34,6 +34,9 @@ type Deps struct {
 	PublicLimiter httpserver.Limiter
 	// ContactLimiter é o limite dedicado do formulário de contato.
 	ContactLimiter httpserver.Limiter
+	// AtlasChatLimiter limita as consultas ao assistente do Atlas por
+	// identidade (cada uma pode acionar o modelo de linguagem).
+	AtlasChatLimiter httpserver.Limiter
 	// InvalidatePermissions avisa o IAM (todas as réplicas) que perfis,
 	// lotações ou mapeamentos mudaram.
 	InvalidatePermissions func(ctx context.Context)

@@ -48,6 +48,7 @@ type RateLimiters struct {
 	WSTicket  *ratelimit.RedisLimiter
 	Public    *ratelimit.RedisLimiter // rotas anônimas, por IP
 	Contact   *ratelimit.RedisLimiter // formulário de contato, por IP
+	AtlasChat *ratelimit.RedisLimiter // assistente do Atlas, por identidade
 	Lockout   *ratelimit.Lockout      // lockout progressivo de credenciais
 }
 
@@ -173,6 +174,7 @@ func build(ctx context.Context, cfg *config.Config, component string) (*Dependen
 		WSTicket:  ratelimit.NewRedisLimiter(d.Redis, 5, 5, "ws_ticket"),
 		Public:    ratelimit.NewRedisLimiter(d.Redis, cfg.PublicRateLimit.WindowSeconds, cfg.PublicRateLimit.MaxRequests, "public"),
 		Contact:   ratelimit.NewRedisLimiter(d.Redis, cfg.ContactRateLimit.WindowSeconds, cfg.ContactRateLimit.MaxRequests, "contact"),
+		AtlasChat: ratelimit.NewRedisLimiter(d.Redis, cfg.Atlas.ChatRateLimit.WindowSeconds, cfg.Atlas.ChatRateLimit.MaxRequests, "atlas_chat"),
 		// Conta: 5 falhas liberadas; depois 1min, 2min, 4min... até 24h.
 		// IP: teto bem mais alto, janela de 1h e bloqueio máximo de 1h —
 		// atrás de NAT o IP é o prédio inteiro (ver Lockout.WithPolicy).

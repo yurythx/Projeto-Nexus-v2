@@ -143,11 +143,6 @@ services:
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
       MINIO_BUCKET: ${MINIO_BUCKET:-nexus}
       MINIO_USE_SSL: "false"
-      TYPESENSE_URL: ${TYPESENSE_URL:-http://typesense:8108}
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-nexus-typesense-secret-key-2026}
-      AI_ENDPOINT: ${AI_ENDPOINT:-http://ollama:11434}
-      AI_API_KEY: ${AI_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-llama3.2}
     volumes:
     - ./secrets:/run/secrets:ro
     networks:
@@ -192,15 +187,10 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379/0
       MINIO_ENDPOINT: minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?MINIO_ROOT_USER must be set}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD must be set}
       MINIO_BUCKET: ${MINIO_BUCKET:-nexus}
       MINIO_USE_SSL: "false"
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9002}
-      TYPESENSE_URL: ${TYPESENSE_URL:-http://typesense:8108}
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-nexus-typesense-secret-key-2026}
-      AI_ENDPOINT: ${AI_ENDPOINT:-http://ollama:11434}
-      AI_API_KEY: ${AI_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-llama3.2}
     volumes:
     - ./secrets:/run/secrets:ro
     networks:

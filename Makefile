@@ -1,5 +1,5 @@
 .PHONY: dev up down logs build test lint format \
-	deploy prod-seed-admin prod-ps prod-logs prod-down iam-scope-report \
+	deploy prod-seed-admin prod-ps prod-logs prod-down iam-scope-report atlas-modelo \
 	demo-keycloak demo-generate demo-seed demo-test demo-popular \
 	migrate-up migrate-down migrate-status migrate-redo seed-admin \
 	backend-shell frontend-shell rabbitmq-status clean \
@@ -78,11 +78,8 @@ down: ## Para e remove todos os serviços
 logs: ## Acompanha os logs de todos os serviços
 	$(COMPOSE) logs -f
 
-atlas-up: ## Sobe os contêineres do Typesense e Ollama do Atlas
-	docker compose -f docker-compose.atlas.yml up -d
-
-atlas-down: ## Para os contêineres do Atlas
-	docker compose -f docker-compose.atlas.yml down
+atlas-modelo: ## Baixa o modelo do assistente no Ollama (overlay docker-compose.atlas.yml ligado)
+	$(COMPOSE_PROD) exec ollama ollama pull $${ATLAS_AI_MODEL:-llama3.2}
 
 clean: ## Para os serviços e remove os volumes (DESTRÓI os dados locais)
 	$(COMPOSE) down -v

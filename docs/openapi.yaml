@@ -127,6 +127,374 @@ components:
                         $ref: '#/components/schemas/Envelope'
             description: Dados inválidos (VALIDATION_ERROR) ou regra de negócio violada.
     schemas:
+        AtlasChatRequest:
+            properties:
+                query:
+                    maxLength: 500
+                    minLength: 3
+                    type: string
+            required:
+                - query
+            type: object
+            x-nexus-generated: true
+        AtlasClassificacaoTTDD:
+            properties:
+                codigo:
+                    type: string
+                created_at:
+                    format: date-time
+                    type: string
+                descritor:
+                    type: string
+                destinacao_final:
+                    enum:
+                        - ELIMINACAO
+                        - GUARDA_PERMANENTE
+                    type: string
+                fase_corrente_anos:
+                    type: integer
+                fase_interm_anos:
+                    type: integer
+                observacoes:
+                    type: string
+            required:
+                - codigo
+                - created_at
+                - descritor
+                - destinacao_final
+                - fase_corrente_anos
+                - fase_interm_anos
+                - observacoes
+            type: object
+            x-nexus-generated: true
+        AtlasCreateRequest:
+            properties:
+                codigo_processual:
+                    maxLength: 64
+                    type: string
+                codigo_ttdd:
+                    maxLength: 32
+                    type: string
+                etapas:
+                    items:
+                        $ref: '#/components/schemas/AtlasEtapaRequest'
+                    maxItems: 50
+                    minItems: 1
+                    type: array
+                hipotese_legal_restricao:
+                    maxLength: 255
+                    type: string
+                nivel_acesso:
+                    enum:
+                        - PUBLICO
+                        - RESTRITO
+                        - SIGILOSO
+                    type: string
+                objetivo:
+                    maxLength: 5000
+                    type: string
+                publico_alvo:
+                    maxLength: 255
+                    type: string
+                titulo:
+                    maxLength: 255
+                    type: string
+                versao:
+                    minimum: 1
+                    type: integer
+            required:
+                - codigo_processual
+                - codigo_ttdd
+                - etapas
+                - nivel_acesso
+                - objetivo
+                - publico_alvo
+                - titulo
+            type: object
+            x-nexus-generated: true
+        AtlasDocumentoRequest:
+            properties:
+                exige_conferencia_copia:
+                    type: boolean
+                formato:
+                    enum:
+                        - NATO_DIGITAL
+                        - EXTERNO_DIGITALIZADO
+                    type: string
+                modelo_minuta_padrao_url:
+                    maxLength: 2000
+                    type: string
+                nome_documento:
+                    maxLength: 150
+                    type: string
+                obrigatorio:
+                    type: boolean
+                tipo_assinatura:
+                    enum:
+                        - INDIVIDUAL
+                        - CONJUNTA_MULTINIVEL
+                        - EM_BLOCO
+                    type: string
+            required:
+                - formato
+                - nome_documento
+                - tipo_assinatura
+            type: object
+            x-nexus-generated: true
+        AtlasEtapa:
+            properties:
+                atribuicoes_setor:
+                    type: string
+                documentos:
+                    items:
+                        $ref: '#/components/schemas/AtlasEtapaDocumento'
+                    type: array
+                id:
+                    format: uuid
+                    type: string
+                manter_aberto_apos_remessa:
+                    type: boolean
+                nome_setor:
+                    type: string
+                ordem:
+                    type: integer
+                prazo_sla_em_dias:
+                    type: integer
+                transicoes:
+                    items:
+                        $ref: '#/components/schemas/AtlasEtapaTransicao'
+                    type: array
+                unidade_administrativa:
+                    type: string
+            required:
+                - atribuicoes_setor
+                - documentos
+                - id
+                - manter_aberto_apos_remessa
+                - nome_setor
+                - ordem
+                - prazo_sla_em_dias
+                - transicoes
+                - unidade_administrativa
+            type: object
+            x-nexus-generated: true
+        AtlasEtapaDocumento:
+            properties:
+                exige_conferencia_copia:
+                    type: boolean
+                formato:
+                    enum:
+                        - EXTERNO_DIGITALIZADO
+                        - NATO_DIGITAL
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                modelo_minuta_padrao_url:
+                    type: string
+                nome_documento:
+                    type: string
+                obrigatorio:
+                    type: boolean
+                tipo_assinatura:
+                    enum:
+                        - CONJUNTA_MULTINIVEL
+                        - EM_BLOCO
+                        - INDIVIDUAL
+                    type: string
+            required:
+                - exige_conferencia_copia
+                - formato
+                - id
+                - modelo_minuta_padrao_url
+                - nome_documento
+                - obrigatorio
+                - tipo_assinatura
+            type: object
+            x-nexus-generated: true
+        AtlasEtapaRequest:
+            properties:
+                atribuicoes_setor:
+                    maxLength: 5000
+                    type: string
+                documentos:
+                    items:
+                        $ref: '#/components/schemas/AtlasDocumentoRequest'
+                    maxItems: 30
+                    type: array
+                manter_aberto_apos_remessa:
+                    type: boolean
+                nome_setor:
+                    maxLength: 150
+                    type: string
+                ordem:
+                    minimum: 1
+                    type: integer
+                prazo_sla_em_dias:
+                    maximum: 3650
+                    minimum: 0
+                    type: integer
+                transicoes:
+                    items:
+                        $ref: '#/components/schemas/AtlasTransicaoRequest'
+                    maxItems: 10
+                    type: array
+                unidade_administrativa:
+                    maxLength: 64
+                    type: string
+            required:
+                - atribuicoes_setor
+                - nome_setor
+                - ordem
+                - unidade_administrativa
+            type: object
+            x-nexus-generated: true
+        AtlasEtapaTransicao:
+            properties:
+                condicao_transicao:
+                    type: string
+                descricao_diligencia:
+                    type: string
+                destino_ordem:
+                    type: integer
+                id:
+                    format: uuid
+                    type: string
+                is_devolucao_diligencia:
+                    type: boolean
+            required:
+                - condicao_transicao
+                - descricao_diligencia
+                - destino_ordem
+                - id
+                - is_devolucao_diligencia
+            type: object
+            x-nexus-generated: true
+        AtlasFonte:
+            properties:
+                codigo_processual:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                relevancia:
+                    type: number
+                titulo:
+                    type: string
+            required:
+                - codigo_processual
+                - id
+                - relevancia
+                - titulo
+            type: object
+            x-nexus-generated: true
+        AtlasResposta:
+            properties:
+                answer:
+                    type: string
+                generated_at:
+                    format: date-time
+                    type: string
+                mode:
+                    type: string
+                refused:
+                    type: boolean
+                score:
+                    type: number
+                sources:
+                    items:
+                        $ref: '#/components/schemas/AtlasFonte'
+                    type: array
+            required:
+                - answer
+                - generated_at
+                - mode
+                - refused
+                - score
+                - sources
+            type: object
+            x-nexus-generated: true
+        AtlasTransicaoRequest:
+            properties:
+                condicao_transicao:
+                    maxLength: 255
+                    type: string
+                descricao_diligencia:
+                    maxLength: 2000
+                    type: string
+                destino_ordem:
+                    minimum: 1
+                    type: integer
+                is_devolucao_diligencia:
+                    type: boolean
+            required:
+                - condicao_transicao
+                - destino_ordem
+            type: object
+            x-nexus-generated: true
+        AtlasWorkflow:
+            properties:
+                ativo:
+                    type: boolean
+                classificacao:
+                    $ref: '#/components/schemas/AtlasClassificacaoTTDD'
+                codigo_processual:
+                    type: string
+                codigo_ttdd:
+                    type: string
+                created_at:
+                    format: date-time
+                    type: string
+                created_by:
+                    format: uuid
+                    nullable: true
+                    type: string
+                etapas:
+                    items:
+                        $ref: '#/components/schemas/AtlasEtapa'
+                    type: array
+                hipotese_legal_restricao:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                nivel_acesso:
+                    enum:
+                        - PUBLICO
+                        - RESTRITO
+                        - SIGILOSO
+                    type: string
+                objetivo:
+                    type: string
+                publico_alvo:
+                    type: string
+                titulo:
+                    type: string
+                total_etapas:
+                    type: integer
+                updated_at:
+                    format: date-time
+                    type: string
+                versao:
+                    type: integer
+            required:
+                - ativo
+                - codigo_processual
+                - codigo_ttdd
+                - created_at
+                - created_by
+                - etapas
+                - hipotese_legal_restricao
+                - id
+                - nivel_acesso
+                - objetivo
+                - publico_alvo
+                - titulo
+                - total_etapas
+                - updated_at
+                - versao
+            type: object
+            x-nexus-generated: true
         AuditRecord:
             properties:
                 action:
@@ -3871,6 +4239,407 @@ paths:
             summary: Alterar /admin/modules/{key}
             tags:
                 - kernel
+    /api/v1/atlas/admin/workflows:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtlasAdminWorkflows
+            parameters:
+                - $ref: '#/components/parameters/Page'
+                - $ref: '#/components/parameters/PageSize'
+                - in: query
+                  name: q
+                  required: false
+                  schema:
+                    maxLength: 200
+                    type: string
+                  x-nexus-generated: true
+                - in: query
+                  name: codigo_ttdd
+                  required: false
+                  schema:
+                    maxLength: 32
+                    type: string
+                  x-nexus-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtlasWorkflow'
+                                            type: array
+                                        meta:
+                                            $ref: '#/components/schemas/PaginationMeta'
+                                      type: object
+                    description: Página de itens em `data`, paginação em `meta`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/workflows
+            tags:
+                - atlas
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflows
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtlasCreateRequest'
+                required: true
+                x-nexus-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasWorkflow'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/workflows
+            tags:
+                - atlas
+    /api/v1/atlas/admin/workflows/{id}:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtlasAdminWorkflowsId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasWorkflow'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Obter /atlas/admin/workflows/{id}
+            tags:
+                - atlas
+    /api/v1/atlas/admin/workflows/{id}/ativar:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflowsIdAtivar
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasWorkflow'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/ativar
+            tags:
+                - atlas
+    /api/v1/atlas/admin/workflows/{id}/desativar:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflowsIdDesativar
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasWorkflow'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/desativar
+            tags:
+                - atlas
+    /api/v1/atlas/chat:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasChat
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtlasChatRequest'
+                required: true
+                x-nexus-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasResposta'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Criar /atlas/chat
+            tags:
+                - atlas
+    /api/v1/atlas/ttdd:
+        get:
+            operationId: getAtlasTtdd
+            parameters:
+                - $ref: '#/components/parameters/Page'
+                - $ref: '#/components/parameters/PageSize'
+                - in: query
+                  name: q
+                  required: false
+                  schema:
+                    maxLength: 200
+                    type: string
+                  x-nexus-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtlasClassificacaoTTDD'
+                                            type: array
+                                        meta:
+                                            $ref: '#/components/schemas/PaginationMeta'
+                                      type: object
+                    description: Página de itens em `data`, paginação em `meta`.
+                    x-nexus-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd
+            tags:
+                - atlas
+    /api/v1/atlas/ttdd/{codigo}:
+        get:
+            operationId: getAtlasTtddCodigo
+            parameters:
+                - in: path
+                  name: codigo
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasClassificacaoTTDD'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Atlas — Procedimentos e Temporalidade — Obter /atlas/ttdd/{codigo}
+            tags:
+                - atlas
+    /api/v1/atlas/workflows:
+        get:
+            operationId: getAtlasWorkflows
+            parameters:
+                - $ref: '#/components/parameters/Page'
+                - $ref: '#/components/parameters/PageSize'
+                - in: query
+                  name: q
+                  required: false
+                  schema:
+                    maxLength: 200
+                    type: string
+                  x-nexus-generated: true
+                - in: query
+                  name: codigo_ttdd
+                  required: false
+                  schema:
+                    maxLength: 32
+                    type: string
+                  x-nexus-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtlasWorkflow'
+                                            type: array
+                                        meta:
+                                            $ref: '#/components/schemas/PaginationMeta'
+                                      type: object
+                    description: Página de itens em `data`, paginação em `meta`.
+                    x-nexus-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/workflows
+            tags:
+                - atlas
+    /api/v1/atlas/workflows/{id}:
+        get:
+            operationId: getAtlasWorkflowsId
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasWorkflow'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Atlas — Procedimentos e Temporalidade — Obter /atlas/workflows/{id}
+            tags:
+                - atlas
     /api/v1/audit/export:
         get:
             description: |
@@ -10167,6 +10936,8 @@ servers:
       url: /
 tags:
     - name: administracao
+    - description: Atlas — Procedimentos e Temporalidade. Plug-in — Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) e assistente procedural.
+      name: atlas
     - description: Auditoria. Núcleo — Registro transacional e imutável de operações com encadeamento de hash SHA-256.
       name: audit
     - description: |

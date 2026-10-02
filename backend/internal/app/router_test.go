@@ -87,7 +87,8 @@ func testDeps(t *testing.T) *Dependencies {
 		RateLimiters: &RateLimiters{
 			APIGlobal: ratelimit.NewRedisLimiter(rdb, 60, 1000, "api"), Login: ratelimit.NewRedisLimiter(rdb, 60, 100, "login"),
 			WSTicket: ratelimit.NewRedisLimiter(rdb, 5, 5, "ws"), Public: ratelimit.NewRedisLimiter(rdb, 60, 1000, "public"),
-			Contact: ratelimit.NewRedisLimiter(rdb, 60, 100, "contact"), Lockout: ratelimit.NewLockout(rdb, 5, time.Minute, time.Hour),
+			Contact: ratelimit.NewRedisLimiter(rdb, 60, 100, "contact"), AtlasChat: ratelimit.NewRedisLimiter(rdb, 60, 5, "atlas_chat"),
+			Lockout: ratelimit.NewLockout(rdb, 5, time.Minute, time.Hour),
 		},
 	}
 	d.Kernel = kernel.New(kernel.NewPostgresStore(pool, logger), logger)
@@ -116,6 +117,7 @@ func TestRouterMountsEveryPluginAndEnforcesAuthAndGuard(t *testing.T) {
 		"POST /api/v1/contact/messages", "GET /api/v1/directory/people", "GET /api/v1/calendar/events", "GET /api/v1/files/browse",
 		"GET /api/v1/wiki/tree", "GET /api/v1/search", "POST /api/v1/signum/envelopes/{id}/sign", "GET /api/v1/signum/verify/{id}",
 		"POST /api/v1/tramite/processos", "POST /api/v1/auth/login", "GET /api/v1/system/public-modules", "GET /api/v1/branding",
+		"GET /api/v1/atlas/workflows", "POST /api/v1/atlas/chat", "POST /api/v1/atlas/admin/workflows",
 	} {
 		if !routes[want] {
 			t.Errorf("rota ausente: %s", want)

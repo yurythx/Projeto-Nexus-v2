@@ -43,6 +43,7 @@ func registerPlugins(d *Dependencies) {
 		Cipher:                d.Cipher,
 		PublicLimiter:         d.RateLimiters.Public,
 		ContactLimiter:        d.RateLimiters.Contact,
+		AtlasChatLimiter:      d.RateLimiters.AtlasChat,
 		InvalidatePermissions: d.IAM.Invalidate,
 		ResetLoginLockout: func(ctx context.Context, username string) error {
 			return d.RateLimiters.Lockout.Reset(ctx, "user:"+strings.ToLower(username))

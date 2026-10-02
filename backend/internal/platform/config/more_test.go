@@ -106,3 +106,22 @@ func TestLoadIntegersProxiesAndLocalAuth(t *testing.T) {
 		t.Fatalf("login local sem chave: %v", err)
 	}
 }
+
+// ATLAS_AI_ENDPOINT: URL http(s) com host e sem credenciais embutidas.
+func TestAtlasAIEndpoint(t *testing.T) {
+	for _, raw := range []string{"ftp://ia.local", "http://", "http://user:senha@ia.local", "::nao-e-url"} {
+		t.Run(raw, func(t *testing.T) {
+			setRequiredEnv(t)
+			t.Setenv("ATLAS_AI_ENDPOINT", raw)
+			if _, err := Load(); err == nil || !strings.Contains(err.Error(), "ATLAS_AI_ENDPOINT") {
+				t.Fatalf("endpoint %q aceito: %v", raw, err)
+			}
+		})
+	}
+	setRequiredEnv(t)
+	t.Setenv("ATLAS_AI_ENDPOINT", "http://ollama:11434")
+	cfg, err := Load()
+	if err != nil || cfg.Atlas.AIEndpoint != "http://ollama:11434" || cfg.Atlas.AIModel != "llama3.2" || cfg.Atlas.ChatRateLimit.MaxRequests != 10 {
+		t.Fatalf("configuração do Atlas: %+v %v", cfg.Atlas, err)
+	}
+}

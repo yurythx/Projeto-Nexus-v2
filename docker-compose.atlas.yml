@@ -1,42 +1,27 @@
-# Overlay opcional para o Módulo Atlas (Busca Híbrida e IA Local)
-# Ative com COMPOSE_FILE=docker-compose.yml:docker-compose.atlas.yml no .env
-# ou execute:
-#   docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.atlas.yml up
+# Overlay OPCIONAL: IA local (Ollama) para o assistente procedural do Atlas.
+# Sem ele o assistente funciona do mesmo jeito, respondendo com a síntese
+# canônica dos procedimentos homologados (sem modelo de linguagem).
+#
+# Ligar: acrescente ao COMPOSE_FILE do .env
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.atlas.yml
+# e rode `make deploy`; depois baixe o modelo uma vez: `make atlas-modelo`.
+#
+# Para um provedor externo compatível com a API da OpenAI (vLLM, LiteLLM,
+# OpenAI), não use este arquivo: defina ATLAS_AI_ENDPOINT/ATLAS_AI_API_KEY
+# no .env.
 volumes:
-  typesense_data: null
   ollama_data: null
 
 services:
-  typesense:
-    image: typesense/typesense:27.1
-    restart: unless-stopped
-    command: '--data-dir /data --api-key=${TYPESENSE_API_KEY:-dev-typesense-api-key} --enable-cors'
-    environment:
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-dev-typesense-api-key}
-      TYPESENSE_DATA_DIR: /data
-      TYPESENSE_ENABLE_CORS: "true"
-    volumes:
-      - typesense_data:/data
-    ports:
-      - "${HOST_BIND:-0.0.0.0}:${HOST_TYPESENSE_PORT:-8108}:8108"
-    networks:
-      - nexus_internal
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-
   ollama:
-    image: ollama/ollama:latest
+    # Versão fixada (builds reproduzíveis); atualize conscientemente.
+    image: ${OLLAMA_IMAGE:-ollama/ollama:0.6.8}
     restart: unless-stopped
     environment:
       OLLAMA_KEEP_ALIVE: "24h"
     volumes:
       - ollama_data:/root/.ollama
-    ports:
-      - "${HOST_BIND:-0.0.0.0}:${HOST_OLLAMA_PORT:-11434}:11434"
+    # Sem porta publicada: só a API o alcança, pela rede interna.
     networks:
       - nexus_internal
     healthcheck:
@@ -48,16 +33,5 @@ services:
 
   backend-api:
     environment:
-      TYPESENSE_URL: http://typesense:8108
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-dev-typesense-api-key}
-      AI_ENDPOINT: http://ollama:11434
-      AI_API_KEY: ${AI_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-llama3}
-
-  backend-worker:
-    environment:
-      TYPESENSE_URL: http://typesense:8108
-      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-dev-typesense-api-key}
-      AI_ENDPOINT: http://ollama:11434
-      AI_API_KEY: ${AI_API_KEY:-}
-      AI_MODEL: ${AI_MODEL:-llama3}
+      ATLAS_AI_ENDPOINT: http://ollama:11434
+      ATLAS_AI_MODEL: ${ATLAS_AI_MODEL:-llama3.2}

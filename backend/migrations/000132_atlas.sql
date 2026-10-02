@@ -104,6 +104,7 @@ INSERT INTO atlas_classificacao_ttdd (codigo, descritor, fase_corrente_anos, fas
 ON CONFLICT (codigo) DO NOTHING;
 
 -- Workflows Canônicos SEI
+-- +goose StatementBegin
 DO $$
 DECLARE
     wf_pregao UUID := 'a1000000-0000-0000-0000-000000000001';
@@ -232,14 +233,10 @@ BEGIN
     ON CONFLICT DO NOTHING;
 
 END $$;
+-- +goose StatementEnd
 
--- Registra o módulo Atlas no sistema de controle de módulos do Kernel
-INSERT INTO system_modules (key, enabled, updated_at)
-VALUES ('atlas', TRUE, NOW())
-ON CONFLICT (key) DO UPDATE SET enabled = EXCLUDED.enabled, updated_at = NOW();
 
 -- +goose Down
-DELETE FROM system_modules WHERE key = 'atlas';
 DROP TABLE IF EXISTS atlas_etapa_transicoes CASCADE;
 DROP TABLE IF EXISTS atlas_etapa_documentos CASCADE;
 DROP TABLE IF EXISTS atlas_etapas CASCADE;

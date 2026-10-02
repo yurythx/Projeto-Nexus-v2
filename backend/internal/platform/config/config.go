@@ -158,6 +158,19 @@ type EgressConfig struct {
 	AllowPrivateNetworks bool
 }
 
+// AtlasConfig parametriza o assistente procedural do plugin Atlas.
+type AtlasConfig struct {
+	// AIEndpoint é a URL base de um provedor compatível com a API de chat
+	// da OpenAI (OpenAI, vLLM, LiteLLM, Ollama). Vazio = assistente sem IA:
+	// responde com a síntese canônica dos procedimentos homologados.
+	AIEndpoint string
+	AIAPIKey   string
+	AIModel    string
+	AITimeout  time.Duration
+	// ChatRateLimit limita as consultas ao assistente por identidade.
+	ChatRateLimit RateLimitConfig
+}
+
 // SignumConfig parametriza a cerimônia de assinatura eletrônica.
 type SignumConfig struct {
 	ChallengeTTL time.Duration
@@ -224,6 +237,7 @@ type Config struct {
 	LocalAuth LocalAuthConfig
 	Worker    WorkerConfig
 	Egress    EgressConfig
+	Atlas     AtlasConfig
 	Signum    SignumConfig
 	Upload    UploadConfig
 
@@ -451,6 +465,16 @@ func Load() (*Config, error) {
 			PollInterval:         l.durationVal("EGRESS_POLL_INTERVAL", 5*time.Second),
 			AllowPrivateNetworks: l.boolVal("EGRESS_ALLOW_PRIVATE_NETWORKS", false),
 		},
+		Atlas: AtlasConfig{
+			AIEndpoint: l.str("ATLAS_AI_ENDPOINT", false, ""),
+			AIAPIKey:   l.secret("ATLAS_AI_API_KEY", false, ""),
+			AIModel:    l.str("ATLAS_AI_MODEL", false, "llama3.2"),
+			AITimeout:  l.durationVal("ATLAS_AI_TIMEOUT", 20*time.Second),
+			ChatRateLimit: RateLimitConfig{
+				WindowSeconds: l.intVal("ATLAS_CHAT_RATE_LIMIT_WINDOW_SECONDS", false, 60),
+				MaxRequests:   l.intVal("ATLAS_CHAT_RATE_LIMIT_MAX", false, 10),
+			},
+		},
 		Signum: SignumConfig{
 			ChallengeTTL: l.durationVal("SIGNUM_CHALLENGE_TTL", 5*time.Minute),
 		},
@@ -476,6 +500,12 @@ func Load() (*Config, error) {
 
 	if len(l.errs) > 0 {
 		return nil, fmt.Errorf("config: missing or invalid required environment variables: %s", strings.Join(l.errs, ", "))
+	}
+
+	if raw := cfg.Atlas.AIEndpoint; raw != "" {
+		if u, err := url.Parse(raw); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.User != nil {
+			return nil, fmt.Errorf("config: ATLAS_AI_ENDPOINT deve ser uma URL http(s) sem credenciais embutidas (use ATLAS_AI_API_KEY), veio %q", raw)
+		}
 	}
 
 	if cfg.App.Env != "development" && cfg.App.Env != "staging" && cfg.App.Env != "production" && cfg.App.Env != "test" {
