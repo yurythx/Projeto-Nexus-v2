@@ -69,6 +69,10 @@ quem precisa continuar com acesso amplo (concessão global) antes do deploy.
   `WEBSOCKET_PUBLIC_URL` e `MINIO_PUBLIC_URL` no `.env` e rode `make deploy`
   — as `NEXT_PUBLIC_*` são embutidas no build do frontend.
 - Sem Keycloak (`KEYCLOAK_ISSUER_URL` vazio) só o login local funciona.
+- **CA recriada:** se o volume `caddy_data` se perder (ex.: `down -v`), o
+  Caddy gera uma CA nova. O `deploy.sh` percebe, atualiza `secrets/ca` e
+  reinicia API, worker e frontend — mas cada máquina de teste precisa
+  instalar a nova raiz (`http://<host>/nexus-ca.crt`).
 - **Não exponha a stack sem o proxy HTTPS.** Sem um proxy de borda que
   sobrescreva o `X-Forwarded-For`, o frontend não repassa o IP do visitante
   (seria forjável) e a API enxerga todo mundo com o IP do frontend: os

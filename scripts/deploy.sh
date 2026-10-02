@@ -91,6 +91,24 @@ log "Build e subida dos serviços"
 if "${COMPOSE[@]}" ps --services 2>/dev/null | grep -qx caddy; then
   log "Recarregando a configuração do Caddy"
   "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
+
+  # A CA interna do Caddy é recriada quando o volume caddy_data se perde
+  # (ex.: `down -v`). API, worker e frontend confiam em secrets/ca: sem
+  # esta sincronia a API não valida o Keycloak e não sobe.
+  tmp=$(mktemp)
+  for _ in $(seq 1 30); do
+    "${COMPOSE[@]}" cp caddy:/data/caddy/pki/authorities/local/root.crt "$tmp" >/dev/null 2>&1 && [ -s "$tmp" ] && break
+    sleep 2
+  done
+  if [ -s "$tmp" ] && ! cmp -s "$tmp" secrets/ca/nexus-ca.crt; then
+    log "CA interna do Caddy mudou: atualizando secrets/ca e reiniciando API, worker e frontend"
+    mkdir -p secrets/ca
+    cp "$tmp" secrets/ca/nexus-ca.crt
+    chmod 644 secrets/ca/nexus-ca.crt
+    "${COMPOSE[@]}" restart backend-api backend-worker frontend
+    echo "  ATENÇÃO: reinstale a CA nas máquinas de teste (http://<host>/nexus-ca.crt)"
+  fi
+  rm -f "$tmp"
 fi
 
 log "Aguardando os serviços ficarem saudáveis"
