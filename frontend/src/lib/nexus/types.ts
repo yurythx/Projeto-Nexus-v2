@@ -510,7 +510,13 @@ export interface Verification {
   document_sha256: string;
   status: Envelope["status"];
   document_match?: boolean;
-  signatures: { name: string; status: string; signed_at?: string; method?: string; valid: boolean }[];
+  signatures: {
+    name: string;
+    status: string;
+    signed_at?: string;
+    method?: string;
+    valid: boolean;
+  }[];
   checked_at: string;
 }
 
@@ -629,4 +635,88 @@ export interface EgressDelivery {
   last_error?: string;
   created_at: string;
   delivered_at?: string;
+}
+
+// ------------------------------------------------------------------- atlas
+
+export type DestinacaoFinal = "GUARDA_PERMANENTE" | "ELIMINACAO";
+export type NivelAcesso = "PUBLICO" | "RESTRITO" | "SIGILOSO";
+export type FormatoDocumento = "NATO_DIGITAL" | "EXTERNO_DIGITALIZADO";
+export type TipoAssinatura = "INDIVIDUAL" | "CONJUNTA_MULTINIVEL" | "EM_BLOCO";
+
+export interface ClassificacaoTTDD {
+  codigo: string;
+  descritor: string;
+  fase_corrente_anos: number;
+  fase_interm_anos: number;
+  destinacao_final: DestinacaoFinal;
+  observacoes: string;
+  created_at: string;
+}
+
+export interface EtapaDocumento {
+  id: UUID;
+  nome_documento: string;
+  obrigatorio: boolean;
+  formato: FormatoDocumento;
+  tipo_assinatura: TipoAssinatura;
+  exige_conferencia_copia: boolean;
+  modelo_minuta_padrao_url: string;
+}
+
+export interface EtapaTransicao {
+  id: UUID;
+  destino_ordem: number;
+  condicao_transicao: string;
+  is_devolucao_diligencia: boolean;
+  descricao_diligencia: string;
+}
+
+export interface Etapa {
+  id: UUID;
+  ordem: number;
+  unidade_administrativa: string;
+  nome_setor: string;
+  atribuicoes_setor: string;
+  prazo_sla_em_dias: number;
+  manter_aberto_apos_remessa: boolean;
+  documentos: EtapaDocumento[];
+  transicoes: EtapaTransicao[];
+}
+
+/** Procedimento canônico. Na listagem `etapas` vem vazio (use total_etapas);
+ * o detalhe traz o percurso completo. */
+export interface Workflow {
+  id: UUID;
+  codigo_processual: string;
+  titulo: string;
+  objetivo: string;
+  publico_alvo: string;
+  versao: number;
+  ativo: boolean;
+  nivel_acesso: NivelAcesso;
+  hipotese_legal_restricao: string;
+  codigo_ttdd: string;
+  classificacao?: ClassificacaoTTDD;
+  total_etapas: number;
+  etapas: Etapa[];
+  created_by?: UUID | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AtlasFonte {
+  id: UUID;
+  codigo_processual: string;
+  titulo: string;
+  relevancia: number;
+}
+
+export interface AtlasResposta {
+  answer: string;
+  score: number;
+  refused: boolean;
+  mode: "ia" | "sintese" | "recusada";
+  sources: AtlasFonte[];
+  generated_at: string;
 }
