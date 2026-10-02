@@ -83,32 +83,42 @@ if [ ! -f secrets/local_auth_private_key.pem ]; then
   chmod 644 secrets/local_auth_private_key.pem
 fi
 
-log "Build e subida dos serviços"
-"${COMPOSE[@]}" up -d --build --remove-orphans
-
-# O Caddy (se a borda HTTPS estiver ativa) relê o Caddyfile sem derrubar
-# conexões: mudanças de TLS/rotas valem sem recriar o container.
-if "${COMPOSE[@]}" ps --services 2>/dev/null | grep -qx caddy; then
-  log "Recarregando a configuração do Caddy"
-  "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
-
-  # A CA interna do Caddy é recriada quando o volume caddy_data se perde
-  # (ex.: `down -v`). API, worker e frontend confiam em secrets/ca: sem
-  # esta sincronia a API não valida o Keycloak e não sobe.
+# Borda HTTPS ativa? O Caddy sobe primeiro: a CA interna dele é recriada
+# quando o volume caddy_data se perde (ex.: `down -v`), e API, worker e
+# frontend confiam em secrets/ca — com a cópia desatualizada a API não
+# valida o Keycloak e não sobe. Sincroniza antes de subir o resto.
+ca_changed=0
+if "${COMPOSE[@]}" config --services 2>/dev/null | grep -qx caddy; then
+  log "Subindo o Caddy e conferindo a CA interna"
+  "${COMPOSE[@]}" up -d caddy
   tmp=$(mktemp)
   for _ in $(seq 1 30); do
     "${COMPOSE[@]}" cp caddy:/data/caddy/pki/authorities/local/root.crt "$tmp" >/dev/null 2>&1 && [ -s "$tmp" ] && break
     sleep 2
   done
   if [ -s "$tmp" ] && ! cmp -s "$tmp" secrets/ca/nexus-ca.crt; then
-    log "CA interna do Caddy mudou: atualizando secrets/ca e reiniciando API, worker e frontend"
     mkdir -p secrets/ca
     cp "$tmp" secrets/ca/nexus-ca.crt
     chmod 644 secrets/ca/nexus-ca.crt
-    "${COMPOSE[@]}" restart backend-api backend-worker frontend
-    echo "  ATENÇÃO: reinstale a CA nas máquinas de teste (http://<host>/nexus-ca.crt)"
+    ca_changed=1
+    echo "  CA nova em secrets/ca — reinstale nas máquinas de teste (http://<host>/nexus-ca.crt)"
   fi
   rm -f "$tmp"
+fi
+
+log "Build e subida dos serviços"
+"${COMPOSE[@]}" up -d --build --remove-orphans
+
+if [ "$ca_changed" = 1 ]; then
+  log "Reiniciando API, worker e frontend com a CA nova"
+  "${COMPOSE[@]}" restart backend-api backend-worker frontend
+fi
+
+# O Caddy relê o Caddyfile sem derrubar conexões: mudanças de TLS/rotas
+# valem sem recriar o container.
+if "${COMPOSE[@]}" ps --services 2>/dev/null | grep -qx caddy; then
+  log "Recarregando a configuração do Caddy"
+  "${COMPOSE[@]}" exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 fi
 
 log "Aguardando os serviços ficarem saudáveis"
