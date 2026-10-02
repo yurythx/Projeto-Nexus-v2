@@ -205,8 +205,18 @@ if code == 200:
     check("segredo nunca devolvido em claro", "client_secret\":\"" not in json.dumps(d) or "***" in json.dumps(d), d)
 code, _ = call(S, "GET", "admin/keycloak")
 expect("servidor não lê a configuração", code, 403)
+# O módulo Exemplo nasce desativado (DefaultEnabled: false): liga para o
+# teste e devolve ao estado em que estava.
+code, d = call(ADMIN, "GET", "system/modules")
+exemplo_ativo = code == 200 and any(m["key"] == "example" and m["enabled"] for m in d["data"])
+if not exemplo_ativo:
+    code, d = call(ADMIN, "PATCH", "admin/modules/example", {"enabled": True})
+    expect("liga o módulo Exemplo", code, 200, d)
 code, d = call(S, "POST", "examples", {"name": f"Item exemplo {RUN}"})
 expect("cria item no módulo Exemplo", code, (200, 201, 403), d)
 code, d = call(S, "GET", "examples")
 expect("lista itens", code, (200, 403))
+if not exemplo_ativo:
+    code, d = call(ADMIN, "PATCH", "admin/modules/example", {"enabled": False})
+    expect("desliga o módulo Exemplo de volta", code, 200, d)
 done()
