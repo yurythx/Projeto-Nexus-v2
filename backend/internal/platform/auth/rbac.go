@@ -50,6 +50,8 @@ const (
 	PermTramiteRoute    Permission = "tramite:route"
 	PermTramiteManage   Permission = "tramite:manage"
 	PermExampleManage   Permission = "example:manage"
+	PermAtlasRead       Permission = "atlas:read"
+	PermAtlasManage     Permission = "atlas:manage"
 )
 
 // HasPermission reporta se identity possui permission, considerando os

@@ -19,16 +19,19 @@
 	}
 }
 
-# TLS 1.3 como versão mínima (skill §4 — A02): TLS 1.2 é recusado.
+# TLS 1.2 e 1.3 (o Caddy só oferece cifras modernas no 1.2). A skill §4 pede
+# 1.3; o 1.2 fica aceito porque o Windows 10 (TLS do sistema) não tem 1.3 —
+# para exigir só 1.3: "protocols tls1.3".
 (tls_local) {
 	tls internal {
-		protocols tls1.3
+		protocols tls1.2 tls1.3
 	}
 }
 
 # Frontend (NextAuth, BFF, site público)
 https://{$PUBLIC_HOST} {
 	import tls_local
+	log
 	reverse_proxy frontend:3000
 }
 

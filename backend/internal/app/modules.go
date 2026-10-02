@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/yurythx/projeto-nexus/internal/modules/atlas"
 	"github.com/yurythx/projeto-nexus/internal/modules/auditoria"
 	"github.com/yurythx/projeto-nexus/internal/modules/blog"
 	"github.com/yurythx/projeto-nexus/internal/modules/busca"
@@ -67,6 +68,7 @@ func registerPlugins(d *Dependencies) {
 		busca.New(deps, d.Kernel.SearchProviders),
 		signumModule,
 		tramite.New(deps, &signaturePort{svc: signumModule.Service(), enabled: func() bool { return d.Kernel.Enabled(signum.Key) }}),
+		atlas.New(deps),
 		example.New(deps),
 	)
 	d.LGPD.SetPersonalDataSource(d.personalData)

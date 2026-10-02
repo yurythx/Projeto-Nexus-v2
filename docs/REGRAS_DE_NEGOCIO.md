@@ -41,7 +41,7 @@ Referência funcional da plataforma. Serve para quem **implanta e administra**
 | Tipo | Módulos | Pode desligar? |
 |---|---|---|
 | Núcleo | IAM & Usuários, Auditoria | Não |
-| Plug-ins | Mercúrio, Egress, Blog, Catálogo, Contato, Diretório, Agenda, Arquivos, Wiki, Busca, Signum, Trâmite, Módulo Modelo | Sim, em Configurações → Módulos (`modules:manage`) |
+| Plug-ins | Mercúrio, Egress, Blog, Catálogo, Contato, Diretório, Agenda, Arquivos, Wiki, Busca, Signum, Trâmite, Atlas, Módulo Modelo | Sim, em Configurações → Módulos (`modules:manage`) |
 
 - Desligar um módulo tem efeito imediato, sem reiniciar:
   - as rotas dele respondem `404 MODULE_DISABLED`;
@@ -161,6 +161,7 @@ saúde, filial, sede.
 | Contato | `contact:read`, `contact:manage` |
 | Agenda / Arquivos / Diretório | `calendar:manage`, `files:manage`, `directory:manage` |
 | Mercúrio / Signum / Egress | `mercurio:manage`, `signum:manage`, `egress:manage` |
+| Atlas | `atlas:read`, `atlas:manage` |
 | Módulo Modelo | `example:manage` |
 
 O que **não** exige permissão, só estar autenticado:
@@ -538,6 +539,24 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 ### Transparência
 - Endpoints públicos, sem login: dados da plataforma, módulos ativos,
   conjuntos de dados e estatística de ações da auditoria.
+
+### Atlas (Catálogo Procedural SEI, TTDD & IA)
+- **Princípio de Isolamento Total:** O Atlas funciona como repositório canônico e fonte da verdade procedural; **não bloqueia nem intercepta** as rotinas operacionais do Trâmite ou do Protocolo Geral.
+- **Padrão SEI de Processo Administrativo Eletrônico:**
+  - Procedimentos portadores de NUP e vinculados estritamente ao código da TTDD.
+  - Distinção rígida de peças autuadas: `NATO_DIGITAL` (geradas no sistema e assinadas digitalmente) e `EXTERNO_DIGITALIZADO` (exigem obrigatoriamente atesto de autenticidade / conferência de cópia).
+  - Assinaturas documentais: `INDIVIDUAL`, `CONJUNTA_MULTINIVEL` (ordem hierárquica) e `EM_BLOCO`.
+  - Regra de tramitação `manter_aberto_apos_remessa`: permite que a unidade de origem envie o processo mantendo uma cópia aberta para acompanhamento em sua mesa virtual.
+- **Tabela de Temporalidade (TTDD / CCPAD - Rondonópolis):**
+  - Mapeamento das Funções (2.0.01 a 2.0.08), subfunções e itens documentais.
+  - Prazos legais em **Arquivo Corrente** (anos) e **Arquivo Intermediário** (anos).
+  - **Destinação Final:** estritamente `GUARDA_PERMANENTE` ou `ELIMINACAO`.
+- **Assistente Procedural com Grounding Estrito de IA:**
+  - Busca Híbrida via Typesense (`alpha = 0.6` ponderando vetorial e lexical) com fallback no PostgreSQL.
+  - Limiar de segurança estrito (`0.65`): consultas com relevância abaixo de 0.65 retornam deterministicamente a mensagem oficial de recusa contra alucinações.
+  - LLM calibrada com temperatura `0.05` e proibição absoluta de inferir prazos, setores ou exigências ausentes no documento canônico.
+- **Transactional Outbox e Auditoria:** criação de novos workflows registra o evento `atlas.workflow.created` no Outbox e salva o registro na cadeia imutável de auditoria na mesma transação.
+
 
 ---
 

@@ -49,7 +49,7 @@ O Projeto Nexus atende integralmente aos 5 módulos de conformidade exigidos pel
 │   │   ├── domain/            # Tipos e erros primitivos de domínio
    │   ├── platform/          # 🛡️ Core System / Kernel (Auth, DB, Messaging, Outbox, Audit, WS)
 │   │   └── modules/           # 🔌 Plug-ins (IAM, Auditoria, Mercúrio, Egress, Blog, Catálogo, Contato,
-│   │                          #    Diretório, Agenda, Arquivos, Wiki, Busca, Signum, Trâmite, Example)
+│   │                          #    Diretório, Agenda, Arquivos, Wiki, Busca, Signum, Trâmite, Atlas, Example)
 │   ├── migrations/            # Scripts de schema PostgreSQL (Goose)
 │   └── pkg/                   # Utilitários genéricos (httputil)
 ├── frontend/                  # 🎨 Frontend (Next.js / TypeScript / React)
@@ -88,6 +88,7 @@ O Projeto Nexus atende integralmente aos 5 módulos de conformidade exigidos pel
 | Busca Global | Plug-in | `/busca` (campo `#global-search`, Alt+3) | — |
 | Signum | Plug-in | `/signum` | `/verificar/{id}` |
 | Trâmite | Plug-in | `/tramite` | — |
+| Atlas | Plug-in | `/atlas` (Catálogo SEI, TTDD e Assistente IA) | `/atlas` (Consulta pública) |
 
 Os plug-ins são ativados e desativados em runtime em **Configurações → Módulos**: o menu, as páginas públicas e o sitemap acompanham o estado do Kernel. A tela mostra o grafo de dependências (hoje, **Trâmite depende de Signum**): desligar um módulo pede para desligar antes quem depende dele, e ligar pede para ligar antes as dependências.
 

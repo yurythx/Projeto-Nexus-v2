@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FolderKanban, Plus, Search } from "lucide-react";
+import { ExternalLink, FolderKanban, Plus, Search } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 import { DataState } from "@/components/nexus/DataState";
@@ -55,6 +55,16 @@ function AbrirProcesso({ onDone }: { onDone: (p: Processo) => void }) {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
+      <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+        <span>Dúvidas sobre o rito processual, temporalidade ou peças obrigatórias?</span>
+        <Link
+          href="/atlas"
+          target="_blank"
+          className="ml-2 inline-flex items-center gap-1 font-medium text-primary hover:underline"
+        >
+          Consultar Atlas <ExternalLink size={12} aria-hidden="true" />
+        </Link>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Select id="pr-tipo" name="tipo_id" label="Tipo *" required placeholder="Selecione…" options={(tipos.data ?? []).map((t) => ({ value: t.id, label: t.nome }))} />
         <Select
