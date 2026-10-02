@@ -1,5 +1,5 @@
 .PHONY: dev up down logs build test lint format \
-	deploy prod-seed-admin prod-ps prod-logs prod-down iam-scope-report atlas-modelo \
+	deploy prod-seed-admin prod-ps prod-logs prod-down iam-scope-report atlas-modelo estrutura-gerar estrutura-aplicar \
 	demo-keycloak demo-generate demo-seed demo-test demo-popular \
 	migrate-up migrate-down migrate-status migrate-redo seed-admin \
 	backend-shell frontend-shell rabbitmq-status clean \
@@ -48,6 +48,12 @@ prod-down: ## Para os serviços de produção (mantém os volumes)
 
 iam-scope-report: ## Impacto da permissão com escopo (ADR 013) nas lotações e grupos atuais
 	$(COMPOSE_PROD) exec -T postgres psql -U $(DB_USER) -d $(DB_NAME) < scripts/iam-scope-report.sql
+
+estrutura-gerar: ## Regera deploy/estrutura a partir do export do AD (AD=docs/AD)
+	node scripts/estrutura/ad-para-estrutura.mjs $${AD:-docs/AD}
+
+estrutura-aplicar: ## Aplica (idempotente) a estrutura organizacional real no Postgres
+	$(COMPOSE_PROD) exec -T postgres psql -q -v ON_ERROR_STOP=1 -U $(DB_USER) -d $(DB_NAME) < deploy/estrutura/estrutura.sql
 
 ## --- Ambiente de teste: Keycloak + dados fictícios (ver docs/DEPLOY.md) ---
 

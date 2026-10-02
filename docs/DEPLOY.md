@@ -175,6 +175,23 @@ minuto por pessoa, padrão 10).
 
 ## Modelar a organização
 
+**Estrutura real a partir do AD.** `deploy/estrutura/` traz a estrutura da
+prefeitura extraída do export do Active Directory (25 entidades, 255
+unidades, 55 departamentos — sem dados pessoais):
+
+```bash
+make estrutura-aplicar                 # idempotente: pode rodar de novo
+make estrutura-gerar AD=<pasta-export> # regera a partir de um export novo
+```
+
+O export bruto (`docs/AD/`, ignorado pelo git) tem nomes de servidores e não
+deve ser versionado. O gerador (`scripts/estrutura/ad-para-estrutura.mjs`)
+ignora contas de usuário, só lista os grupos de segurança (viram
+mapeamentos na tela de IAM) e documenta no cabeçalho as decisões de
+modelagem. **Não misture com os dados fictícios** (`make demo-seed`,
+`demo-popular`, `demo-test`): os cenários de teste dependem da prefeitura
+fictícia.
+
 Como desenhar entidades, unidades, departamentos, grupos e mapeamentos (e
 o que o escopo restringe ou não): [REGRAS_DE_NEGOCIO.md](REGRAS_DE_NEGOCIO.md#6-como-modelar-uma-implantação).
 

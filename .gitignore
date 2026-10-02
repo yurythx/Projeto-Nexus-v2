@@ -52,3 +52,7 @@ __pycache__/
 
 # Marca do povoamento de teste (scripts/demo-data/cenarios/popular.py)
 .demo-popular
+
+# Export bruto do Active Directory: contém nomes de servidores (LGPD).
+# A estrutura limpa, sem dados pessoais, fica em deploy/estrutura/.
+docs/AD/
