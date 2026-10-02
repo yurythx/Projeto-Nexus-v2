@@ -78,6 +78,12 @@ down: ## Para e remove todos os serviços
 logs: ## Acompanha os logs de todos os serviços
 	$(COMPOSE) logs -f
 
+atlas-up: ## Sobe os contêineres do Typesense e Ollama do Atlas
+	docker compose -f docker-compose.atlas.yml up -d
+
+atlas-down: ## Para os contêineres do Atlas
+	docker compose -f docker-compose.atlas.yml down
+
 clean: ## Para os serviços e remove os volumes (DESTRÓI os dados locais)
 	$(COMPOSE) down -v
 

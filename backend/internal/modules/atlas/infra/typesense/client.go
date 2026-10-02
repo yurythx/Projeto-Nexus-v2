@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -194,6 +195,10 @@ func (c *Client) fallbackPostgresSearch(ctx context.Context, tenantID, query str
 			})
 		}
 	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Score > results[j].Score
+	})
 
 	return results, nil
 }
