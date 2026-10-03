@@ -14,6 +14,7 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/httpserver"
 	"github.com/yurythx/projeto-nexus/internal/platform/idempotency"
 	"github.com/yurythx/projeto-nexus/internal/platform/kernel"
+	"github.com/yurythx/projeto-nexus/internal/platform/iaconfig"
 	"github.com/yurythx/projeto-nexus/internal/platform/keycloakconfig"
 	"github.com/yurythx/projeto-nexus/internal/platform/lgpd"
 	"github.com/yurythx/projeto-nexus/internal/platform/localauth"
@@ -60,6 +61,10 @@ func NewRouter(d *Dependencies) chi.Router {
 	kernelHandlers := kernel.NewHandlers(d.Kernel, d.Logger)
 	brandingHandlers := branding.NewHandlers(d.Branding, d.Logger)
 	keycloakHandlers := keycloakconfig.NewHandlers(d.KeycloakCfg, d.Verifier, d.Config.Keycloak, audit.NewWriter(d.DB), d.Logger)
+	atlasIA := d.Config.Atlas
+	iaHandlers := iaconfig.NewHandlers(iaconfig.NewPostgresStore(d.DB, d.Cipher), iaconfig.NovoCliente(),
+		iaconfig.ConexaoDoAmbiente(atlasIA.AIEndpoint, atlasIA.AIAPIKey, atlasIA.AIModel, int(atlasIA.AITimeout.Seconds())),
+		audit.NewWriter(d.DB), d.Logger)
 	outboxStats := outbox.NewStatsHandlers(d.OutboxStats, d.Logger)
 
 	r.Route("/api/v1", func(api chi.Router) {
@@ -91,6 +96,7 @@ func NewRouter(d *Dependencies) chi.Router {
 			kernelHandlers.RegisterRoutes(authed)
 			brandingHandlers.RegisterAdminRoutes(authed)
 			keycloakconfig.RegisterRoutes(authed, keycloakHandlers, d.Logger)
+			iaconfig.RegisterRoutes(authed, iaHandlers, d.Logger)
 			outbox.RegisterStatsRoutes(authed, outboxStats, d.Logger)
 			d.LGPD.RegisterRoutes(authed)
 			d.LGPD.RegisterDSRRoutes(authed)

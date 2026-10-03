@@ -372,11 +372,14 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 		resp.Answer, resp.Mode = sintese, ModoSintese
 	default:
 		answer, err := s.assistente.Responder(ctx, pergunta, contexto)
-		if err != nil {
+		switch {
+		case err == nil:
+			resp.Answer, resp.Mode = answer, ModoIA
+		case errors.Is(err, domain.ErrIADesligada):
+			resp.Answer, resp.Mode = sintese, ModoSintese
+		default:
 			s.logger.WarnContext(ctx, "atlas: assistente de IA indisponível, usando a síntese canônica", "error", err)
 			resp.Answer, resp.Mode = sintese, ModoSintese
-		} else {
-			resp.Answer, resp.Mode = answer, ModoIA
 		}
 	}
 

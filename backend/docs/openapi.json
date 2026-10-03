@@ -2872,6 +2872,274 @@
         "type": "object",
         "x-nexus-generated": true
       },
+      "IaconfigConexaoPublica": {
+        "properties": {
+          "chave_final": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "externo": {
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "modelo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "provedor": {
+            "enum": [
+              "anthropic",
+              "azure",
+              "compativel",
+              "gemini",
+              "groq",
+              "mistral",
+              "ollama",
+              "openai",
+              "openrouter"
+            ],
+            "type": "string"
+          },
+          "tem_chave": {
+            "type": "boolean"
+          },
+          "timeout_segundos": {
+            "type": "integer"
+          },
+          "ultimo_teste": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IaconfigTeste"
+              }
+            ],
+            "nullable": true
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_by": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "chave_final",
+          "endpoint",
+          "externo",
+          "id",
+          "modelo",
+          "nome",
+          "provedor",
+          "tem_chave",
+          "timeout_segundos",
+          "ultimo_teste",
+          "updated_at",
+          "updated_by"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "IaconfigConexaoRequest": {
+        "properties": {
+          "chave": {
+            "maxLength": 4096,
+            "type": "string"
+          },
+          "endpoint": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "externo": {
+            "type": "boolean"
+          },
+          "modelo": {
+            "maxLength": 120,
+            "type": "string"
+          },
+          "nome": {
+            "maxLength": 80,
+            "type": "string"
+          },
+          "provedor": {
+            "maxLength": 32,
+            "type": "string"
+          },
+          "remover_chave": {
+            "type": "boolean"
+          },
+          "timeout_segundos": {
+            "maximum": 300,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "endpoint",
+          "modelo",
+          "nome",
+          "provedor"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "IaconfigModelo": {
+        "properties": {
+          "endpoint": {
+            "type": "string"
+          },
+          "exige_chave": {
+            "type": "boolean"
+          },
+          "externo": {
+            "type": "boolean"
+          },
+          "modelo_sugerido": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "provedor": {
+            "enum": [
+              "anthropic",
+              "azure",
+              "compativel",
+              "gemini",
+              "groq",
+              "mistral",
+              "ollama",
+              "openai",
+              "openrouter"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "endpoint",
+          "exige_chave",
+          "externo",
+          "modelo_sugerido",
+          "nome",
+          "provedor"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "IaconfigTeste": {
+        "properties": {
+          "em": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "erro": {
+            "type": "string"
+          },
+          "latencia_ms": {
+            "type": "integer"
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "em",
+          "erro",
+          "latencia_ms",
+          "ok"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "IaconfigUsoRequest": {
+        "properties": {
+          "autorizo_envio_externo": {
+            "type": "boolean"
+          },
+          "mascarar_dados_pessoais": {
+            "type": "boolean"
+          },
+          "principal_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "reserva_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "IaconfigUsoResponse": {
+        "properties": {
+          "ambiente": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IaconfigConexaoPublica"
+              }
+            ],
+            "nullable": true
+          },
+          "configurado": {
+            "type": "boolean"
+          },
+          "externo_autorizado_em": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "externo_autorizado_por": {
+            "type": "string"
+          },
+          "funcao": {
+            "type": "string"
+          },
+          "mascarar_dados_pessoais": {
+            "type": "boolean"
+          },
+          "principal_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "reserva_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "updated_by": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ambiente",
+          "configurado",
+          "externo_autorizado_em",
+          "externo_autorizado_por",
+          "funcao",
+          "mascarar_dados_pessoais",
+          "principal_id",
+          "reserva_id",
+          "updated_at",
+          "updated_by"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "IamADMapping": {
         "properties": {
           "ad_group": {
@@ -11872,6 +12140,499 @@
         ]
       }
     },
+    "/api/v1/ia/conexoes": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getIaConexoes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/IaconfigConexaoPublica"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Listar/consultar /ia/conexoes",
+        "tags": [
+          "ia"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postIaConexoes",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IaconfigConexaoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-nexus-generated": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/IaconfigConexaoPublica"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Criar /ia/conexoes",
+        "tags": [
+          "ia"
+        ]
+      }
+    },
+    "/api/v1/ia/conexoes/{id}": {
+      "delete": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "deleteIaConexoesId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Sem conteúdo."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Excluir /ia/conexoes/{id}",
+        "tags": [
+          "ia"
+        ]
+      },
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putIaConexoesId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IaconfigConexaoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-nexus-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/IaconfigConexaoPublica"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Salvar /ia/conexoes/{id}",
+        "tags": [
+          "ia"
+        ]
+      }
+    },
+    "/api/v1/ia/conexoes/{id}/testar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postIaConexoesIdTestar",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/IaconfigTeste"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Executar ação /ia/conexoes/{id}/testar",
+        "tags": [
+          "ia"
+        ]
+      }
+    },
+    "/api/v1/ia/provedores": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getIaProvedores",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/IaconfigModelo"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Listar/consultar /ia/provedores",
+        "tags": [
+          "ia"
+        ]
+      }
+    },
+    "/api/v1/ia/uso/{funcao}": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getIaUsoFuncao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "funcao",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/IaconfigUsoResponse"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Obter /ia/uso/{funcao}",
+        "tags": [
+          "ia"
+        ]
+      },
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putIaUsoFuncao",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "funcao",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IaconfigUsoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-nexus-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/IaconfigUsoResponse"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Salvar /ia/uso/{funcao}",
+        "tags": [
+          "ia"
+        ]
+      }
+    },
     "/api/v1/iam/ad-mappings": {
       "get": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -17809,6 +18570,9 @@
     {
       "description": "Arquivos. Plug-in — Gestão de pastas e arquivos sobre MinIO com permissões por grupo/perfil.",
       "name": "files"
+    },
+    {
+      "name": "ia"
     },
     {
       "description": "IAM \u0026 Usuários. Núcleo — Identidades, sessões, RBAC multi-escopo (Entidades, Unidades, Departamentos) e mapeamento de grupos do AD.",

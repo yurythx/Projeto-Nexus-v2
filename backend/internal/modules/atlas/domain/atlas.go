@@ -25,6 +25,9 @@ var (
 	ErrNotFound     = errors.New("atlas: procedimento não encontrado")
 	ErrTTDDNotFound = errors.New("atlas: classificação TTDD não encontrada")
 	ErrDuplicate    = errors.New("atlas: já existe procedimento com este código e versão")
+	// ErrIADesligada: nenhuma conexão de IA para o assistente — a resposta
+	// é a síntese canônica (não é falha).
+	ErrIADesligada = errors.New("atlas: assistente sem IA configurada")
 )
 
 // InvalidError é uma violação de regra de cadastro (422 com a mensagem).

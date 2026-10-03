@@ -3,77 +3,61 @@ package infrastructure
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/domain"
+	"github.com/yurythx/projeto-nexus/internal/platform/iaconfig"
 )
 
-func TestLLMResponder(t *testing.T) {
+// semUso: nada configurado pela tela (vale a conexão do ambiente).
+type semUso struct{ iaconfig.Store }
+
+func (semUso) Uso(_ context.Context, f string) (iaconfig.Uso, error) {
+	return iaconfig.Uso{Funcao: f}, nil
+}
+
+func roteador(endpoint string) *iaconfig.Roteador {
+	return iaconfig.NovoRoteador(semUso{}, iaconfig.NovoCliente(), iaconfig.ConexaoDoAmbiente(endpoint, "k", "m", 5),
+		slog.New(slog.NewTextHandler(io.Discard, nil)))
+}
+
+func TestAssistenteIA(t *testing.T) {
 	var got struct {
 		Model       string  `json:"model"`
 		Temperature float64 `json:"temperature"`
 		Messages    []struct{ Role, Content string }
 	}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/chat/completions" || r.Header.Get("Authorization") != "Bearer k" {
-			http.Error(w, "rota/credencial", http.StatusBadRequest)
-			return
-		}
 		_ = json.NewDecoder(r.Body).Decode(&got)
 		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"  Orientação  "}}]}`))
 	}))
 	defer srv.Close()
 
-	l := NewLLM(srv.URL+"/", "k", "modelo", time.Second)
-	wf := domain.Workflow{CodigoProcessual: "ADM.LIC.001", Titulo: "Pregão", Etapas: []domain.Etapa{{Ordem: 1, NomeSetor: "Licitações"}}}
-	answer, err := l.Responder(context.Background(), "como licitar?", []string{domain.SinteseCanonica(wf)})
-	if err != nil || answer != "Orientação" {
-		t.Fatalf("resposta = %q, %v", answer, err)
+	out, err := NewAssistenteIA(roteador(srv.URL)).Responder(context.Background(), "Como tramitar?", []string{"ADM.LIC.001 — Pregão", "2.0.02.00.07"})
+	if err != nil || out != "Orientação" {
+		t.Fatalf("resposta: %q %v", out, err)
 	}
-	if got.Model != "modelo" || got.Temperature > 0.1 || len(got.Messages) != 2 || got.Messages[0].Role != "system" {
-		t.Fatalf("requisição inesperada: %+v", got)
-	}
-	if !strings.Contains(got.Messages[1].Content, "ADM.LIC.001") || !strings.Contains(got.Messages[1].Content, "como licitar?") {
-		t.Fatalf("contexto/pergunta ausentes: %s", got.Messages[1].Content)
+	if got.Model != "m" || got.Temperature != 0.05 || len(got.Messages) != 2 || got.Messages[0].Role != "system" ||
+		!strings.Contains(got.Messages[0].Content, "EXCLUSIVAMENTE") ||
+		!strings.Contains(got.Messages[1].Content, "CONTEXTO HOMOLOGADO:\n\n---\nADM.LIC.001 — Pregão\n---\n2.0.02.00.07") ||
+		!strings.HasSuffix(got.Messages[1].Content, "\n\nPERGUNTA: Como tramitar?") {
+		t.Fatalf("pedido ao modelo: %+v", got)
 	}
 
-	// Endpoint já com /v1 não duplica o sufixo.
-	if NewLLM("http://x/v1", "", "m", time.Second).url != "http://x/v1/chat/completions" {
-		t.Fatal("url com /v1 duplicado")
+	// Falha do fornecedor: o erro sobe (o serviço cai na síntese).
+	if _, err := NewAssistenteIA(roteador("http://127.0.0.1:1")).Responder(context.Background(), "x", nil); err == nil ||
+		errors.Is(err, domain.ErrIADesligada) {
+		t.Fatalf("fornecedor fora: %v", err)
 	}
-}
-
-func TestLLMErros(t *testing.T) {
-	for name, handler := range map[string]http.HandlerFunc{
-		"http 500": func(w http.ResponseWriter, _ *http.Request) { http.Error(w, "segredo do contexto", 500) },
-		"vazia":    func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`{"choices":[]}`)) },
-		"ilegível": func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write([]byte(`não é json`)) },
-		"sem texto": func(w http.ResponseWriter, _ *http.Request) {
-			_, _ = w.Write([]byte(`{"choices":[{"message":{"content":" "}}]}`))
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			srv := httptest.NewServer(handler)
-			defer srv.Close()
-			_, err := NewLLM(srv.URL, "", "m", time.Second).Responder(context.Background(), "p", nil)
-			if err == nil {
-				t.Fatal("esperado erro")
-			}
-			if strings.Contains(err.Error(), "segredo") {
-				t.Fatal("corpo do erro do provedor vazou na mensagem")
-			}
-		})
-	}
-	// URL que não vira requisição (caractere de controle).
-	if _, err := NewLLM("http://x/\x7f", "", "m", time.Second).Responder(context.Background(), "p", nil); err == nil {
-		t.Fatal("esperado erro de URL inválida")
-	}
-	// Provedor fora do ar.
-	if _, err := NewLLM("http://127.0.0.1:1", "", "m", 200*time.Millisecond).Responder(context.Background(), "p", nil); err == nil {
-		t.Fatal("esperado erro de conexão")
+	// Sem conexão nenhuma: IA desligada (síntese, sem aviso).
+	sem := iaconfig.NovoRoteador(semUso{}, iaconfig.NovoCliente(), nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if _, err := NewAssistenteIA(sem).Responder(context.Background(), "x", nil); !errors.Is(err, domain.ErrIADesligada) {
+		t.Fatalf("sem conexão: %v", err)
 	}
 }

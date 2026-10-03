@@ -29,7 +29,7 @@ const MENU_PERMISSION: Record<string, string> = {
 };
 
 const ADMIN_PERMISSIONS = [
-  "modules:manage", "iam:manage", "users:read", "branding:manage", "keycloak:manage",
+  "modules:manage", "iam:manage", "users:read", "branding:manage", "keycloak:manage", "ia:manage",
   "egress:manage", "catalog:manage", "contact:read", "mercurio:manage", "calendar:manage",
 ];
 

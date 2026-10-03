@@ -9,7 +9,7 @@ opcionais, ligadas pelo `COMPOSE_FILE` do `.env`:
 | `docker-compose.yml` | a stack | sempre |
 | `docker-compose.keycloak.yml` | Keycloak **de teste** com usuários fictícios | `make demo-keycloak` |
 | `docker-compose.https.yml` | Caddy com HTTPS (CA interna) como única entrada | `scripts/enable-https.sh` |
-| `docker-compose.atlas.yml` | (opcional) Ollama — IA local do assistente do Atlas | acrescentar ao `COMPOSE_FILE` (ver "Atlas" abaixo) |
+| `docker-compose.ia.yml` | (opcional) IA local (Ollama, serviço `ia-local`) | acrescentar ao `COMPOSE_FILE` (ver "Inteligência artificial" abaixo) |
 
 ## Pré-requisitos
 
@@ -179,34 +179,50 @@ Série que sai da tabela não é apagada: fica **revogada** (data e edição do
 Diário Oficial), some da consulta e do assistente, mas continua acessível
 pelo código, com o histórico dos prazos anteriores.
 
-## Atlas — assistente procedural com IA (opcional)
+## Inteligência artificial (assistente do Atlas)
 
 Sem configuração nenhuma, o assistente do Atlas já funciona: responde com
-a **síntese canônica** dos procedimentos homologados (sem modelo de
-linguagem). Para respostas redigidas por IA:
+a **síntese canônica** dos procedimentos e da TTDD (sem modelo de
+linguagem). A IA é configurada **pela tela**, em **Configurações →
+Inteligência artificial** (permissão `ia:manage`, ADR 020):
 
-- **IA local (Ollama)** — acrescente o overlay e baixe o modelo uma vez:
+- **Conexões:** IA local (Ollama), OpenAI, Azure OpenAI, Google Gemini,
+  Anthropic (Claude), Groq, OpenRouter, Mistral ou qualquer serviço
+  compatível com a API de chat da OpenAI. Endereço, modelo, tempo limite e
+  **chave de API** — cifrada no banco (`CONFIG_ENCRYPTION_KEY`), nunca
+  devolvida pela API nem gravada na auditoria. Ao salvar, a conexão é
+  **testada** com uma conversa real; se falhar, nada é gravado. Trocar o
+  endereço exige informar a chave de novo.
+- **Assistente do Atlas:** conexão **principal** e **reserva**; se as duas
+  falharem, a síntese. Vale na próxima pergunta, sem reiniciar.
+- **Fornecedor externo:** exige autorização explícita (registrada com quem
+  e quando — LGPD art. 33) e, por padrão, CPF, CNPJ, e-mail e telefone são
+  mascarados na pergunta antes de sair da rede.
 
-  ```bash
-  # .env
-  COMPOSE_FILE=docker-compose.yml:docker-compose.atlas.yml   # (+ os overlays que já usa, separados por ":")
-  ATLAS_AI_MODEL=llama3.2
-  ```
-  ```bash
-  make deploy && make atlas-modelo
-  ```
-  O Ollama não publica porta; só a API o alcança pela rede interna. Conte
-  com 4–8 GB de RAM a mais, conforme o modelo.
-- **Provedor externo** compatível com a API de chat da OpenAI (vLLM,
-  LiteLLM, OpenAI): `ATLAS_AI_ENDPOINT` (URL base, http/https, sem
-  credenciais na URL), `ATLAS_AI_API_KEY` e `ATLAS_AI_MODEL` no `.env`.
-  Atenção: a pergunta e os procedimentos encontrados saem para esse
-  provedor.
+Enquanto nada for salvo na tela, valem `ATLAS_AI_ENDPOINT`,
+`ATLAS_AI_API_KEY`, `ATLAS_AI_MODEL` e `ATLAS_AI_TIMEOUT` do `.env`.
 
-Se o provedor falhar ou estourar `ATLAS_AI_TIMEOUT` (padrão 20s), a
-resposta cai na síntese canônica. Quem usa o assistente precisa da
-permissão `atlas:read` (limite de `ATLAS_CHAT_RATE_LIMIT_MAX` consultas por
-minuto por pessoa, padrão 10).
+**IA local (serviço `ia-local`, Ollama).** Overlay opcional:
+
+```bash
+# .env
+COMPOSE_FILE=docker-compose.yml:...:docker-compose.ia.yml   # (+ os overlays que já usa)
+IA_LOCAL_MODELO=qwen2.5:1.5b    # opcional; baixado na 1ª subida (serviço ia-local-modelo)
+```
+```bash
+make deploy          # sobe ia-local e baixa o modelo; make ia-modelo baixa de novo
+```
+
+Sem porta publicada (só a API o alcança), com limite de memória e CPU
+(`IA_LOCAL_MEMORIA`, padrão 2560m; `IA_LOCAL_CPUS`, padrão 3). **Precisa de
+RAM sobrando:** sem GPU, um modelo de 1,5B usa ~1,2 GB e um de 3B ~2,5 GB,
+além da stack (~2 GB). No servidor de teste (4 GB) o modelo esgotou a
+memória e a geração caiu a 0,3 palavra/s — use ≥ 8 GB, uma máquina
+dedicada (a conexão "IA local" aceita qualquer endereço da rede, ex.
+`http://<servidor-ia>:11434`) ou um fornecedor externo.
+
+Quem usa o assistente precisa da permissão `atlas:read` (limite de
+`ATLAS_CHAT_RATE_LIMIT_MAX` consultas por minuto por pessoa, padrão 10).
 
 ## Modelar a organização
 

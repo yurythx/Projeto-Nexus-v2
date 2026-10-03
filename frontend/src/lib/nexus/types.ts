@@ -775,3 +775,64 @@ export interface AtlasResposta {
   sources: AtlasFonte[];
   generated_at: string;
 }
+
+// -------------------------------------------------------------- ia (ADR 020)
+
+export type ProvedorIA =
+  | "ollama"
+  | "openai"
+  | "azure"
+  | "gemini"
+  | "anthropic"
+  | "groq"
+  | "openrouter"
+  | "mistral"
+  | "compativel";
+
+/** Fornecedor do catálogo (pré-preenche a conexão). */
+export interface ModeloProvedorIA {
+  provedor: ProvedorIA;
+  nome: string;
+  endpoint: string;
+  modelo_sugerido: string;
+  externo: boolean;
+  exige_chave: boolean;
+}
+
+export interface TesteIA {
+  ok: boolean;
+  em: string;
+  latencia_ms: number;
+  erro: string;
+}
+
+/** Conexão de IA como a API devolve: a chave nunca vem, só o final dela. */
+export interface ConexaoIA {
+  id: UUID;
+  nome: string;
+  provedor: ProvedorIA;
+  endpoint: string;
+  modelo: string;
+  externo: boolean;
+  timeout_segundos: number;
+  tem_chave: boolean;
+  chave_final: string;
+  ultimo_teste: TesteIA | null;
+  updated_at: string;
+  updated_by: string;
+}
+
+/** Uso de uma função (ex.: assistente do Atlas). configurado=false: vale o
+ * ambiente do servidor; principal_id nulo com configurado: IA desligada. */
+export interface UsoIA {
+  funcao: string;
+  configurado: boolean;
+  principal_id: UUID | null;
+  reserva_id: UUID | null;
+  mascarar_dados_pessoais: boolean;
+  externo_autorizado_por: string;
+  externo_autorizado_em: string | null;
+  updated_at: string | null;
+  updated_by: string;
+  ambiente: ConexaoIA | null;
+}

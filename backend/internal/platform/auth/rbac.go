@@ -52,6 +52,8 @@ const (
 	PermExampleManage   Permission = "example:manage"
 	PermAtlasRead       Permission = "atlas:read"
 	PermAtlasManage     Permission = "atlas:manage"
+	// PermIAManage: conexões de inteligência artificial (Configurações).
+	PermIAManage Permission = "ia:manage"
 )
 
 // HasPermission reporta se identity possui permission, considerando os

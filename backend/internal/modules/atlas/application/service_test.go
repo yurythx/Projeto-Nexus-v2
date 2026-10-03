@@ -83,6 +83,13 @@ func TestPerguntar(t *testing.T) {
 			t.Fatalf("resposta = %+v, %v", r, err)
 		}
 	})
+	t.Run("IA desligada na configuração usa a síntese", func(t *testing.T) {
+		ia := &fakeAssistente{err: domain.ErrIADesligada}
+		r, err := NewService(pool, repo, outbox.NewWriter("t"), ia, logger).Perguntar(ctx, "pregão eletrônico")
+		if err != nil || r.Mode != ModoSintese || !strings.Contains(r.Answer, "ADM.LIC.001") {
+			t.Fatalf("resposta = %+v, %v", r, err)
+		}
+	})
 	t.Run("sem IA configurada usa a síntese", func(t *testing.T) {
 		r, err := NewService(pool, repo, outbox.NewWriter("t"), nil, logger).Perguntar(ctx, "pregão eletrônico")
 		if err != nil || r.Mode != ModoSintese {

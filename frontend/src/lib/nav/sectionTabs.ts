@@ -19,6 +19,7 @@ export const CONFIG_TABS: GuardedTab[] = [
   { href: "/configuracao/mapeamento-ad", label: "Mapeamento AD", permission: "iam:manage", global: true },
   { href: "/configuracao/usuarios", label: "Usuários", permission: "users:read" },
   { href: "/configuracao/keycloak", label: "Keycloak (IAM)", permission: "keycloak:manage" },
+  { href: "/configuracao/ia", label: "Inteligência artificial", permission: "ia:manage" },
   { href: "/configuracao/egress", label: "Egress & Webhooks", permission: "egress:manage", module: "egress" },
 ];
 

@@ -154,7 +154,7 @@ saúde, filial, sede.
 
 | Módulo | Permissões |
 |---|---|
-| IAM | `users:read`, `users:manage`, `iam:manage`, `modules:manage`, `keycloak:manage`, `branding:manage`, `monitoring:read`, `monitoring:manage` |
+| IAM | `users:read`, `users:manage`, `iam:manage`, `modules:manage`, `keycloak:manage`, `ia:manage`, `branding:manage`, `monitoring:read`, `monitoring:manage` |
 | Auditoria | `audit:read`, `audit:verify` |
 | Trâmite | `tramite:create`, `tramite:route`, `tramite:manage` |
 | Blog / Catálogo / Wiki | `blog:manage`, `catalog:manage`, `wiki:manage` |
@@ -260,7 +260,7 @@ Há dois jeitos de alguém receber um perfil. Os dois resultam na mesma coisa:
 | `files:manage` | unidade dona da pasta (ou de uma pasta acima) |
 | `iam:manage`, `users:read`, `users:manage` | estrutura, lotações e contas da área (ver IAM, seção 7) |
 
-**Permissões de plataforma** (`modules:manage`, `keycloak:manage`,
+**Permissões de plataforma** (`modules:manage`, `keycloak:manage`, `ia:manage`,
 `branding:manage`, `monitoring:*`, `egress:manage`, `audit:verify`,
 `signum:manage`): **só valem com concessão global**. Dadas com escopo, não
 valem em lugar nenhum.
@@ -629,9 +629,16 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   - sobre temporalidade, repete os prazos exatamente como na TTDD
     (inclusive condições), a destinação, a recomendação e a fonte;
   - abaixo do limiar: **recusa padronizada**, sem chamar o modelo;
-  - com IA configurada (`ATLAS_AI_ENDPOINT`): o modelo redige a resposta
-    só com os procedimentos encontrados (temperatura 0,05); sem IA, ou se
-    ela falhar, a resposta é a **síntese canônica** dos dados homologados;
+  - com IA configurada: o modelo redige a resposta só com as fontes
+    encontradas (temperatura 0,05); sem IA, ou se ela falhar, a resposta é
+    a **síntese canônica** dos dados homologados;
+  - **qual IA (ADR 020):** Configurações → Inteligência artificial
+    (`ia:manage`) — conexão principal e reserva (IA local ou fornecedor
+    compatível com a API da OpenAI); a chave é cifrada e nunca volta pela
+    API; toda conexão é testada antes de ser salva; trocar o endereço exige
+    a chave de novo; fornecedor externo exige autorização registrada e, por
+    padrão, CPF, CNPJ, e-mail e telefone são mascarados na pergunta. Sem
+    nada salvo na tela, valem as variáveis `ATLAS_AI_*`;
   - a resposta informa o modo (`ia`, `sintese`, `recusada`), a relevância
     e as fontes (com link para a página de cada uma);
   - fica numa gaveta lateral disponível em todas as páginas do Atlas; o

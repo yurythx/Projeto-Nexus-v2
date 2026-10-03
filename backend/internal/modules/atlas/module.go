@@ -16,6 +16,7 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/transport"
 	"github.com/yurythx/projeto-nexus/internal/platform/auth"
 	"github.com/yurythx/projeto-nexus/internal/platform/httpserver"
+	"github.com/yurythx/projeto-nexus/internal/platform/iaconfig"
 	"github.com/yurythx/projeto-nexus/internal/platform/kernel"
 	"github.com/yurythx/projeto-nexus/internal/platform/modkit"
 	"github.com/yurythx/projeto-nexus/internal/platform/search"
@@ -31,13 +32,15 @@ type Module struct {
 	handlers *transport.Handlers
 }
 
-// New constrói o módulo. Sem ATLAS_AI_ENDPOINT o assistente responde com
-// a síntese canônica dos procedimentos (sem modelo de linguagem).
+// New constrói o módulo. A IA do assistente vem das conexões configuradas
+// em Configurações > Inteligência artificial (ou, enquanto nada foi
+// configurado lá, de ATLAS_AI_*); sem nenhuma, o assistente responde com a
+// síntese canônica dos procedimentos (sem modelo de linguagem).
 func New(deps modkit.Deps) *Module {
-	var assistente domain.Assistente
-	if c := deps.Config.Atlas; c.AIEndpoint != "" {
-		assistente = infrastructure.NewLLM(c.AIEndpoint, c.AIAPIKey, c.AIModel, c.AITimeout)
-	}
+	c := deps.Config.Atlas
+	roteador := iaconfig.NovoRoteador(iaconfig.NewPostgresStore(deps.Pool, deps.Cipher), iaconfig.NovoCliente(),
+		iaconfig.ConexaoDoAmbiente(c.AIEndpoint, c.AIAPIKey, c.AIModel, int(c.AITimeout.Seconds())), deps.Logger)
+	var assistente domain.Assistente = infrastructure.NewAssistenteIA(roteador)
 	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox, assistente, deps.Logger)
 	return &Module{deps: deps, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger, deps.Config.MaxPageSize)}
 }

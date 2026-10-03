@@ -1,5 +1,5 @@
 .PHONY: dev up down logs build test lint format \
-	deploy prod-seed-admin prod-ps prod-logs prod-limpeza prod-down iam-scope-report atlas-modelo estrutura-gerar estrutura-aplicar ttdd-impacto ttdd-aplicar \
+	deploy prod-seed-admin prod-ps prod-logs prod-limpeza prod-down iam-scope-report ia-modelo estrutura-gerar estrutura-aplicar ttdd-impacto ttdd-aplicar \
 	demo-keycloak demo-generate demo-seed demo-test demo-popular \
 	migrate-up migrate-down migrate-status migrate-redo seed-admin \
 	backend-shell frontend-shell rabbitmq-status clean \
@@ -95,8 +95,8 @@ down: ## Para e remove todos os serviços
 logs: ## Acompanha os logs de todos os serviços
 	$(COMPOSE) logs -f
 
-atlas-modelo: ## Baixa o modelo do assistente no Ollama (overlay docker-compose.atlas.yml ligado)
-	$(COMPOSE_PROD) exec ollama ollama pull $${ATLAS_AI_MODEL:-llama3.2}
+ia-modelo: ## Baixa (ou atualiza) o modelo IA_LOCAL_MODELO no serviço ia-local (overlay docker-compose.ia.yml)
+	$(COMPOSE_PROD) run --rm ia-local-modelo
 
 clean: ## Para os serviços e remove os volumes (DESTRÓI os dados locais)
 	$(COMPOSE) down -v

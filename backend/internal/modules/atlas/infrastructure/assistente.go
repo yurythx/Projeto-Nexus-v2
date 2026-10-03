@@ -1,17 +1,12 @@
 package infrastructure
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
-	"net/http"
 	"strings"
-	"time"
 
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/domain"
+	"github.com/yurythx/projeto-nexus/internal/platform/iaconfig"
 )
 
 // promptSistema fixa o grounding: a resposta só pode usar o CONTEXTO.
@@ -24,78 +19,38 @@ Regras obrigatórias:
 4. Responda em português formal e objetivo, em texto simples. Para procedimento: identificação (código, título e código TTDD); etapas e setores com prazos; peças exigidas (formato e assinatura); temporalidade e destinação; regras especiais. Para série da TTDD: código e descritor; prazo na fase corrente e na intermediária (exatamente como no contexto, inclusive condições como "Enquanto estiver vigorando"); destinação final; observações e recomendação; fonte (versão e Diário Oficial).
 5. Cite sempre os códigos das fontes usadas.`
 
-// maxRespostaBytes limita o que se lê do provedor (defesa contra resposta
-// gigante consumindo memória da API).
-const maxRespostaBytes = 1 << 20
-
-// LLM implementa domain.Assistente sobre a API de chat compatível com a
-// OpenAI (/v1/chat/completions) — atendida por OpenAI, vLLM, LiteLLM e
-// pelo próprio Ollama. O endpoint vem da configuração do operador
-// (ATLAS_AI_ENDPOINT), não de entrada do usuário.
-type LLM struct {
-	url    string
-	apiKey string
-	model  string
-	client *http.Client
+// AssistenteIA implementa domain.Assistente sobre as conexões de IA da
+// plataforma (iaconfig): principal, reserva, mascaramento de dados pessoais
+// para fornecedor externo — configurados em Configurações > Inteligência
+// artificial. Sem conexão para a função: domain.ErrIADesligada.
+type AssistenteIA struct {
+	roteador *iaconfig.Roteador
 }
 
-// NewLLM cria o cliente; endpoint é a URL base do provedor (com ou sem /v1).
-func NewLLM(endpoint, apiKey, model string, timeout time.Duration) *LLM {
-	base := strings.TrimRight(endpoint, "/")
-	if !strings.HasSuffix(base, "/v1") {
-		base += "/v1"
-	}
-	return &LLM{url: base + "/chat/completions", apiKey: apiKey, model: model, client: &http.Client{Timeout: timeout}}
+// NewAssistenteIA cria o assistente sobre o roteador.
+func NewAssistenteIA(roteador *iaconfig.Roteador) *AssistenteIA {
+	return &AssistenteIA{roteador: roteador}
 }
 
-var _ domain.Assistente = (*LLM)(nil)
+var _ domain.Assistente = (*AssistenteIA)(nil)
 
 // Responder envia a pergunta com o contexto homologado (temperatura baixa:
-// a tarefa é redigir, não criar).
-func (l *LLM) Responder(ctx context.Context, pergunta string, contexto []string) (string, error) {
-	// Só strings, números e bool: o Marshal não tem como falhar.
-	body, _ := json.Marshal(map[string]any{
-		"model": l.model,
-		"messages": []map[string]string{
-			{"role": "system", "content": promptSistema},
-			{"role": "user", "content": "CONTEXTO HOMOLOGADO:\n" + contextoFactual(contexto) + "\n\nPERGUNTA: " + pergunta},
+// a tarefa é redigir, não criar). Só a pergunta é mascarada para
+// fornecedor externo; o contexto é público (TTDD e procedimentos).
+func (a *AssistenteIA) Responder(ctx context.Context, pergunta string, contexto []string) (string, error) {
+	resp, err := a.roteador.Conversar(ctx, iaconfig.FuncaoAtlasAssistente, iaconfig.Pedido{
+		Sistema:  promptSistema,
+		Pergunta: pergunta,
+		Montar: func(p string) string {
+			return "CONTEXTO HOMOLOGADO:\n" + contextoFactual(contexto) + "\n\nPERGUNTA: " + p
 		},
-		"temperature": 0.05,
-		"max_tokens":  1200,
-		"stream":      false,
+		Temperatura: 0.05,
+		MaxTokens:   1200,
 	})
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, l.url, bytes.NewReader(body))
-	if err != nil {
-		return "", fmt.Errorf("atlas: requisição ao assistente: %w", err)
+	if errors.Is(err, iaconfig.ErrSemConexao) {
+		return "", domain.ErrIADesligada
 	}
-	req.Header.Set("Content-Type", "application/json")
-	if l.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+l.apiKey)
-	}
-	resp, err := l.client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("atlas: assistente indisponível: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		// O corpo do erro não vai para o log: pode ecoar o contexto enviado.
-		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxRespostaBytes))
-		return "", fmt.Errorf("atlas: assistente respondeu HTTP %d", resp.StatusCode)
-	}
-	var out struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
-	if err := json.NewDecoder(io.LimitReader(resp.Body, maxRespostaBytes)).Decode(&out); err != nil {
-		return "", fmt.Errorf("atlas: resposta do assistente ilegível: %w", err)
-	}
-	if len(out.Choices) == 0 || strings.TrimSpace(out.Choices[0].Message.Content) == "" {
-		return "", errors.New("atlas: assistente devolveu resposta vazia")
-	}
-	return strings.TrimSpace(out.Choices[0].Message.Content), nil
+	return resp.Texto, err
 }
 
 // contextoFactual junta as sínteses homologadas para o prompt.
