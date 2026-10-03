@@ -475,9 +475,6 @@ type Repository interface {
 	DesativarVersoes(ctx context.Context, db database.DBTX, codigo string, exceto uuid.UUID) ([]uuid.UUID, error)
 	// Search é a busca full-text (ativos) com o rank de cada resultado.
 	Search(ctx context.Context, db database.DBTX, query string, limit int) ([]Workflow, []float64, error)
-	// Candidatos devolve os procedimentos ativos (completos) que casam com
-	// algum termo da pergunta — base do grounding do assistente.
-	Candidatos(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]Workflow, error)
 }
 
 // Assistente redige a orientação a partir EXCLUSIVAMENTE do contexto

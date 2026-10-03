@@ -11,6 +11,8 @@ opcionais, ligadas pelo `COMPOSE_FILE` do `.env`:
 | `docker-compose.https.yml` | Caddy com HTTPS (CA interna) como única entrada | `scripts/enable-https.sh` |
 | `docker-compose.ia.yml` | (opcional) IA local (Ollama, serviço `ia-local`) | acrescentar ao `COMPOSE_FILE` (ver "Inteligência artificial" abaixo) |
 
+O servidor de teste (192.168.1.42) — máquina, endereços, verificação pós-deploy, CI e incidentes já resolvidos — está em [SERVIDOR_TESTE.md](SERVIDOR_TESTE.md).
+
 ## Pré-requisitos
 
 - Docker Engine + Docker Compose v2, `git`, `openssl`, `make`, `python3`

@@ -634,10 +634,6 @@
           "codigo": {
             "type": "string"
           },
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
           "relevancia": {
             "type": "number"
           },

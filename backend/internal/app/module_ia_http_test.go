@@ -78,7 +78,7 @@ func TestIAConfiguracaoHTTP(t *testing.T) {
 		t.Fatalf("uso: %s", body)
 	}
 	r := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
-		`{"query":"Quais documentos do pregão eletrônico? Meu CPF é 123.456.789-09"}`))
+		`{"query":"Qual o prazo de guarda dos processos de pregão eletrônico? Meu CPF é 123.456.789-09"}`))
 	if r.Mode != "ia" || r.Answer != "Resposta redigida pela IA." {
 		t.Fatalf("assistente pela IA configurada: %+v", r)
 	}
@@ -93,7 +93,7 @@ func TestIAConfiguracaoHTTP(t *testing.T) {
 	h.expect(http.StatusConflict, http.MethodDelete, "/api/v1/ia/conexoes/"+criada.ID, admin, "")
 	h.expect(http.StatusOK, http.MethodPut, "/api/v1/ia/uso/atlas.assistente", admin, `{}`)
 	if r := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
-		`{"query":"Quais documentos do pregão eletrônico?"}`)); r.Mode != "sintese" {
+		`{"query":"Qual o prazo de guarda dos processos de pregão eletrônico?"}`)); r.Mode != "sintese" {
 		t.Fatalf("IA desligada: %+v", r)
 	}
 	h.expect(http.StatusNoContent, http.MethodDelete, "/api/v1/ia/conexoes/"+criada.ID, admin, "")

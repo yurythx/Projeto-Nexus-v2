@@ -200,22 +200,23 @@ type atlasResposta struct {
 	} `json:"sources"`
 }
 
-// Assistente: atlas:read, grounding estrito (limiar), síntese canônica sem
-// IA configurada, auditoria sem o texto da pergunta e limite por identidade.
+// Assistente: atlas:read, só a TTDD (ADR 021) com grounding estrito
+// (limiar), recusa para qualquer outro assunto, síntese canônica sem IA
+// configurada, auditoria sem o texto da pergunta e limite por identidade.
 func TestAtlasAssistenteHTTP(t *testing.T) {
 	h := newHarness(t)
 	_, comum := h.user("nexus-user")
 	leitor := h.globalCom(t, "atlas:read")
 
-	const pergunta = `{"query":"Quais documentos do pregão eletrônico?"}`
+	const pergunta = `{"query":"Qual o prazo de guarda dos processos de pregão eletrônico?"}`
 	h.expect(http.StatusUnauthorized, http.MethodPost, "/api/v1/atlas/chat", "", pergunta)
 	h.expect(http.StatusForbidden, http.MethodPost, "/api/v1/atlas/chat", comum, pergunta)
 	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/atlas/chat", leitor, `{"query":"oi"}`)
 
 	r := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta))
-	if r.Refused || r.Mode != "sintese" || r.Score < 0.65 || len(r.Sources) == 0 || r.Sources[0].Codigo != "ADM.LIC.001" ||
-		!strings.Contains(r.Answer, "ADM.LIC.001") {
-		t.Fatalf("resposta fundamentada: %+v", r)
+	if r.Refused || r.Mode != "sintese" || r.Score < 0.65 || len(r.Sources) == 0 || r.Sources[0].Tipo != "ttdd" ||
+		r.Sources[0].Codigo != "2.0.02.00.07" || !strings.Contains(r.Answer, "2.0.02.00.07") || strings.Contains(r.Answer, "ADM.LIC.001") {
+		t.Fatalf("resposta fundamentada só na TTDD: %+v", r)
 	}
 	// Pergunta só de temporalidade: a série da TTDD sustenta a resposta.
 	ttdd := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
@@ -224,10 +225,15 @@ func TestAtlasAssistenteHTTP(t *testing.T) {
 		!strings.Contains(ttdd.Answer, "99 anos") || !strings.Contains(ttdd.Answer, "eliminação") {
 		t.Fatalf("resposta pela TTDD: %+v", ttdd)
 	}
+	// Fora do objetivo (outro assunto ou procedimento): a recusa canônica.
 	recusa := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
 		`{"query":"licença para viagem internacional de férias"}`))
-	if !recusa.Refused || recusa.Mode != "recusada" || len(recusa.Sources) != 0 {
-		t.Fatalf("pergunta sem procedimento homologado deve ser recusada: %+v", recusa)
+	if !recusa.Refused || recusa.Mode != "recusada" || len(recusa.Sources) != 0 || !strings.HasPrefix(recusa.Answer, "Esse assunto foge do objetivo da IA") {
+		t.Fatalf("assunto fora da TTDD deve ser recusado: %+v", recusa)
+	}
+	if proc := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
+		`{"query":"Como tramitar o processo de pregão eletrônico?"}`)); !proc.Refused || !strings.Contains(proc.Answer, "foge do objetivo") {
+		t.Fatalf("procedimento está fora do objetivo: %+v", proc)
 	}
 	var vazou int
 	if err := h.d.DB.QueryRow(context.Background(),
@@ -235,9 +241,8 @@ func TestAtlasAssistenteHTTP(t *testing.T) {
 		t.Fatalf("auditoria não guarda o texto da pergunta: %d %v", vazou, err)
 	}
 
-	// Limite por identidade (5/min no harness): 4 usadas acima (3 OK + 1
+	// Limite por identidade (5/min no harness): 5 usadas acima (4 OK + 1
 	// 422 também conta), a 6ª é barrada.
-	h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta)
 	h.expect(http.StatusTooManyRequests, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta)
 }
 

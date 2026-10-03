@@ -95,46 +95,35 @@ func TestTermos(t *testing.T) {
 	}
 }
 
-func TestRelevancia(t *testing.T) {
-	w := validWorkflow()
-	w.Normalize()
-	if r := Relevancia(w, "Quais documentos para o pregão eletrônico?"); r < LimiarRelevancia {
-		t.Fatalf("pergunta coberta abaixo do limiar: %.2f", r)
-	}
-	if r := Relevancia(w, "ADM.LIC.001"); r < LimiarRelevancia {
-		t.Fatalf("código exato abaixo do limiar: %.2f", r)
-	}
-	if r := Relevancia(w, "licença para viagem internacional"); r >= LimiarRelevancia {
-		t.Fatalf("pergunta sem relação acima do limiar: %.2f", r)
-	}
-	if Relevancia(w, "") != 0 || Relevancia(w, "de o a") != 0 {
-		t.Fatal("pergunta vazia tem relevância zero")
-	}
-}
-
-func TestSinteseCanonica(t *testing.T) {
-	w := validWorkflow()
-	w.Normalize()
-	w.Classificacao = &ClassificacaoTTDD{Codigo: "2.0.02.00.07", Descritor: "Pregão", FaseCorrenteAnos: ptr(1), FaseIntermAnos: ptr(4), DestinacaoFinal: ptr(DestinacaoGuardaPermanente)}
-	w.Etapas[0].ManterAbertoAposRemessa = true
-	w.Etapas[0].Documentos = append(w.Etapas[0].Documentos, EtapaDocumento{NomeDocumento: "Cópia do RG", Formato: FormatoExternoDigitalizado,
-		TipoAssinatura: AssinaturaIndividual, ExigeConferenciaCopia: true})
-	if Relevancia(w, "pregão") == 0 {
-		t.Fatal("descritor da TTDD entra no corpus")
-	}
-	s := SinteseCanonica(w)
-	for _, want := range []string{"ADM.LIC.001", "Pregão", "guarda permanente", "1 ano", "4 anos", "Prazo total de guarda antes da destinação: 5 ano(s)", "1. Demandante", "DFD", "segue para a etapa 2", "devolve à etapa 1 em diligência", "mantém o processo aberto", "peça opcional", "exige conferência da cópia"} {
-		if !strings.Contains(s, want) {
-			t.Fatalf("síntese sem %q:\n%s", want, s)
+// O assistente só trata da TTDD: as duas recusas e o reconhecimento da
+// recusa na resposta do modelo (ADR 021).
+func TestObjetivoDoAssistente(t *testing.T) {
+	for _, p := range []string{"Qual o prazo de guarda da pasta funcional?", "posso ELIMINAR os empenhos?", "série documental do alvará",
+		"o que diz a TTDD sobre diárias", "destinação final dos contratos", "arquivo intermediário"} {
+		if !SobreTemporalidade(p) {
+			t.Errorf("%q é sobre temporalidade", p)
 		}
 	}
-}
-
-func TestSinteseRestrito(t *testing.T) {
-	w := validWorkflow()
-	w.NivelAcesso, w.HipoteseLegal = NivelRestrito, "LAI art. 31"
-	if !strings.Contains(SinteseCanonica(w), "hipótese legal: LAI art. 31") {
-		t.Fatal("síntese de procedimento restrito informa a hipótese legal")
+	for _, p := range []string{"Como tramitar um processo de pregão?", "receita de bolo de cenoura", "quem ganhou o jogo ontem?",
+		"escreva um poema", "qual documento preciso para pedir diárias?"} {
+		if SobreTemporalidade(p) {
+			t.Errorf("%q não é sobre temporalidade", p)
+		}
+	}
+	for p, want := range map[string]bool{
+		"Como tramitar o processo de pregão?":             true,
+		"quais etapas e setores do pedido de diárias":     true,
+		"quem assina o termo de referência?":              true,
+		"qual o prazo de guarda do processo de pregão?":   false, // fala de temporalidade
+		"receita de bolo":                                 false, // fora do objetivo, mas não é procedimento
+	} {
+		if PedidoDeProcedimento(p) != want {
+			t.Errorf("PedidoDeProcedimento(%q) != %v", p, want)
+		}
+	}
+	if !strings.HasPrefix(MensagemForaDoObjetivo, "Esse assunto foge do objetivo da IA") || !ForaDoObjetivo("  "+MensagemForaDoObjetivo) ||
+		ForaDoObjetivo(MensagemSemSerie) || ForaDoObjetivo("2.0.07.00.00 — Pasta funcional: 1 ano + 99 anos") {
+		t.Fatal("recusa por assunto")
 	}
 }
 

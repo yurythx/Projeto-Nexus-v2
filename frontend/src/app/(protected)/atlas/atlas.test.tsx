@@ -152,14 +152,11 @@ const base = (perms: string[]) => ({
 const renderAtlas = (ui: React.ReactElement) => renderApp(<AtlasLayout>{ui}</AtlasLayout>);
 
 const CHAT_OK = {
-  answer: "Instrua com DFD, ETP e TR.",
+  answer: "Guarde por 1 ano na fase corrente e 4 na intermediária.",
   score: 0.9,
   refused: false,
   mode: "sintese",
-  sources: [
-    { tipo: "procedimento", id: "wf-1", codigo: "ADM.LIC.001", titulo: "Pregão", relevancia: 0.9 },
-    { tipo: "ttdd", codigo: "2.0.02.00.07", titulo: "Pregão", relevancia: 0.85 },
-  ],
+  sources: [{ tipo: "ttdd", codigo: "2.0.02.00.07", titulo: "Pregão", relevancia: 0.85 }],
   generated_at: "2026-10-01T00:00:00Z",
 };
 
@@ -361,7 +358,7 @@ describe("Atlas — procedimento", () => {
 
     // Sem atlas:read não há "Perguntar"; imprimir sempre.
     expect(
-      screen.queryByRole("button", { name: "Perguntar sobre este procedimento" }),
+      screen.queryByRole("button", { name: "Perguntar sobre a temporalidade" }),
     ).not.toBeInTheDocument();
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
     await userEvent.click(screen.getByRole("button", { name: "Imprimir" }));
@@ -385,12 +382,10 @@ describe("Atlas — procedimento", () => {
       await screen.findByRole("button", { name: "Desativar procedimento" }),
     ).toBeInTheDocument();
 
-    await userEvent.click(
-      screen.getByRole("button", { name: "Perguntar sobre este procedimento" }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Perguntar sobre a temporalidade" }));
     const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
     expect(within(gaveta).getByLabelText("Sua pergunta")).toHaveValue(
-      'Como tramitar o procedimento "Pregão Eletrônico" (ADM.LIC.001)?',
+      'Por quanto tempo guardar "Pregão Presencial / Eletrônico" (2.0.02.00.07) e qual a destinação?',
     );
   });
 
@@ -637,25 +632,28 @@ describe("Atlas — assistente em gaveta", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Perguntar ao assistente" }));
     const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
-    await userEvent.type(within(gaveta).getByLabelText("Sua pergunta"), "Como tramitar o pregão?");
+    await userEvent.type(
+      within(gaveta).getByLabelText("Sua pergunta"),
+      "Por quanto tempo guardar o pregão?",
+    );
     await userEvent.click(within(gaveta).getByRole("button", { name: "Enviar pergunta" }));
 
-    expect(await within(gaveta).findByText("Instrua com DFD, ETP e TR.")).toBeInTheDocument();
     expect(
-      within(gaveta).getByText(/Síntese direta das fontes homologadas · relevância 90%/),
+      await within(gaveta).findByText("Guarde por 1 ano na fase corrente e 4 na intermediária."),
     ).toBeInTheDocument();
-    expect(within(gaveta).getByRole("link", { name: "ADM.LIC.001" })).toHaveAttribute(
-      "href",
-      "/atlas/procedimentos/wf-1",
-    );
+    expect(
+      within(gaveta).getByText(/Síntese direta da TTDD oficial · relevância 90%/),
+    ).toBeInTheDocument();
     expect(within(gaveta).getByRole("link", { name: "2.0.02.00.07" })).toHaveAttribute(
       "href",
       "/atlas/ttdd/2.0.02.00.07",
     );
-    expect(backend.to("POST v1/atlas/chat")[0]!.body).toEqual({ query: "Como tramitar o pregão?" });
+    expect(backend.to("POST v1/atlas/chat")[0]!.body).toEqual({
+      query: "Por quanto tempo guardar o pregão?",
+    });
 
     // Seguir uma fonte fecha a gaveta.
-    await userEvent.click(within(gaveta).getByRole("link", { name: "ADM.LIC.001" }));
+    await userEvent.click(within(gaveta).getByRole("link", { name: "2.0.02.00.07" }));
     expect(screen.queryByRole("dialog", { name: "Assistente do Atlas" })).not.toBeInTheDocument();
   });
 

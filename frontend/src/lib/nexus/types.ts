@@ -758,10 +758,9 @@ export interface Workflow {
   updated_at: string;
 }
 
-/** Fonte que sustentou a resposta: procedimento (com id) ou série da TTDD. */
+/** Série da TTDD que sustentou a resposta (o assistente só trata da TTDD — ADR 021). */
 export interface AtlasFonte {
-  tipo: "procedimento" | "ttdd";
-  id?: UUID;
+  tipo: "ttdd";
   codigo: string;
   titulo: string;
   relevancia: number;

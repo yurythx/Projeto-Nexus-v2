@@ -29,8 +29,8 @@ const (
 	EventWorkflowDeactivated = "atlas.workflow.deactivated"
 )
 
-// Grounding: quantos candidatos o índice entrega e quantos procedimentos,
-// no máximo, sustentam uma resposta.
+// Grounding: quantas séries o índice entrega e quantas, no máximo,
+// sustentam uma resposta.
 const (
 	maxCandidatos = 10
 	maxFontes     = 3
@@ -285,29 +285,26 @@ func summary(w domain.Workflow) map[string]any {
 		"titulo": w.Titulo, "codigo_ttdd": w.CodigoTTDD, "nivel_acesso": w.NivelAcesso, "ativo": w.Ativo, "etapas": len(w.Etapas)}
 }
 
-// Tipos de fonte do assistente.
-const (
-	FonteProcedimento = "procedimento"
-	FonteTTDD         = "ttdd"
-)
+// FonteTTDD é o tipo da fonte das respostas: o assistente só responde
+// sobre a TTDD (ADR 021).
+const FonteTTDD = "ttdd"
 
-// Fonte é o procedimento ou a série da TTDD que sustentou a resposta.
+// Fonte é a série da TTDD que sustentou a resposta.
 type Fonte struct {
-	Tipo       string     `json:"tipo"`
-	ID         *uuid.UUID `json:"id,omitempty"`
-	Codigo     string     `json:"codigo"`
-	Titulo     string     `json:"titulo"`
-	Relevancia float64    `json:"relevancia"`
+	Tipo       string  `json:"tipo"`
+	Codigo     string  `json:"codigo"`
+	Titulo     string  `json:"titulo"`
+	Relevancia float64 `json:"relevancia"`
 }
 
 // Modos de resposta do assistente.
 const (
 	ModoIA       = "ia"       // redigida pelo modelo de linguagem
 	ModoSintese  = "sintese"  // síntese canônica (IA desligada ou indisponível)
-	ModoRecusada = "recusada" // nenhuma fonte acima do limiar
+	ModoRecusada = "recusada" // fora do objetivo ou sem série acima do limiar
 )
 
-// Resposta do assistente procedural.
+// Resposta do assistente.
 type Resposta struct {
 	Answer      string    `json:"answer"`
 	Score       float64   `json:"score"`
@@ -317,18 +314,26 @@ type Resposta struct {
 	GeneratedAt time.Time `json:"generated_at"`
 }
 
-// Perguntar responde com grounding estrito: só procedimentos homologados e
-// séries da TTDD oficial com relevância >= domain.LimiarRelevancia sustentam
-// a resposta (até maxFontes); abaixo disso, a recusa canônica. Exige
-// atlas:read (na rota).
+// recusar devolve a recusa canônica: fora do objetivo da IA, ou — se a
+// pergunta fala de temporalidade — sem série da TTDD correspondente.
+// Coincidência fraca de palavras com uma série não torna o assunto válido.
+func recusar(resp *Resposta, pergunta string) {
+	resp.Answer, resp.Refused, resp.Mode, resp.Sources = domain.MensagemForaDoObjetivo, true, ModoRecusada, []Fonte{}
+	if domain.SobreTemporalidade(pergunta) {
+		resp.Answer = domain.MensagemSemSerie
+	}
+}
+
+// Perguntar responde SÓ sobre a TTDD oficial, com grounding estrito: só
+// séries com relevância >= domain.LimiarRelevancia sustentam a resposta
+// (até maxFontes); abaixo disso, a recusa canônica. Qualquer outro assunto
+// — inclusive procedimentos — recebe "foge do objetivo da IA", decidido
+// aqui (determinístico) e reforçado no prompt do modelo. Exige atlas:read
+// (na rota).
 func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, error) {
 	pergunta = strings.TrimSpace(pergunta)
 	resp := Resposta{Sources: []Fonte{}, GeneratedAt: s.now()}
 
-	procs, err := s.repo.Candidatos(ctx, s.pool, pergunta, maxCandidatos)
-	if err != nil {
-		return resp, MapError(err)
-	}
 	series, err := s.repo.CandidatosTTDD(ctx, s.pool, pergunta, maxCandidatos)
 	if err != nil {
 		return resp, MapError(err)
@@ -338,13 +343,6 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 		sintese string
 	}
 	var hits []candidato
-	for _, w := range procs {
-		if r := domain.Relevancia(w, pergunta); r > 0 {
-			id := w.ID
-			hits = append(hits, candidato{Fonte{Tipo: FonteProcedimento, ID: &id, Codigo: w.CodigoProcessual, Titulo: w.Titulo, Relevancia: r},
-				domain.SinteseCanonica(w)})
-		}
-	}
 	for _, c := range series {
 		if r := domain.RelevanciaTTDD(c, pergunta); r > 0 {
 			hits = append(hits, candidato{Fonte{Tipo: FonteTTDD, Codigo: c.Codigo, Titulo: c.Descritor, Relevancia: r}, domain.SinteseTTDD(c)})
@@ -366,13 +364,19 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 	sintese := strings.Join(contexto, "\n\n")
 
 	switch {
+	case domain.PedidoDeProcedimento(pergunta):
+		recusar(&resp, "")
 	case len(contexto) == 0:
-		resp.Answer, resp.Refused, resp.Mode = domain.MensagemRecusa, true, ModoRecusada
+		recusar(&resp, pergunta)
 	case s.assistente == nil:
 		resp.Answer, resp.Mode = sintese, ModoSintese
 	default:
 		answer, err := s.assistente.Responder(ctx, pergunta, contexto)
 		switch {
+		case err == nil && domain.ForaDoObjetivo(answer):
+			// O modelo reconheceu um pedido fora do objetivo (ex.: a série
+			// casou por palavras, mas a pergunta pede outra coisa).
+			recusar(&resp, "")
 		case err == nil:
 			resp.Answer, resp.Mode = answer, ModoIA
 		case errors.Is(err, domain.ErrIADesligada):

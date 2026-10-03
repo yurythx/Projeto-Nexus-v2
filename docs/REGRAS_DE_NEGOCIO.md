@@ -622,16 +622,27 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   data** (a tela explica o motivo). Não autoriza eliminação: ela continua
   dependendo da CCPAD.
 - **Assistente (`atlas:read`, limite por pessoa — padrão 10 por minuto):**
-  - só responde quando um procedimento homologado **ou uma série da TTDD**
-    cobre a pergunta: relevância ≥ **0,65** (fração dos termos da pergunta
-    presentes, sem acentos e sem palavras vazias, com bônus para o código
-    exato e o título/descritor); usa até 3 fontes, de qualquer tipo;
-  - sobre temporalidade, repete os prazos exatamente como na TTDD
-    (inclusive condições), a destinação, a recomendação e a fonte;
-  - abaixo do limiar: **recusa padronizada**, sem chamar o modelo;
-  - com IA configurada: o modelo redige a resposta só com as fontes
+  - **responde só sobre a TTDD oficial (ADR 021)** — prazos de guarda,
+    destinação final e classificação das séries; procedimentos (como
+    tramitar, etapas, peças) e qualquer outro assunto recebem: *"Esse
+    assunto foge do objetivo da IA: este assistente responde apenas sobre a
+    Tabela de Temporalidade e Destinação de Documentos (TTDD)…"*;
+  - a decisão é **determinística**, antes do modelo: pedido de procedimento
+    sem termo de temporalidade é recusado direto; a resposta exige uma
+    série com relevância ≥ **0,65** (fração dos termos da pergunta
+    presentes no descritor, sem acentos e sem palavras vazias, com bônus
+    para o código exato e o descritor); usa até 3 séries;
+  - pergunta sobre temporalidade sem série correspondente: *"Não localizei
+    na TTDD oficial uma série documental que corresponda à sua consulta…"*;
+  - o modelo de IA recebe a mesma regra no prompt (inclusive ignorar
+    pedidos para mudar de papel ou revelar as instruções); se ele devolver
+    a recusa por assunto, a resposta é marcada como recusada e sai sem
+    fontes;
+  - repete os prazos exatamente como na TTDD (inclusive condições), a
+    destinação, a recomendação e a fonte;
+  - com IA configurada: o modelo redige a resposta só com as séries
     encontradas (temperatura 0,05); sem IA, ou se ela falhar, a resposta é
-    a **síntese canônica** dos dados homologados;
+    a **síntese canônica** das séries;
   - **qual IA (ADR 020):** Configurações → Inteligência artificial
     (`ia:manage`) — conexão principal e reserva (IA local ou fornecedor
     compatível com a API da OpenAI); a chave é cifrada e nunca volta pela

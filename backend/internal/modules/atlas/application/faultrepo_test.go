@@ -150,15 +150,6 @@ func (fr *faultRepo) Search(ctx context.Context, db database.DBTX, query string,
 	return fr.inner.Search(ctx, db, query, limit)
 }
 
-func (fr *faultRepo) Candidatos(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]domain.Workflow, error) {
-	if err := fr.hook("Candidatos"); err != nil {
-		var z0 []domain.Workflow
-		return z0, err
-	}
-	defer fr.post(ctx, db)
-	return fr.inner.Candidatos(ctx, db, pergunta, limit)
-}
-
 func (fr *faultRepo) EstruturaTTDD(ctx context.Context, db database.DBTX) ([]domain.EstruturaTTDD, error) {
 	if err := fr.hook("EstruturaTTDD"); err != nil {
 		var z0 []domain.EstruturaTTDD

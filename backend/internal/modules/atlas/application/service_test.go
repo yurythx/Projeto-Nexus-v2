@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
-
 	"github.com/yurythx/projeto-nexus/internal/domain/pagination"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/domain"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
@@ -17,21 +15,16 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
 )
 
-// fakeRepo entrega candidatos fixos ao grounding.
+// fakeRepo entrega séries fixas ao grounding.
 type fakeRepo struct {
 	domain.Repository
-	candidatos []domain.Workflow
-	series     []domain.ClassificacaoTTDD
-	err        error
-	errTTDD    error
+	series  []domain.ClassificacaoTTDD
+	err     error
+	errTTDD error
 }
 
 func (f fakeRepo) CandidatosTTDD(context.Context, database.DBTX, string, int) ([]domain.ClassificacaoTTDD, error) {
 	return f.series, f.errTTDD
-}
-
-func (f fakeRepo) Candidatos(context.Context, database.DBTX, string, int) ([]domain.Workflow, error) {
-	return f.candidatos, f.err
 }
 
 func (f fakeRepo) ListTTDD(context.Context, database.DBTX, domain.FiltroTTDD, pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
@@ -49,83 +42,74 @@ func (f *fakeAssistente) Responder(_ context.Context, _ string, ctx []string) (s
 	return f.answer, f.err
 }
 
-func pregao() domain.Workflow {
-	return domain.Workflow{ID: uuid.New(), CodigoProcessual: "ADM.LIC.001", Titulo: "Pregão Eletrônico", Objetivo: "Aquisição de bens",
-		NivelAcesso: domain.NivelPublico, Etapas: []domain.Etapa{{Ordem: 1, NomeSetor: "Licitações", UnidadeAdministrativa: "LIC"}}}
+func serie(codigo, descritor string, corrente, interm int, dest domain.DestinacaoFinal) domain.ClassificacaoTTDD {
+	return domain.ClassificacaoTTDD{Codigo: codigo, Descritor: descritor, FaseCorrenteAnos: &corrente, FaseIntermAnos: &interm, DestinacaoFinal: &dest}
 }
 
-func diarias() domain.Workflow {
-	return domain.Workflow{ID: uuid.New(), CodigoProcessual: "RH.DIA.001", Titulo: "Concessão de Diárias", Objetivo: "Viagem a serviço",
-		NivelAcesso: domain.NivelPublico}
-}
+var (
+	pasta        = serie("2.0.07.00.00", "Pasta funcional de Servidores Ativos, inativos e aposentados", 1, 99, domain.DestinacaoEliminacao)
+	organogramas = serie("2.0.01.00.01", "Organogramas", 1, 1, domain.DestinacaoEliminacao)
+)
 
+// O assistente responde SÓ sobre a TTDD (ADR 021).
 func TestPerguntar(t *testing.T) {
 	pool := dbtest.Pool(t) // a consulta é auditada
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ctx := context.Background()
-	repo := fakeRepo{candidatos: []domain.Workflow{diarias(), pregao()}}
+	repo := fakeRepo{series: []domain.ClassificacaoTTDD{organogramas, pasta}}
+	const pergunta = "  Qual o prazo de guarda da pasta funcional de servidores?  "
+	svc := func(ia domain.Assistente, r fakeRepo) *Service {
+		return NewService(pool, r, outbox.NewWriter("t"), ia, logger)
+	}
 
-	t.Run("IA responde só com o procedimento acima do limiar", func(t *testing.T) {
+	t.Run("IA responde só com a série acima do limiar", func(t *testing.T) {
 		ia := &fakeAssistente{answer: "Orientação do modelo"}
-		r, err := NewService(pool, repo, outbox.NewWriter("t"), ia, logger).Perguntar(ctx, "  Como funciona o pregão eletrônico?  ")
+		r, err := svc(ia, repo).Perguntar(ctx, pergunta)
 		if err != nil || r.Mode != ModoIA || r.Answer != "Orientação do modelo" || r.Refused {
 			t.Fatalf("resposta = %+v, %v", r, err)
 		}
-		if len(ia.contexto) != 1 || !strings.Contains(ia.contexto[0], "ADM.LIC.001") || len(r.Sources) != 1 ||
-			r.Sources[0].Tipo != FonteProcedimento || r.Sources[0].ID == nil || r.Sources[0].Codigo != "ADM.LIC.001" {
+		if len(ia.contexto) != 1 || !strings.Contains(ia.contexto[0], "99 anos") || len(r.Sources) != 1 ||
+			r.Sources[0].Tipo != FonteTTDD || r.Sources[0].Codigo != "2.0.07.00.00" {
 			t.Fatalf("contexto enviado ao modelo: %+v / fontes %+v", ia.contexto, r.Sources)
 		}
 	})
-	t.Run("IA indisponível cai na síntese canônica", func(t *testing.T) {
-		ia := &fakeAssistente{err: errors.New("timeout")}
-		r, err := NewService(pool, repo, outbox.NewWriter("t"), ia, logger).Perguntar(ctx, "pregão eletrônico")
-		if err != nil || r.Mode != ModoSintese || !strings.Contains(r.Answer, "ADM.LIC.001") {
+	t.Run("modelo reconhece pedido fora do objetivo", func(t *testing.T) {
+		ia := &fakeAssistente{answer: domain.MensagemForaDoObjetivo}
+		r, err := svc(ia, repo).Perguntar(ctx, pergunta)
+		if err != nil || !r.Refused || r.Mode != ModoRecusada || r.Answer != domain.MensagemForaDoObjetivo || len(r.Sources) != 0 {
 			t.Fatalf("resposta = %+v, %v", r, err)
 		}
 	})
-	t.Run("IA desligada na configuração usa a síntese", func(t *testing.T) {
-		ia := &fakeAssistente{err: domain.ErrIADesligada}
-		r, err := NewService(pool, repo, outbox.NewWriter("t"), ia, logger).Perguntar(ctx, "pregão eletrônico")
-		if err != nil || r.Mode != ModoSintese || !strings.Contains(r.Answer, "ADM.LIC.001") {
-			t.Fatalf("resposta = %+v, %v", r, err)
-		}
-	})
-	t.Run("sem IA configurada usa a síntese", func(t *testing.T) {
-		r, err := NewService(pool, repo, outbox.NewWriter("t"), nil, logger).Perguntar(ctx, "pregão eletrônico")
-		if err != nil || r.Mode != ModoSintese {
-			t.Fatalf("resposta = %+v, %v", r, err)
-		}
-	})
-	t.Run("abaixo do limiar recusa sem chamar o modelo", func(t *testing.T) {
-		ia := &fakeAssistente{answer: "não deveria"}
-		r, err := NewService(pool, repo, outbox.NewWriter("t"), ia, logger).Perguntar(ctx, "férias no exterior com licença")
-		if err != nil || !r.Refused || r.Mode != ModoRecusada || r.Answer != domain.MensagemRecusa || ia.contexto != nil {
-			t.Fatalf("resposta = %+v, %v (modelo chamado: %v)", r, err, ia.contexto != nil)
-		}
-	})
-	t.Run("falha do repositório propaga", func(t *testing.T) {
-		for _, r := range []fakeRepo{{err: errors.New("db")}, {errTTDD: errors.New("db")}} {
-			if _, err := NewService(pool, r, outbox.NewWriter("t"), nil, logger).Perguntar(ctx, "pregão"); err == nil {
-				t.Fatal("esperado erro")
+	for nome, ia := range map[string]domain.Assistente{
+		"IA indisponível cai na síntese":   &fakeAssistente{err: errors.New("timeout")},
+		"IA desligada na configuração":     &fakeAssistente{err: domain.ErrIADesligada},
+		"sem IA configurada usa a síntese": nil,
+	} {
+		t.Run(nome, func(t *testing.T) {
+			r, err := svc(ia, repo).Perguntar(ctx, pergunta)
+			if err != nil || r.Mode != ModoSintese || !strings.Contains(r.Answer, "2.0.07.00.00") || !strings.Contains(r.Answer, "eliminação") {
+				t.Fatalf("resposta = %+v, %v", r, err)
 			}
+		})
+	}
+	// Recusas sem chamar o modelo: assunto fora do objetivo, ou sobre
+	// temporalidade sem série correspondente (nenhuma ou abaixo do limiar).
+	for pergunta, want := range map[string]string{
+		"receita de bolo de cenoura":                  domain.MensagemForaDoObjetivo,
+		"Como tramitar um processo de pregão?":        domain.MensagemForaDoObjetivo,
+		"qual o prazo de guarda dos alvarás de obra?": domain.MensagemSemSerie,
+		"organogramas antigos da secretaria de obras": domain.MensagemForaDoObjetivo, // palavra solta não basta
+		"prazo para eliminar os mapas de obras":       domain.MensagemSemSerie,
+	} {
+		ia := &fakeAssistente{answer: "não deveria"}
+		r, err := svc(ia, repo).Perguntar(ctx, pergunta)
+		if err != nil || !r.Refused || r.Mode != ModoRecusada || r.Answer != want || ia.contexto != nil || len(r.Sources) != 0 {
+			t.Errorf("%q: %+v, %v (modelo chamado: %v)", pergunta, r, err, ia.contexto != nil)
 		}
-	})
-	t.Run("série da TTDD sustenta a resposta junto com o procedimento", func(t *testing.T) {
-		um := 1
-		serie := domain.ClassificacaoTTDD{Codigo: "2.0.02.00.07", Descritor: "Processos relativos a Pregão Presencial/Pregão Eletrônico",
-			FaseCorrenteAnos: &um, FaseIntermAnos: &um}
-		alheia := domain.ClassificacaoTTDD{Codigo: "2.0.01.00.01", Descritor: "Organogramas"}
-		r, err := NewService(pool, fakeRepo{candidatos: []domain.Workflow{pregao()}, series: []domain.ClassificacaoTTDD{alheia, serie}},
-			outbox.NewWriter("t"), nil, logger).Perguntar(ctx, "prazo de guarda do pregão eletrônico")
-		if err != nil || r.Refused || len(r.Sources) != 2 {
-			t.Fatalf("resposta = %+v, %v", r, err)
-		}
-		tipos := map[string]bool{}
-		for _, f := range r.Sources {
-			tipos[f.Tipo] = true
-		}
-		if !tipos[FonteTTDD] || !tipos[FonteProcedimento] || !strings.Contains(r.Answer, "2.0.02.00.07") || !strings.Contains(r.Answer, "ADM.LIC.001") {
-			t.Fatalf("fontes e síntese: %+v\n%s", r.Sources, r.Answer)
+	}
+	t.Run("falha do repositório propaga", func(t *testing.T) {
+		if _, err := svc(nil, fakeRepo{errTTDD: errors.New("db")}).Perguntar(ctx, pergunta); err == nil {
+			t.Fatal("esperado erro")
 		}
 	})
 }
@@ -152,9 +136,9 @@ func TestPerguntarFalhaNaAuditoria(t *testing.T) {
 	pool := dbtest.Pool(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // o repositório falso ignora o contexto; a auditoria não
-	svc := NewService(pool, fakeRepo{candidatos: []domain.Workflow{pregao()}}, outbox.NewWriter("t"), nil,
+	svc := NewService(pool, fakeRepo{series: []domain.ClassificacaoTTDD{pasta}}, outbox.NewWriter("t"), nil,
 		slog.New(slog.NewTextHandler(io.Discard, nil)))
-	if _, err := svc.Perguntar(ctx, "pregão eletrônico"); err == nil {
+	if _, err := svc.Perguntar(ctx, "prazo de guarda da pasta funcional"); err == nil {
 		t.Fatal("falha ao auditar a consulta deve falhar a resposta")
 	}
 }

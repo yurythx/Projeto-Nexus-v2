@@ -229,8 +229,8 @@ export default function ProcedimentoPage() {
                 </p>
               )}
               <AcoesPagina
-                rotulo="Perguntar sobre este procedimento"
-                pergunta={`Como tramitar o procedimento "${wf.titulo}" (${wf.codigo_processual})?`}
+                rotulo="Perguntar sobre a temporalidade"
+                pergunta={`Por quanto tempo guardar "${wf.classificacao?.descritor ?? wf.titulo}" (${wf.codigo_ttdd}) e qual a destinação?`}
               >
                 {canManage && (
                   <Button size="sm" onClick={() => setVersionando(true)}>
