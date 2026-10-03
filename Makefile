@@ -1,5 +1,5 @@
 .PHONY: dev up down logs build test lint format \
-	deploy prod-seed-admin prod-ps prod-logs prod-down iam-scope-report atlas-modelo estrutura-gerar estrutura-aplicar ttdd-impacto ttdd-aplicar \
+	deploy prod-seed-admin prod-ps prod-logs prod-limpeza prod-down iam-scope-report atlas-modelo estrutura-gerar estrutura-aplicar ttdd-impacto ttdd-aplicar \
 	demo-keycloak demo-generate demo-seed demo-test demo-popular \
 	migrate-up migrate-down migrate-status migrate-redo seed-admin \
 	backend-shell frontend-shell rabbitmq-status clean \
@@ -39,6 +39,11 @@ prod-seed-admin: ## Cria/reseta o admin local dentro do container (sem Go no hos
 
 prod-ps: ## Estado dos serviços de produção
 	$(COMPOSE_PROD) ps
+
+prod-limpeza: ## Libera disco: cache de build sem uso há 3 dias e imagens órfãs (nunca volumes)
+	docker builder prune -a -f --filter until=72h
+	docker image prune -f
+	df -h /
 
 prod-logs: ## Logs dos serviços de produção
 	$(COMPOSE_PROD) logs -f --tail=200

@@ -69,6 +69,14 @@ quem precisa continuar com acesso amplo (concessão global) antes do deploy.
   `WEBSOCKET_PUBLIC_URL` e `MINIO_PUBLIC_URL` no `.env` e rode `make deploy`
   — as `NEXT_PUBLIC_*` são embutidas no build do frontend.
 - Sem Keycloak (`KEYCLOAK_ISSUER_URL` vazio) só o login local funciona.
+- **Disco:** cada `make deploy` deixa cache de build (chegou a 29 GB e
+  98% do disco no servidor de teste). Rode `make prod-limpeza` de tempos em
+  tempos — remove só cache sem uso há 3 dias e imagens órfãs, nunca
+  volumes. Com o disco cheio, o Postgres para de gravar.
+- **Instale a CA nas máquinas de teste** (`http://<host>/nexus-ca.crt`):
+  aceitar o aviso do navegador vale só para a página. Downloads e envios de
+  arquivo (MinIO, `:9443`) são feitos por `fetch` e falham em silêncio sem
+  a CA; o WebSocket já usa a mesma origem do site (`/ws`).
 - **CA recriada:** se o volume `caddy_data` se perder (ex.: `down -v`), o
   Caddy gera uma CA nova. O `deploy.sh` percebe, atualiza `secrets/ca` e
   reinicia API, worker e frontend — mas cada máquina de teste precisa
