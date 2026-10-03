@@ -298,3 +298,18 @@ dialog[open]::backdrop {
     scroll-behavior: auto !important;
   }
 }
+
+/* Impressão (Atlas: procedimento e série da TTDD): só o conteúdo da página. */
+@media print {
+  .gov-header,
+  .gov-footer,
+  #main-menu {
+    display: none !important;
+  }
+  :has(> #main-content) {
+    padding: 0 !important;
+  }
+  #main-content {
+    padding: 0 !important;
+  }
+}

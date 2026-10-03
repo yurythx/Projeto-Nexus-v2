@@ -1,142 +1,134 @@
 "use client";
 
-import { Plus, Search, Workflow as WorkflowIcon } from "lucide-react";
+import { ArrowRight, Building2, FileClock, Plus } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-import { AssistentePanel } from "@/components/atlas/AssistentePanel";
+import { AtlasBusca } from "@/components/atlas/AtlasBusca";
 import { NovoProcedimentoForm } from "@/components/atlas/NovoProcedimentoForm";
-import { TTDDTable } from "@/components/atlas/TTDDTable";
-import { WorkflowDetail } from "@/components/atlas/WorkflowDetail";
 import { WorkflowList } from "@/components/atlas/WorkflowList";
 import { DataState } from "@/components/nexus/DataState";
 import { PageHeader } from "@/components/nexus/PageHeader";
 import { Pagination } from "@/components/nexus/Pagination";
-import { SectionTabsInline } from "@/components/nexus/SectionTabsInline";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClass } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
-import { Input } from "@/components/ui/Input";
-import { useApiPage, withQuery } from "@/lib/api/swr";
+import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
 import { useNexus } from "@/lib/nexus/NexusProvider";
-import type { Workflow } from "@/lib/nexus/types";
+import type { EstruturaTTDD, Workflow } from "@/lib/nexus/types";
 
-type Aba = "procedimentos" | "ttdd" | "assistente";
-
-/** Aba de procedimentos: busca, lista paginada e detalhe do selecionado
- * (?procedimento=<id> — também é o link da Busca Global). */
-function Procedimentos({ canManage }: { canManage: boolean }) {
+/** Links antigos (?procedimento=, ?ttdd=) da Busca Global e do assistente
+ * continuam valendo: redirecionam para as páginas próprias. */
+function useRedirecionaLegado() {
   const params = useSearchParams();
   const router = useRouter();
-  const selectedId = params.get("procedimento");
-  const [q, setQ] = useState("");
-  const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-  // A gestão lista pela rota administrativa (inclui os desativados).
-  const base = canManage ? "v1/atlas/admin/workflows" : "v1/atlas/workflows";
-  const list = useApiPage<Workflow>(withQuery(base, { q: query, page, page_size: 20 }));
-  const items = list.data?.items ?? [];
+  const procedimento = params.get("procedimento");
+  const ttdd = params.get("ttdd");
+  useEffect(() => {
+    if (procedimento) router.replace(`/atlas/procedimentos/${encodeURIComponent(procedimento)}`);
+    else if (ttdd) router.replace(`/atlas/ttdd/${encodeURIComponent(ttdd)}`);
+  }, [procedimento, ttdd, router]);
+}
 
-  const select = (id: string) => router.replace(`/atlas?procedimento=${id}`);
-
+/** Atalhos por secretaria: cada órgão abre a TTDD filtrada. */
+function Secretarias() {
+  const estrutura = useApiQuery<EstruturaTTDD[]>("v1/atlas/ttdd/estrutura");
+  const orgaos = estrutura.data ?? [];
+  if (orgaos.length === 0) return null;
   return (
-    <div className="grid gap-6 lg:grid-cols-12">
-      <div className="flex flex-col gap-4 lg:col-span-5">
-        <form
-          role="search"
-          className="flex items-end gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setPage(1);
-            setQuery(q.trim());
-          }}
+    <section aria-labelledby="atlas-secretarias">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 id="atlas-secretarias" className="text-lg font-bold text-foreground">
+          Temporalidade por secretaria
+        </h2>
+        <Link
+          href="/atlas/ttdd"
+          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
         >
-          <div className="flex-1">
-            <Input
-              id="atlas-q"
-              label="Código, título ou objetivo"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-          </div>
-          <Button type="submit" variant="secondary" aria-label="Buscar procedimentos">
-            <Search size={14} aria-hidden="true" />
-          </Button>
-        </form>
+          Tabela completa <ArrowRight size={14} aria-hidden="true" />
+        </Link>
+      </div>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {orgaos.map((o) => (
+          <li key={o.prefixo}>
+            <Link
+              href={`/atlas/ttdd?codigo=${encodeURIComponent(o.prefixo)}`}
+              className="flex h-full items-start gap-3 rounded-lg border border-surface-border bg-surface p-3 transition-colors hover:border-primary/50 hover:bg-surface-hover"
+            >
+              <Building2 size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-primary" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">{o.nome}</span>
+                <span className="block text-xs text-muted">
+                  <span className="font-mono">{o.prefixo}</span> · {o.total}{" "}
+                  {o.total === 1 ? "série" : "séries"}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Procedimentos em cartões. A gestão lista pela rota administrativa
+ * (inclui os desativados). */
+function Procedimentos({ canManage }: { canManage: boolean }) {
+  const [page, setPage] = useState(1);
+  const base = canManage ? "v1/atlas/admin/workflows" : "v1/atlas/workflows";
+  const list = useApiPage<Workflow>(withQuery(base, { page, page_size: 12 }));
+  const items = list.data?.items ?? [];
+  return (
+    <section aria-labelledby="atlas-procedimentos">
+      <h2 id="atlas-procedimentos" className="text-lg font-bold text-foreground">
+        Procedimentos
+      </h2>
+      <div className="mt-3">
         <DataState
           loading={list.isLoading}
           error={list.error}
           onRetry={() => void list.mutate()}
           empty={items.length === 0}
-          emptyTitle="Nenhum procedimento encontrado"
-          emptyDescription="Revise os termos da busca."
+          emptyTitle="Nenhum procedimento cadastrado"
         >
-          <WorkflowList items={items} selectedId={selectedId} onSelect={select} />
+          <WorkflowList items={items} />
           <Pagination meta={list.data?.meta} onPage={setPage} />
         </DataState>
       </div>
-
-      <div className="lg:col-span-7">
-        {selectedId ? (
-          <WorkflowDetail
-            key={selectedId}
-            id={selectedId}
-            canManage={canManage}
-            onChanged={() => void list.mutate()}
-          />
-        ) : (
-          <div className="flex h-96 flex-col items-center justify-center rounded-lg border border-dashed border-surface-border p-8 text-center text-muted">
-            <WorkflowIcon size={40} aria-hidden="true" />
-            <p className="mt-3 font-semibold text-foreground">Selecione um procedimento</p>
-            <p className="mt-1 max-w-sm text-xs">
-              Veja as etapas, os prazos e as peças exigidas em cada setor.
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
+    </section>
   );
 }
 
-function Atlas() {
+function Inicio() {
+  useRedirecionaLegado();
   const { can } = useNexus();
   const router = useRouter();
-  // ?ttdd=<código>: link de uma fonte do assistente — abre a TTDD filtrada.
-  const buscaTTDD = useSearchParams().get("ttdd") ?? "";
   const canManage = can("atlas:manage");
-  const canAsk = can("atlas:read");
-  const [aba, setAba] = useState<Aba>(buscaTTDD ? "ttdd" : "procedimentos");
   const [creating, setCreating] = useState(false);
-  // Remonta a lista após um cadastro (busca de novo).
-  const [versao, setVersao] = useState(0);
-
-  const tabs: { value: Aba; label: string }[] = [
-    { value: "procedimentos", label: "Procedimentos" },
-    { value: "ttdd", label: "Tabela de Temporalidade (TTDD)" },
-    ...(canAsk ? [{ value: "assistente" as const, label: "Assistente procedural" }] : []),
-  ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <PageHeader
         eyebrow="Atlas"
         title="Procedimentos e temporalidade"
-        description="Roteiros canônicos de processo administrativo (padrão SEI), Tabela de Temporalidade e Destinação de Documentos e assistente procedural."
+        description="Como tramitar cada processo (padrão SEI) e por quanto tempo guardar cada documento, conforme a Tabela de Temporalidade e Destinação de Documentos oficial."
         actions={
-          canManage && (
-            <Button onClick={() => setCreating(true)}>
-              <Plus size={16} aria-hidden="true" className="mr-1" /> Novo procedimento
-            </Button>
-          )
+          <div className="flex flex-wrap gap-2">
+            <Link href="/atlas/ttdd" className={buttonClass("secondary")}>
+              <FileClock size={16} aria-hidden="true" /> Tabela de Temporalidade
+            </Link>
+            {canManage && (
+              <Button onClick={() => setCreating(true)}>
+                <Plus size={16} aria-hidden="true" className="mr-1" /> Novo procedimento
+              </Button>
+            )}
+          </div>
         }
       />
 
-      <SectionTabsInline tabs={tabs} value={aba} onChange={setAba} label="Seções do Atlas" />
-
-      <div role="tabpanel" aria-label={tabs.find((t) => t.value === aba)?.label}>
-        {aba === "procedimentos" && <Procedimentos key={versao} canManage={canManage} />}
-        {aba === "ttdd" && <TTDDTable key={buscaTTDD} busca={buscaTTDD} />}
-        {aba === "assistente" && canAsk && <AssistentePanel />}
-      </div>
+      <AtlasBusca />
+      <Procedimentos canManage={canManage} />
+      <Secretarias />
 
       <Dialog
         open={creating}
@@ -149,9 +141,7 @@ function Atlas() {
           <NovoProcedimentoForm
             onDone={(wf) => {
               setCreating(false);
-              setAba("procedimentos");
-              setVersao((v) => v + 1);
-              router.replace(`/atlas?procedimento=${wf.id}`);
+              router.push(`/atlas/procedimentos/${wf.id}`);
             }}
           />
         )}
@@ -163,7 +153,7 @@ function Atlas() {
 export default function AtlasPage() {
   return (
     <Suspense>
-      <Atlas />
+      <Inicio />
     </Suspense>
   );
 }

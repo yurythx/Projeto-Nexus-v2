@@ -287,7 +287,7 @@ func (g *schemaGen) walk(node ast.Node, pkg *packages.Package, info *opInfo, see
 			if s, ok := constString(ti, call.Args[0]); ok {
 				info.query = append(info.query, queryParam{name: s, schema: map[string]any{"type": "string"}})
 			}
-		case strings.HasPrefix(fn.Pkg().Path(), modulePath) && depth < 4 && passesWriter(ti, call):
+		case strings.HasPrefix(fn.Pkg().Path(), modulePath) && depth < 4 && passesHTTP(ti, call):
 			key := runtimeName(fn.Origin())
 			if seen[key] {
 				return true
@@ -384,10 +384,16 @@ func isURLValues(ti *types.Info, call *ast.CallExpr) bool {
 	return ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == "net/url" && n.Obj().Name() == "Values"
 }
 
-func passesWriter(ti *types.Info, call *ast.CallExpr) bool {
+func passesHTTP(ti *types.Info, call *ast.CallExpr) bool {
 	for _, a := range call.Args {
-		if n, ok := ti.TypeOf(a).(*types.Named); ok && n.Obj().Pkg() != nil &&
-			n.Obj().Pkg().Path() == "net/http" && n.Obj().Name() == "ResponseWriter" {
+		t := ti.TypeOf(a)
+		// *http.Request também: helpers que leem a query (ex.: filtros
+		// compartilhados entre listagem e exportação).
+		if p, ok := t.(*types.Pointer); ok {
+			t = p.Elem()
+		}
+		if n, ok := t.(*types.Named); ok && n.Obj().Pkg() != nil && n.Obj().Pkg().Path() == "net/http" &&
+			(n.Obj().Name() == "ResponseWriter" || n.Obj().Name() == "Request") {
 			return true
 		}
 	}

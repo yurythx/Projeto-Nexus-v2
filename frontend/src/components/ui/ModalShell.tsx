@@ -34,6 +34,7 @@ export function ModalShell({
   labelledBy,
   describedBy,
   className = "",
+  variant = "center",
   children,
 }: {
   open: boolean;
@@ -42,6 +43,8 @@ export function ModalShell({
   labelledBy?: string;
   describedBy?: string;
   className?: string;
+  /** "drawer": painel encostado à direita, na altura toda (ex.: assistente). */
+  variant?: "center" | "drawer";
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -72,11 +75,18 @@ export function ModalShell({
       }}
       aria-labelledby={labelledBy}
       aria-describedby={describedBy}
-      className={`m-auto w-[calc(100vw-2rem)] ${sizeClass[size]} max-h-[calc(100dvh-2rem)]
-        overflow-hidden rounded-xl border border-surface-border bg-surface p-0 text-foreground
+      className={`${
+        variant === "drawer"
+          ? `my-0 ml-auto mr-0 h-dvh max-h-dvh w-[min(100vw,30rem)] rounded-l-xl`
+          : `m-auto w-[calc(100vw-2rem)] ${sizeClass[size]} max-h-[calc(100dvh-2rem)] rounded-xl`
+      } overflow-hidden border border-surface-border bg-surface p-0 text-foreground
         shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm ${className}`}
     >
-      <div className="flex max-h-[calc(100dvh-2rem)] flex-col">{children}</div>
+      <div
+        className={`flex flex-col ${variant === "drawer" ? "h-full" : "max-h-[calc(100dvh-2rem)]"}`}
+      >
+        {children}
+      </div>
     </dialog>
   );
 }

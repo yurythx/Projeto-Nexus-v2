@@ -582,6 +582,27 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   - observações da série, **recomendação da subfunção** (vale para todas
     as séries dela) e **fonte** — versão e edição/data do Diário Oficial;
   - cada procedimento é enquadrado numa série existente.
+  - **exportação CSV** (`GET /atlas/ttdd/exportar`, pública, mesmos
+    filtros `codigo` e `q` da consulta): separador `;` e BOM UTF-8 (abre
+    direto no Excel), com órgão, função, subfunção, prazos, destinação,
+    observações, recomendação e fonte; até 20.000 séries.
+- **Páginas (URL própria, compartilhável e imprimível):**
+  - `/atlas` — busca unificada (procedimentos e séries em paralelo, ou a
+    pergunta ao assistente), procedimentos e atalhos por secretaria;
+  - `/atlas/procedimentos/{id}` — percurso em linha do tempo (prazo
+    previsto = soma dos prazos das etapas), peças exigidas e temporalidade;
+  - `/atlas/ttdd` — plano de classificação em árvore e séries, com os
+    filtros na URL (`?codigo=`, `?q=`, `?page=`);
+  - `/atlas/ttdd/{codigo}` — a série, a fonte oficial e os procedimentos
+    que a produzem;
+  - os links antigos `/atlas?procedimento=` e `/atlas?ttdd=` redirecionam.
+- **Calculadora de temporalidade** (nas páginas de série e de
+  procedimento): é uma **estimativa** a partir da data informada — fim da
+  fase corrente e da intermediária pela soma dos anos (29/02 vira 28/02);
+  com fase corrente por condição, a data informada é a do fim da condição.
+  Fase intermediária por condição ou fase corrente não informada **não têm
+  data** (a tela explica o motivo). Não autoriza eliminação: ela continua
+  dependendo da CCPAD.
 - **Assistente (`atlas:read`, limite por pessoa — padrão 10 por minuto):**
   - só responde quando um procedimento homologado **ou uma série da TTDD**
     cobre a pergunta: relevância ≥ **0,65** (fração dos termos da pergunta
@@ -594,7 +615,10 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     só com os procedimentos encontrados (temperatura 0,05); sem IA, ou se
     ela falhar, a resposta é a **síntese canônica** dos dados homologados;
   - a resposta informa o modo (`ia`, `sintese`, `recusada`), a relevância
-    e as fontes;
+    e as fontes (com link para a página de cada uma);
+  - fica numa gaveta lateral disponível em todas as páginas do Atlas; o
+    "Perguntar sobre…" de cada página só preenche a pergunta (nada é
+    enviado sem a pessoa confirmar);
   - cada consulta é auditada **sem o texto da pergunta** (modo,
     relevância, fontes e tamanho), por minimização (LGPD).
 - **Outbox e auditoria:** `atlas.workflow.created`, `.activated` e

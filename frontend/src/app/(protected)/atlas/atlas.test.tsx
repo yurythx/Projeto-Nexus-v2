@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -7,7 +7,11 @@ import { resetNavigation, router } from "@/test/navigation";
 
 vi.mock("next/navigation", async () => (await import("@/test/navigation")).navigationModule);
 
+import AtlasLayout from "./layout";
 import AtlasPage from "./page";
+import ProcedimentoPage from "./procedimentos/[id]/page";
+import SeriePage from "./ttdd/[codigo]/page";
+import TTDDPage from "./ttdd/page";
 
 /** Preenche colando (rápido e estável sob carga) em vez de digitar tecla a tecla. */
 async function fill(el: HTMLElement, text: string) {
@@ -141,154 +145,116 @@ const base = (perms: string[]) => ({
   "GET v1/atlas/ttdd/estrutura": { data: ESTRUTURA },
 });
 
-describe("Atlas", () => {
+/** As páginas do Atlas rodam dentro do layout (assistente em gaveta). */
+const renderAtlas = (ui: React.ReactElement) => renderApp(<AtlasLayout>{ui}</AtlasLayout>);
+
+const CHAT_OK = {
+  answer: "Instrua com DFD, ETP e TR.",
+  score: 0.9,
+  refused: false,
+  mode: "sintese",
+  sources: [
+    { tipo: "procedimento", id: "wf-1", codigo: "ADM.LIC.001", titulo: "Pregão", relevancia: 0.9 },
+    { tipo: "ttdd", codigo: "2.0.02.00.07", titulo: "Pregão", relevancia: 0.85 },
+  ],
+  generated_at: "2026-10-01T00:00:00Z",
+};
+
+describe("Atlas — início", () => {
   beforeEach(() => resetNavigation({}, "/atlas"));
 
-  it("consulta pública: lista pela rota pública, sem gestão nem assistente", async () => {
+  it("consulta pública: cartões com link, atalhos por secretaria, sem gestão nem assistente", async () => {
     const backend = mockBackend(base([]));
-    renderApp(<AtlasPage />);
+    renderAtlas(<AtlasPage />);
 
-    const item = await screen.findByRole("button", { name: /ADM\.LIC\.001/ });
-    expect(within(item).getByText("1 etapa")).toBeInTheDocument();
+    const card = await screen.findByRole("link", { name: /ADM\.LIC\.001/ });
+    expect(card).toHaveAttribute("href", "/atlas/procedimentos/wf-1");
+    expect(within(card).getByText("1 etapa")).toBeInTheDocument();
     expect(backend.to("GET v1/atlas/workflows")).toHaveLength(1);
     expect(backend.to("GET v1/atlas/admin/workflows")).toHaveLength(0);
+    expect(
+      await screen.findByRole("link", { name: /Secretaria Municipal de Administração/ }),
+    ).toHaveAttribute("href", "/atlas/ttdd?codigo=2.0");
     expect(screen.queryByRole("button", { name: /Novo procedimento/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("tab", { name: /Assistente/ })).not.toBeInTheDocument();
-
-    await userEvent.click(item);
-    expect(router.replace).toHaveBeenCalledWith("/atlas?procedimento=wf-1");
+    expect(
+      screen.queryByRole("button", { name: "Perguntar ao assistente" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("detalhe busca o percurso completo (etapas, peças e transições)", async () => {
-    resetNavigation({}, "/atlas", "procedimento=wf-1");
+  it("links antigos (?procedimento=, ?ttdd=) redirecionam para as páginas próprias", async () => {
     mockBackend(base([]));
-    renderApp(<AtlasPage />);
-
-    expect(await screen.findByText("Trilha de tramitação (1 etapa)")).toBeInTheDocument();
-    expect(screen.getByText("Setor Demandante")).toBeInTheDocument();
-    expect(screen.getByText("Termo de Referência")).toBeInTheDocument();
-    expect(screen.getByText(/Assinatura conjunta \(multinível\)/)).toBeInTheDocument();
-    expect(screen.getByText(/mantém o processo aberto/)).toBeInTheDocument();
-    expect(screen.getByText(/TR aprovado → etapa 2/)).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Fase corrente: 1 ano · fase intermediária: 4 anos · destinação: guarda permanente/,
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Recomendação: Transferir após aprovação do TCE-MT/),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/versão II — Diário Oficial nº 6\.017 de 25\/08\/2025/),
-    ).toBeInTheDocument();
-  });
-
-  it("gestão: rota administrativa e desativação do procedimento", async () => {
     resetNavigation({}, "/atlas", "procedimento=wf-1");
-    const backend = mockBackend({
-      ...base(["atlas:manage"]),
-      "POST v1/atlas/admin/workflows/wf-1/desativar": { data: { ...DETALHE, ativo: false } },
-    });
-    renderApp(<AtlasPage />);
+    const { unmount } = renderAtlas(<AtlasPage />);
+    expect(router.replace).toHaveBeenCalledWith("/atlas/procedimentos/wf-1");
+    unmount();
 
-    await userEvent.click(await screen.findByRole("button", { name: "Desativar procedimento" }));
-    expect(backend.to("POST v1/atlas/admin/workflows/wf-1/desativar")).toHaveLength(1);
-    expect(await screen.findByRole("button", { name: "Ativar procedimento" })).toBeInTheDocument();
-    expect(backend.to("GET v1/atlas/admin/workflows").length).toBeGreaterThan(0);
-  });
-
-  it("aba TTDD: prazos por anos ou condição, destinação indefinida e filtro por órgão", async () => {
-    const backend = mockBackend(base([]));
-    renderApp(<AtlasPage />);
-
-    await userEvent.click(await screen.findByRole("tab", { name: /Tabela de Temporalidade/ }));
-    expect(await screen.findByText("2.0.01.00.01")).toBeInTheDocument();
-    expect(screen.getAllByText("Guarda permanente").length).toBeGreaterThan(0);
-    expect(screen.getByText("Eliminação")).toBeInTheDocument();
-    expect(screen.getByText("Enquanto estiver vigorando")).toBeInTheDocument();
-    expect(screen.getByText("Não definida na TTDD")).toBeInTheDocument();
-    expect(screen.getAllByText("4 anos").length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Recomendação: Transferir/).length).toBeGreaterThan(0);
-
-    await screen.findByRole("option", { name: /Secretaria Municipal de Administração \(2\)/ });
-    await userEvent.selectOptions(screen.getByLabelText("Órgão"), "2.0");
-    expect(
-      await screen.findByText(/Fonte: TTDD da Secretaria Municipal de Administração, versão II/),
-    ).toBeInTheDocument();
-    await userEvent.selectOptions(screen.getByLabelText("Função"), "2.0.02");
-    expect(backend.to("GET v1/atlas/ttdd").at(-1)!.query.get("codigo")).toBe("2.0.02");
-  });
-
-  it("link de fonte da TTDD (?ttdd=) abre a aba já filtrada", async () => {
     resetNavigation({}, "/atlas", "ttdd=2.0.02.00.07");
-    const backend = mockBackend(base([]));
-    renderApp(<AtlasPage />);
-
-    expect(
-      await screen.findByRole("tab", { name: /Tabela de Temporalidade/, selected: true }),
-    ).toBeInTheDocument();
-    expect(await screen.findByText("2.0.01.00.01")).toBeInTheDocument();
-    expect(backend.to("GET v1/atlas/ttdd")[0]!.query.get("q")).toBe("2.0.02.00.07");
+    renderAtlas(<AtlasPage />);
+    expect(router.replace).toHaveBeenCalledWith("/atlas/ttdd/2.0.02.00.07");
   });
 
-  it("assistente (atlas:read): envia a pergunta e mostra modo e fontes", async () => {
+  it("busca unificada: procedimentos e séries em paralelo, teclado e pergunta ao assistente", async () => {
     const backend = mockBackend({
       ...base(["atlas:read"]),
-      "POST v1/atlas/chat": {
-        data: {
-          answer: "Instrua com DFD, ETP e TR.",
-          score: 0.9,
-          refused: false,
-          mode: "sintese",
-          sources: [
-            {
-              tipo: "procedimento",
-              id: "wf-1",
-              codigo: "ADM.LIC.001",
-              titulo: "Pregão",
-              relevancia: 0.9,
-            },
-            { tipo: "ttdd", codigo: "2.0.02.00.07", titulo: "Pregão", relevancia: 0.85 },
-          ],
-          generated_at: "2026-10-01T00:00:00Z",
-        },
-      },
+      "POST v1/atlas/chat": { data: CHAT_OK },
     });
-    renderApp(<AtlasPage />);
+    renderAtlas(<AtlasPage />);
 
-    await userEvent.click(await screen.findByRole("tab", { name: /Assistente/ }));
-    await userEvent.type(screen.getByLabelText("Sua pergunta"), "Como tramitar o pregão?");
-    await userEvent.click(screen.getByRole("button", { name: "Enviar pergunta" }));
-
-    expect(await screen.findByText("Instrua com DFD, ETP e TR.")).toBeInTheDocument();
+    const campo = screen.getByRole("combobox", { name: "Buscar no Atlas" });
+    await fill(campo, "pregão");
+    expect(await screen.findByRole("option", { name: /Pregão Eletrônico/ })).toBeInTheDocument();
     expect(
-      screen.getByText(/Síntese direta dos procedimentos homologados · relevância 90%/),
+      await screen.findByRole("option", { name: /Pregão Presencial \/ Eletrônico/ }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "ADM.LIC.001" })).toHaveAttribute(
-      "href",
-      "/atlas?procedimento=wf-1",
-    );
-    expect(screen.getByRole("link", { name: "2.0.02.00.07" })).toHaveAttribute(
-      "href",
-      "/atlas?ttdd=2.0.02.00.07",
-    );
-    expect(backend.to("POST v1/atlas/chat")[0]!.body).toEqual({ query: "Como tramitar o pregão?" });
+    expect(backend.to("GET v1/atlas/workflows").at(-1)!.query.get("q")).toBe("pregão");
+    expect(backend.to("GET v1/atlas/ttdd").at(-1)!.query.get("q")).toBe("pregão");
+
+    // Seta para cima a partir do campo vai à última opção; para baixo, volta à 1ª.
+    await userEvent.keyboard("{ArrowUp}");
+    expect(campo.getAttribute("aria-activedescendant")).toMatch(/-op-\d+$/);
+    await userEvent.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{Enter}");
+    expect(router.push).toHaveBeenCalledWith("/atlas/procedimentos/wf-1");
+
+    await userEvent.click(campo);
+    await userEvent.click(await screen.findByRole("option", { name: /Pregão Presencial/ }));
+    expect(router.push).toHaveBeenCalledWith("/atlas/ttdd/2.0.02.00.07");
+
+    await userEvent.click(campo);
+    await userEvent.click(await screen.findByRole("option", { name: /Ver todas as séries/ }));
+    expect(router.push).toHaveBeenCalledWith("/atlas/ttdd?q=preg%C3%A3o");
+
+    // Escape fecha a lista.
+    await userEvent.click(campo);
+    expect(campo).toHaveAttribute("aria-expanded", "true");
+    await userEvent.keyboard("{Escape}");
+    expect(campo).toHaveAttribute("aria-expanded", "false");
+
+    // Pergunta ao assistente: abre a gaveta já com a pergunta, sem enviar.
+    await userEvent.click(campo);
+    await userEvent.click(await screen.findByRole("option", { name: /Perguntar ao assistente/ }));
+    const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
+    expect(within(gaveta).getByLabelText("Sua pergunta")).toHaveValue("pregão");
+    expect(backend.to("POST v1/atlas/chat")).toHaveLength(0);
   });
 
-  it("assistente mostra a mensagem do backend quando a consulta falha", async () => {
-    mockBackend({
-      ...base(["atlas:read"]),
-      "POST v1/atlas/chat": {
-        status: 429,
-        error: { code: "RATE_LIMITED", message: "Muitas consultas; aguarde um minuto." },
-      },
-    });
-    renderApp(<AtlasPage />);
+  it("Enter sem opção destacada: pergunta ao assistente ou, sem ele, abre a TTDD", async () => {
+    mockBackend(base([]));
+    const { unmount } = renderAtlas(<AtlasPage />);
+    const campo = () => screen.getByRole("combobox", { name: "Buscar no Atlas" });
+    await userEvent.click(campo());
+    await userEvent.keyboard("{Enter}"); // vazio: nada acontece
+    await fill(campo(), "alvará");
+    await userEvent.keyboard("{Enter}");
+    expect(router.push).toHaveBeenCalledWith("/atlas/ttdd?q=alvar%C3%A1");
+    unmount();
 
-    await userEvent.click(await screen.findByRole("tab", { name: /Assistente/ }));
-    await userEvent.type(screen.getByLabelText("Sua pergunta"), "pregão eletrônico");
-    await userEvent.click(screen.getByRole("button", { name: "Enviar pergunta" }));
-    expect(await screen.findByText("Muitas consultas; aguarde um minuto.")).toBeInTheDocument();
+    mockBackend(base(["atlas:read"]));
+    renderAtlas(<AtlasPage />);
+    await fill(campo(), "alvará");
+    await userEvent.keyboard("{Enter}");
+    const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
+    expect(within(gaveta).getByLabelText("Sua pergunta")).toHaveValue("alvará");
   });
 
   it("cadastro: várias etapas na ordem e peças uma por linha", async () => {
@@ -296,7 +262,7 @@ describe("Atlas", () => {
       ...base(["atlas:manage"]),
       "POST v1/atlas/admin/workflows": { status: 201, data: { ...DETALHE, id: "wf-2" } },
     });
-    renderApp(<AtlasPage />);
+    renderAtlas(<AtlasPage />);
 
     await userEvent.click(await screen.findByRole("button", { name: /Novo procedimento/ }));
     await fill(screen.getByLabelText("Código processual *"), "adm.fin.021");
@@ -339,6 +305,370 @@ describe("Atlas", () => {
       "Requerimento",
       "Comprovante",
     ]);
-    expect(router.replace).toHaveBeenCalledWith("/atlas?procedimento=wf-2");
+    expect(router.push).toHaveBeenCalledWith("/atlas/procedimentos/wf-2");
+  });
+});
+
+describe("Atlas — procedimento", () => {
+  beforeEach(() => resetNavigation({ id: "wf-1" }, "/atlas/procedimentos/wf-1"));
+
+  it("percurso em linha do tempo, peças, temporalidade e calculadora", async () => {
+    const backend = mockBackend(base([]));
+    renderAtlas(<ProcedimentoPage />);
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Pregão Eletrônico" }),
+    ).toBeInTheDocument();
+    expect(backend.to("GET v1/atlas/workflows/wf-1")).toHaveLength(1);
+    const trilha = screen.getByRole("navigation", { name: "Trilha de navegação" });
+    expect(within(trilha).getByText("ADM.LIC.001")).toHaveAttribute("aria-current", "page");
+    expect(screen.getByText(/5 dias/, { selector: "dd" })).toBeInTheDocument();
+
+    const percurso = screen.getByRole("region", { name: "Percurso" });
+    expect(within(percurso).getByText("Setor Demandante")).toBeInTheDocument();
+    expect(within(percurso).getByText(/mantém o processo aberto/)).toBeInTheDocument();
+    expect(within(percurso).getByText(/TR aprovado → etapa 2/)).toBeInTheDocument();
+
+    const pecas = screen.getByRole("region", { name: "Peças exigidas" });
+    expect(within(pecas).getByText("Termo de Referência")).toBeInTheDocument();
+    expect(within(pecas).getByText(/assinatura conjunta \(multinível\)/)).toBeInTheDocument();
+    expect(within(pecas).getByText("Obrigatória")).toBeInTheDocument();
+
+    const temp = screen.getByRole("region", { name: "Temporalidade" });
+    expect(within(temp).getByRole("link", { name: /2\.0\.02\.00\.07/ })).toHaveAttribute(
+      "href",
+      "/atlas/ttdd/2.0.02.00.07",
+    );
+    expect(within(temp).getByText("1 ano")).toBeInTheDocument();
+    expect(within(temp).getByText("4 anos")).toBeInTheDocument();
+    expect(within(temp).getByText(/Transferir após aprovação do TCE-MT/)).toBeInTheDocument();
+    expect(
+      within(temp).getByText(/versão II — Diário Oficial nº 6\.017 de 25\/08\/2025/),
+    ).toBeInTheDocument();
+
+    fireEvent.change(within(temp).getByLabelText(/Data de encerramento/), {
+      target: { value: "2020-01-15" },
+    });
+    expect(within(temp).getByText("15/01/2021")).toBeInTheDocument();
+    expect(within(temp).getAllByText("15/01/2025")).toHaveLength(2);
+    expect(within(temp).getByText(/: guarda permanente/)).toBeInTheDocument();
+
+    // Sem atlas:read não há "Perguntar"; imprimir sempre.
+    expect(
+      screen.queryByRole("button", { name: "Perguntar sobre este procedimento" }),
+    ).not.toBeInTheDocument();
+    const print = vi.spyOn(window, "print").mockImplementation(() => {});
+    await userEvent.click(screen.getByRole("button", { name: "Imprimir" }));
+    expect(print).toHaveBeenCalled();
+  });
+
+  it("gestão: rota administrativa, desativação e reativação", async () => {
+    const backend = mockBackend({
+      ...base(["atlas:manage", "atlas:read"]),
+      "POST v1/atlas/admin/workflows/wf-1/desativar": { data: { ...DETALHE, ativo: false } },
+      "POST v1/atlas/admin/workflows/wf-1/ativar": { data: DETALHE },
+    });
+    renderAtlas(<ProcedimentoPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Desativar procedimento" }));
+    expect(backend.to("GET v1/atlas/admin/workflows/wf-1")).toHaveLength(1);
+    expect(backend.to("POST v1/atlas/admin/workflows/wf-1/desativar")).toHaveLength(1);
+    await userEvent.click(await screen.findByRole("button", { name: "Ativar procedimento" }));
+    expect(backend.to("POST v1/atlas/admin/workflows/wf-1/ativar")).toHaveLength(1);
+    expect(
+      await screen.findByRole("button", { name: "Desativar procedimento" }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Perguntar sobre este procedimento" }),
+    );
+    const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
+    expect(within(gaveta).getByLabelText("Sua pergunta")).toHaveValue(
+      'Como tramitar o procedimento "Pregão Eletrônico" (ADM.LIC.001)?',
+    );
+  });
+
+  it("série sem classificação, procedimento restrito e sem peças", async () => {
+    mockBackend({
+      ...base([]),
+      "GET v1/atlas/workflows/wf-1": {
+        data: {
+          ...DETALHE,
+          classificacao: undefined,
+          nivel_acesso: "RESTRITO",
+          hipotese_legal_restricao: "LAI, art. 31",
+          etapas: [
+            {
+              ...DETALHE.etapas[0],
+              manter_aberto_apos_remessa: false,
+              documentos: [
+                {
+                  ...DETALHE.etapas[0]!.documentos[0],
+                  obrigatorio: false,
+                  formato: "EXTERNO_DIGITALIZADO",
+                  exige_conferencia_copia: true,
+                  modelo_minuta_padrao_url: "https://exemplo.gov.br/modelo.docx",
+                },
+              ],
+              transicoes: [
+                {
+                  id: "tr-2",
+                  destino_ordem: 1,
+                  condicao_transicao: "Pendência",
+                  is_devolucao_diligencia: true,
+                  descricao_diligencia: "corrigir o TR",
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    renderAtlas(<ProcedimentoPage />);
+    expect(await screen.findByText("LAI, art. 31")).toBeInTheDocument();
+    expect(screen.getByText(/Série 2\.0\.02\.00\.07 não encontrada/)).toBeInTheDocument();
+    expect(screen.getByText("Opcional")).toBeInTheDocument();
+    expect(screen.getByText("Conferência da cópia")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Modelo/ })).toHaveAttribute(
+      "href",
+      "https://exemplo.gov.br/modelo.docx",
+    );
+    expect(screen.getByText(/diligência: corrigir o TR/)).toBeInTheDocument();
+  });
+
+  it("procedimento sem peças", async () => {
+    mockBackend({
+      ...base([]),
+      "GET v1/atlas/workflows/wf-1": {
+        data: { ...DETALHE, etapas: [{ ...DETALHE.etapas[0], documentos: [], transicoes: [] }] },
+      },
+    });
+    renderAtlas(<ProcedimentoPage />);
+    expect(await screen.findByText(/não lista peças obrigatórias/)).toBeInTheDocument();
+  });
+});
+
+describe("Atlas — TTDD", () => {
+  beforeEach(() => resetNavigation({}, "/atlas/ttdd"));
+
+  it("consulta: prazos por anos ou condição, recomendação uma vez por subfunção, exportar", async () => {
+    mockBackend(base([]));
+    renderAtlas(<TTDDPage />);
+
+    expect(await screen.findByText("Organogramas")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Organogramas/ })).toHaveAttribute(
+      "href",
+      "/atlas/ttdd/2.0.01.00.01",
+    );
+    expect(screen.getAllByText("Guarda permanente").length).toBeGreaterThan(0);
+    expect(screen.getByText("Eliminação")).toBeInTheDocument();
+    expect(screen.getByText(/Corrente: Enquanto estiver vigorando/)).toBeInTheDocument();
+    expect(screen.getByText("Não definida na TTDD")).toBeInTheDocument();
+    // Duas séries da mesma subfunção: a recomendação aparece uma só vez.
+    expect(screen.getAllByText(/Recomendação: Transferir/)).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 2, name: /Todas as séries/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Exportar CSV/ })).toHaveAttribute(
+      "href",
+      "/api/backend/v1/atlas/ttdd/exportar",
+    );
+
+    await fill(screen.getByLabelText("Código ou descritor"), "pregão");
+    await userEvent.click(screen.getByRole("button", { name: "Buscar" }));
+    expect(router.replace).toHaveBeenCalledWith("/atlas/ttdd?q=preg%C3%A3o");
+  });
+
+  it("filtro na URL: árvore aberta no ramo, selo da fonte, paginação e exportação filtrada", async () => {
+    resetNavigation({}, "/atlas/ttdd", "codigo=2.0.02.00&q=preg&page=2");
+    const backend = mockBackend({
+      ...base([]),
+      "GET v1/atlas/ttdd": {
+        data: [CLASSIFICACAO],
+        meta: { page: 2, page_size: 50, total_items: 51, total_pages: 2 },
+      },
+    });
+    renderAtlas(<TTDDPage />);
+
+    const arvore = await screen.findByRole("navigation", {
+      name: "Plano de classificação da TTDD",
+    });
+    expect(await within(arvore).findByRole("link", { name: /Processo de Compra/ })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(arvore).getByRole("link", { name: /Gestão de Compras/ })).toHaveAttribute(
+      "href",
+      "/atlas/ttdd?codigo=2.0.02",
+    );
+    expect(
+      screen.getByRole("heading", { level: 2, name: /Processo de Compra/ }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText("51 séries")).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/TTDD da Secretaria Municipal de Administração, versão II/).length,
+    ).toBeGreaterThan(0);
+    const req = backend.to("GET v1/atlas/ttdd").at(-1)!.query;
+    expect([req.get("codigo"), req.get("q"), req.get("page")]).toEqual(["2.0.02.00", "preg", "2"]);
+    expect(screen.getByRole("link", { name: /Exportar CSV/ })).toHaveAttribute(
+      "href",
+      "/api/backend/v1/atlas/ttdd/exportar?codigo=2.0.02.00&q=preg",
+    );
+
+    // Voltar à página 1 tira o parâmetro da URL.
+    await userEvent.click(screen.getByRole("button", { name: /anterior/i }));
+    expect(router.replace).toHaveBeenCalledWith("/atlas/ttdd?codigo=2.0.02.00&q=preg");
+  });
+
+  it("série: prazos, guarda total, procedimentos que a produzem e pergunta ao assistente", async () => {
+    resetNavigation({ codigo: "2.0.02.00.07" }, "/atlas/ttdd/2.0.02.00.07");
+    const backend = mockBackend({
+      ...base(["atlas:read"]),
+      "GET v1/atlas/ttdd/2.0.02.00.07": { data: CLASSIFICACAO },
+    });
+    renderAtlas(<SeriePage />);
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Pregão Presencial / Eletrônico" }),
+    ).toBeInTheDocument();
+    const trilha = screen.getByRole("navigation", { name: "Trilha de navegação" });
+    expect(within(trilha).getByRole("link", { name: "Processo de Compra" })).toHaveAttribute(
+      "href",
+      "/atlas/ttdd?codigo=2.0.02.00",
+    );
+    expect(screen.getByText("5 anos")).toBeInTheDocument();
+    expect(screen.getByText(/Observações:/)).toBeInTheDocument();
+    expect(screen.getByText(/Recomendação da subfunção:/)).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /ADM\.LIC\.001/ })).toBeInTheDocument();
+    expect(backend.to("GET v1/atlas/workflows").at(-1)!.query.get("codigo_ttdd")).toBe(
+      "2.0.02.00.07",
+    );
+    expect(
+      screen.getByRole("link", { name: /Ver as demais séries de Processo de Compra/ }),
+    ).toHaveAttribute("href", "/atlas/ttdd?codigo=2.0.02.00");
+
+    await userEvent.click(screen.getByRole("button", { name: "Perguntar sobre esta série" }));
+    const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
+    expect(within(gaveta).getByLabelText("Sua pergunta")).toHaveValue(
+      'Por quanto tempo guardar "Pregão Presencial / Eletrônico" (2.0.02.00.07) e qual a destinação?',
+    );
+    await userEvent.click(within(gaveta).getByRole("button", { name: "Fechar o assistente" }));
+    expect(screen.queryByRole("dialog", { name: "Assistente do Atlas" })).not.toBeInTheDocument();
+  });
+
+  it("série por condição: calculadora explica quando não há data", async () => {
+    resetNavigation({ codigo: "12.0.03.01.02" }, "/atlas/ttdd/12.0.03.01.02");
+    mockBackend({
+      ...base([]),
+      "GET v1/atlas/ttdd/12.0.03.01.02": {
+        data: {
+          ...CLASSIFICACAO,
+          codigo: "12.0.03.01.02",
+          fase_corrente_anos: null,
+          fase_corrente_condicao: "Enquanto estiver vigorando",
+          fase_interm_anos: null,
+          fase_interm_condicao: "Até a prescrição",
+          destinacao_final: null,
+          observacoes: "",
+          subfuncao: undefined,
+        },
+      },
+      "GET v1/atlas/workflows": page([]),
+    });
+    renderAtlas(<SeriePage />);
+
+    fireEvent.change(await screen.findByLabelText("Data em que deixou de vigorar"), {
+      target: { value: "2024-03-01" },
+    });
+    expect(screen.getByText(/depende de condição \("Até a prescrição"\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/Guarda total/)).not.toBeInTheDocument();
+    expect(
+      await screen.findByText("Nenhum procedimento cadastrado nesta série"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ver as demais séries da tabela/ })).toHaveAttribute(
+      "href",
+      "/atlas/ttdd",
+    );
+  });
+
+  it("série sem fase intermediária e sem prazo corrente informado", async () => {
+    resetNavigation({ codigo: "2.0.01.00.01" }, "/atlas/ttdd/2.0.01.00.01");
+    mockBackend({
+      ...base([]),
+      "GET v1/atlas/ttdd/2.0.01.00.01": {
+        data: { ...CLASSIFICACAO, fase_corrente_anos: 2, fase_interm_anos: null },
+      },
+    });
+    const { unmount } = renderAtlas(<SeriePage />);
+    fireEvent.change(await screen.findByLabelText(/Data de encerramento/), {
+      target: { value: "2020-02-29" },
+    });
+    expect(screen.getByText("Sem fase intermediária")).toBeInTheDocument();
+    expect(screen.getAllByText("28/02/2022")).toHaveLength(2);
+    unmount();
+
+    mockBackend({
+      ...base([]),
+      "GET v1/atlas/ttdd/2.0.01.00.01": {
+        data: { ...CLASSIFICACAO, fase_corrente_anos: null, fase_corrente_condicao: "" },
+      },
+    });
+    renderAtlas(<SeriePage />);
+    fireEvent.change(await screen.findByLabelText(/Data de encerramento/), {
+      target: { value: "2020-01-01" },
+    });
+    expect(screen.getByText(/não informa o prazo da fase corrente/)).toBeInTheDocument();
+  });
+});
+
+describe("Atlas — assistente em gaveta", () => {
+  beforeEach(() => resetNavigation({}, "/atlas"));
+
+  it("envia a pergunta e mostra modo e fontes com links para as páginas", async () => {
+    const backend = mockBackend({
+      ...base(["atlas:read"]),
+      "POST v1/atlas/chat": { data: CHAT_OK },
+    });
+    renderAtlas(<AtlasPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Perguntar ao assistente" }));
+    const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
+    await userEvent.type(within(gaveta).getByLabelText("Sua pergunta"), "Como tramitar o pregão?");
+    await userEvent.click(within(gaveta).getByRole("button", { name: "Enviar pergunta" }));
+
+    expect(await within(gaveta).findByText("Instrua com DFD, ETP e TR.")).toBeInTheDocument();
+    expect(
+      within(gaveta).getByText(/Síntese direta das fontes homologadas · relevância 90%/),
+    ).toBeInTheDocument();
+    expect(within(gaveta).getByRole("link", { name: "ADM.LIC.001" })).toHaveAttribute(
+      "href",
+      "/atlas/procedimentos/wf-1",
+    );
+    expect(within(gaveta).getByRole("link", { name: "2.0.02.00.07" })).toHaveAttribute(
+      "href",
+      "/atlas/ttdd/2.0.02.00.07",
+    );
+    expect(backend.to("POST v1/atlas/chat")[0]!.body).toEqual({ query: "Como tramitar o pregão?" });
+
+    // Seguir uma fonte fecha a gaveta.
+    await userEvent.click(within(gaveta).getByRole("link", { name: "ADM.LIC.001" }));
+    expect(screen.queryByRole("dialog", { name: "Assistente do Atlas" })).not.toBeInTheDocument();
+  });
+
+  it("mostra a mensagem do backend quando a consulta falha", async () => {
+    mockBackend({
+      ...base(["atlas:read"]),
+      "POST v1/atlas/chat": {
+        status: 429,
+        error: { code: "RATE_LIMITED", message: "Muitas consultas; aguarde um minuto." },
+      },
+    });
+    renderAtlas(<AtlasPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Perguntar ao assistente" }));
+    const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
+    await userEvent.type(within(gaveta).getByLabelText("Sua pergunta"), "pregão eletrônico");
+    await userEvent.click(within(gaveta).getByRole("button", { name: "Enviar pergunta" }));
+    expect(
+      await within(gaveta).findByText("Muitas consultas; aguarde um minuto."),
+    ).toBeInTheDocument();
   });
 });

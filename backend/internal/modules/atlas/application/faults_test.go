@@ -82,6 +82,9 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 				return err
 			}
 		},
+		"ExportarTTDD": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.ExportarTTDD(ctx, domain.FiltroTTDD{}); return err }
+		},
 		"EstruturaTTDD": func() func(*application.Service) error {
 			return func(s *application.Service) error { _, err := s.EstruturaTTDD(ctx); return err }
 		},
@@ -177,6 +180,7 @@ func TestHandlersReportServiceFailures(t *testing.T) {
 	for _, c := range []struct{ method, path, body string }{
 		{http.MethodGet, "/atlas/ttdd", ""},
 		{http.MethodGet, "/atlas/ttdd/estrutura", ""},
+		{http.MethodGet, "/atlas/ttdd/exportar", ""},
 		{http.MethodGet, "/atlas/ttdd/2.0.02.00.07", ""},
 		{http.MethodGet, "/atlas/workflows", ""},
 		{http.MethodGet, "/atlas/workflows/" + id, ""},
@@ -211,7 +215,7 @@ func TestModule(t *testing.T) {
 	w := (&env{t: t, pool: pool}).workflow(true)
 	prov := m.SearchProviders()[0]
 	res, err := prov.Search(ctx, auth.Identity{}, w.CodigoProcessual, 5)
-	if err != nil || len(res) == 0 || res[0].URL != "/atlas?procedimento="+w.ID.String() || prov.Module() != atlas.Key {
+	if err != nil || len(res) == 0 || res[0].URL != "/atlas/procedimentos/"+w.ID.String() || prov.Module() != atlas.Key {
 		t.Fatalf("busca global: %+v %v", res, err)
 	}
 	cctx, cancel := context.WithCancel(ctx)

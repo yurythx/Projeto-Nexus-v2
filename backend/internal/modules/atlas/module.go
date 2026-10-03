@@ -85,7 +85,7 @@ func (p provider) Search(ctx context.Context, _ auth.Identity, q string, limit i
 		updated := w.UpdatedAt
 		out = append(out, search.Result{
 			Module: Key, Type: "procedimento", ID: w.ID.String(), Title: w.CodigoProcessual + " — " + w.Titulo,
-			Snippet: modkit.Snippet(w.Objetivo, 180), URL: "/atlas?procedimento=" + w.ID.String(), Score: ranks[i], UpdatedAt: &updated,
+			Snippet: modkit.Snippet(w.Objetivo, 180), URL: "/atlas/procedimentos/" + w.ID.String(), Score: ranks[i], UpdatedAt: &updated,
 		})
 	}
 	return out, nil

@@ -73,6 +73,27 @@ func (s *Service) ListTTDD(ctx context.Context, f domain.FiltroTTDD, p paginatio
 	return items, total, MapError(err)
 }
 
+// maxExportacao limita a exportação (a TTDD inteira tem ~1.700 séries).
+const maxExportacao = 20000
+
+// ExportarTTDD devolve todas as séries que atendem ao filtro (para CSV),
+// percorrendo as páginas no teto da paginação.
+func (s *Service) ExportarTTDD(ctx context.Context, f domain.FiltroTTDD) ([]domain.ClassificacaoTTDD, error) {
+	var out []domain.ClassificacaoTTDD
+	for page := 1; len(out) < maxExportacao; page++ {
+		p := pagination.New(page, pagination.AbsoluteMaxPageSize, pagination.AbsoluteMaxPageSize)
+		items, total, err := s.repo.ListTTDD(ctx, s.pool, f, p)
+		if err != nil {
+			return nil, MapError(err)
+		}
+		out = append(out, items...)
+		if int64(len(out)) >= total || len(items) == 0 {
+			break
+		}
+	}
+	return out, nil
+}
+
 // EstruturaTTDD devolve a árvore órgão > função > subfunção da TTDD.
 func (s *Service) EstruturaTTDD(ctx context.Context) ([]domain.EstruturaTTDD, error) {
 	return s.repo.EstruturaTTDD(ctx, s.pool)

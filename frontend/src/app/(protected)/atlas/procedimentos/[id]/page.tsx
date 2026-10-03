@@ -1,0 +1,219 @@
+"use client";
+
+import { Clock, FileClock, Files, Workflow as WorkflowIcon } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+
+import { AcoesPagina } from "@/components/atlas/AcoesPagina";
+import { CalculadoraTemporalidade } from "@/components/atlas/CalculadoraTemporalidade";
+import { ChecklistDocumentos, LinhaDoTempo, prazoTotalDias } from "@/components/atlas/LinhaDoTempo";
+import { SeloVigencia } from "@/components/atlas/SeloVigencia";
+import { Trilha } from "@/components/atlas/Trilha";
+import { destinacao, fase, NIVEL_ACESSO } from "@/components/atlas/labels";
+import { DataState } from "@/components/nexus/DataState";
+import { useAction } from "@/components/nexus/useAction";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { apiClient } from "@/lib/api/client";
+import { useApiQuery } from "@/lib/api/swr";
+import { useNexus } from "@/lib/nexus/NexusProvider";
+import type { ClassificacaoTTDD, Workflow } from "@/lib/nexus/types";
+
+const cartao = "rounded-lg border border-surface-border bg-surface p-5";
+
+function Secao({
+  id,
+  titulo,
+  icone,
+  children,
+}: {
+  id: string;
+  titulo: string;
+  icone: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section aria-labelledby={id} className={cartao}>
+      <h2 id={id} className="mb-4 flex items-center gap-2 font-bold text-foreground">
+        <span className="text-primary">{icone}</span> {titulo}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+/** Resumo da temporalidade da série em que o procedimento se enquadra. */
+function Temporalidade({ codigo, c }: { codigo: string; c?: ClassificacaoTTDD }) {
+  if (!c) return <p className="text-sm text-muted">Série {codigo} não encontrada na TTDD.</p>;
+  const dest = destinacao(c.destinacao_final);
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      <Link
+        href={`/atlas/ttdd/${encodeURIComponent(c.codigo)}`}
+        className="font-medium text-primary hover:underline"
+      >
+        <span className="font-mono">{c.codigo}</span> — {c.descritor}
+      </Link>
+      <dl className="grid grid-cols-2 gap-2">
+        <div>
+          <dt className="text-xs text-muted">Fase corrente</dt>
+          <dd className="text-foreground">
+            {fase(c.fase_corrente_anos, c.fase_corrente_condicao, true)}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted">Fase intermediária</dt>
+          <dd className="text-foreground">
+            {fase(c.fase_interm_anos, c.fase_interm_condicao, false)}
+          </dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="text-xs text-muted">Destinação final</dt>
+          <dd>
+            <Badge tone={dest.tone}>{dest.label}</Badge>
+          </dd>
+        </div>
+      </dl>
+      {c.subfuncao?.recomendacao && (
+        <p className="rounded-md bg-warning/10 px-3 py-2 text-xs text-foreground">
+          <strong>Recomendação:</strong> {c.subfuncao.recomendacao}
+        </p>
+      )}
+      <SeloVigencia orgao={c.subfuncao?.funcao.orgao} />
+      <CalculadoraTemporalidade serie={c} />
+    </div>
+  );
+}
+
+/** Página do procedimento: percurso em linha do tempo, peças exigidas e
+ * temporalidade. A gestão (atlas:manage) usa a rota administrativa, que
+ * também mostra os desativados, e pode ativar/desativar. */
+export default function ProcedimentoPage() {
+  const { id } = useParams<{ id: string }>();
+  const { can } = useNexus();
+  const canManage = can("atlas:manage");
+  const path = `v1/atlas/${canManage ? "admin/" : ""}workflows/${encodeURIComponent(id)}`;
+  const detail = useApiQuery<Workflow>(path);
+  const { run, pending } = useAction();
+  const wf = detail.data;
+
+  async function alternar(ativo: boolean) {
+    const res = await run(
+      () =>
+        apiClient.post<Workflow>(
+          `v1/atlas/admin/workflows/${encodeURIComponent(id)}/${ativo ? "ativar" : "desativar"}`,
+        ),
+      ativo ? "Procedimento ativado" : "Procedimento desativado",
+    );
+    if (res) await detail.mutate(res.data, { revalidate: false });
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Trilha
+        itens={[
+          { label: "Atlas", href: "/atlas" },
+          { label: "Procedimentos", href: "/atlas" },
+          { label: wf?.codigo_processual ?? "Procedimento" },
+        ]}
+      />
+      <DataState
+        loading={detail.isLoading}
+        error={detail.error}
+        empty={!wf}
+        emptyTitle="Procedimento não encontrado"
+        onRetry={() => void detail.mutate()}
+      >
+        {wf && (
+          <>
+            <header className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-sm font-bold text-primary">
+                  {wf.codigo_processual} · versão {wf.versao}
+                </span>
+                <Badge tone={NIVEL_ACESSO[wf.nivel_acesso].tone}>
+                  {NIVEL_ACESSO[wf.nivel_acesso].label}
+                </Badge>
+                {!wf.ativo && <Badge tone="danger">Inativo</Badge>}
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">{wf.titulo}</h1>
+              <p className="max-w-3xl text-muted">{wf.objetivo}</p>
+              <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+                <div>
+                  <dt className="text-xs text-muted">Público-alvo</dt>
+                  <dd className="text-foreground">{wf.publico_alvo}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Etapas</dt>
+                  <dd className="text-foreground">{wf.etapas.length}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted">Prazo previsto</dt>
+                  <dd className="flex items-center gap-1 text-foreground">
+                    <Clock size={14} aria-hidden="true" /> {prazoTotalDias(wf.etapas)} dias
+                  </dd>
+                </div>
+                {wf.nivel_acesso !== "PUBLICO" && (
+                  <div>
+                    <dt className="text-xs text-muted">Hipótese legal da restrição</dt>
+                    <dd className="text-foreground">{wf.hipotese_legal_restricao}</dd>
+                  </div>
+                )}
+              </dl>
+              <AcoesPagina
+                rotulo="Perguntar sobre este procedimento"
+                pergunta={`Como tramitar o procedimento "${wf.titulo}" (${wf.codigo_processual})?`}
+              >
+                {canManage &&
+                  (wf.ativo ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={pending}
+                      onClick={() => void alternar(false)}
+                    >
+                      Desativar procedimento
+                    </Button>
+                  ) : (
+                    <Button size="sm" loading={pending} onClick={() => void alternar(true)}>
+                      Ativar procedimento
+                    </Button>
+                  ))}
+              </AcoesPagina>
+            </header>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <Secao
+                  id="atlas-percurso"
+                  titulo="Percurso"
+                  icone={<WorkflowIcon size={16} aria-hidden="true" />}
+                >
+                  <div className="pl-3">
+                    <LinhaDoTempo etapas={wf.etapas} />
+                  </div>
+                </Secao>
+              </div>
+              <div className="flex flex-col gap-6">
+                <Secao
+                  id="atlas-pecas"
+                  titulo="Peças exigidas"
+                  icone={<Files size={16} aria-hidden="true" />}
+                >
+                  <ChecklistDocumentos etapas={wf.etapas} />
+                </Secao>
+                <Secao
+                  id="atlas-temporalidade"
+                  titulo="Temporalidade"
+                  icone={<FileClock size={16} aria-hidden="true" />}
+                >
+                  <Temporalidade codigo={wf.codigo_ttdd} c={wf.classificacao} />
+                </Secao>
+              </div>
+            </div>
+          </>
+        )}
+      </DataState>
+    </div>
+  );
+}

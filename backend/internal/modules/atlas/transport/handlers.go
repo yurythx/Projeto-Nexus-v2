@@ -2,6 +2,7 @@
 package transport
 
 import (
+	"encoding/csv"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -33,6 +34,7 @@ func NewHandlers(svc *application.Service, logger *slog.Logger, maxPageSize int)
 func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	r.Get("/atlas/ttdd", h.ListTTDD)
 	r.Get("/atlas/ttdd/estrutura", h.EstruturaTTDD)
+	r.Get("/atlas/ttdd/exportar", h.ExportarTTDD)
 	r.Get("/atlas/ttdd/{codigo}", h.GetTTDD)
 	r.Get("/atlas/workflows", h.ListPublic)
 	r.Get("/atlas/workflows/{id}", h.GetPublic)
@@ -69,17 +71,59 @@ func (h *Handlers) ListTTDD(w http.ResponseWriter, r *http.Request) {
 	p := httputil.Page(r, h.maxPageSize)
 	// ?codigo= é um prefixo hierárquico: órgão (2.0), função (2.0.01),
 	// subfunção (2.0.01.00) ou a própria série.
-	codigo := httputil.Query(r, "codigo", 32)
-	if codigo != "" && !domain.CodigoTTDDValido(codigo) {
-		h.fail(w, r, apperrors.BadRequest("código TTDD inválido (ex.: 2.0, 2.0.01, 2.0.01.00 ou 2.0.01.00.00)"))
+	f, err := h.filtroTTDD(r)
+	if err != nil {
+		h.fail(w, r, err)
 		return
 	}
-	items, total, err := h.svc.ListTTDD(r.Context(), domain.FiltroTTDD{Query: httputil.Query(r, "q", 200), Codigo: codigo}, p)
+	items, total, err := h.svc.ListTTDD(r.Context(), f, p)
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
 	httputil.WritePage(w, items, p, total)
+}
+
+// filtroTTDD lê ?q= e ?codigo= (prefixo hierárquico validado).
+func (h *Handlers) filtroTTDD(r *http.Request) (domain.FiltroTTDD, error) {
+	codigo := httputil.Query(r, "codigo", 32)
+	if codigo != "" && !domain.CodigoTTDDValido(codigo) {
+		return domain.FiltroTTDD{}, apperrors.BadRequest("código TTDD inválido (ex.: 2.0, 2.0.01, 2.0.01.00 ou 2.0.01.00.00)")
+	}
+	return domain.FiltroTTDD{Query: httputil.Query(r, "q", 200), Codigo: codigo}, nil
+}
+
+// ExportarTTDD entrega as séries filtradas em CSV (transparência ativa, LAI
+// art. 8º §3º II): separador ";" e BOM UTF-8, como o Excel em português espera.
+func (h *Handlers) ExportarTTDD(w http.ResponseWriter, r *http.Request) {
+	f, err := h.filtroTTDD(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	series, err := h.svc.ExportarTTDD(r.Context(), f)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="ttdd.csv"`)
+	_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) // BOM UTF-8
+	cw := csv.NewWriter(w)
+	cw.Comma = ';'
+	_ = cw.Write([]string{"Código", "Série documental", "Órgão", "Função", "Subfunção", "Fase corrente", "Fase intermediária",
+		"Destinação final", "Observações", "Recomendação da subfunção", "Fonte"})
+	for _, c := range series {
+		var orgao, funcao, sub, rec, fonte string
+		if s := c.Subfuncao; s != nil {
+			orgao, funcao, sub, rec = s.Funcao.Orgao.Nome, s.Funcao.Codigo+" "+s.Funcao.Nome, s.Codigo+" "+s.Nome, s.Recomendacao
+			fonte = domain.Fonte(s.Funcao.Orgao)
+		}
+		_ = cw.Write([]string{c.Codigo, c.Descritor, orgao, funcao, sub,
+			domain.Fase(c.FaseCorrenteAnos, c.FaseCorrenteCondicao, true), domain.Fase(c.FaseIntermAnos, c.FaseIntermCondicao, false),
+			c.Destinacao(), c.Observacoes, rec, fonte})
+	}
+	cw.Flush()
 }
 
 // EstruturaTTDD devolve órgão > função > subfunção com a contagem de séries.

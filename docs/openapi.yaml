@@ -4725,6 +4725,37 @@ paths:
             summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd/estrutura
             tags:
                 - atlas
+    /api/v1/atlas/ttdd/exportar:
+        get:
+            operationId: getAtlasTtddExportar
+            parameters:
+                - in: query
+                  name: codigo
+                  required: false
+                  schema:
+                    maxLength: 32
+                    type: string
+                  x-nexus-generated: true
+                - in: query
+                  name: q
+                  required: false
+                  schema:
+                    maxLength: 200
+                    type: string
+                  x-nexus-generated: true
+            responses:
+                "200":
+                    $ref: '#/components/responses/Success'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd/exportar
+            tags:
+                - atlas
     /api/v1/atlas/workflows:
         get:
             operationId: getAtlasWorkflows
@@ -5493,6 +5524,18 @@ paths:
             operationId: getCalendarEvents
             parameters:
                 - in: query
+                  name: from
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
+                - in: query
+                  name: to
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
+                - in: query
                   name: room_id
                   required: false
                   schema:
@@ -5705,6 +5748,19 @@ paths:
     /api/v1/calendar/public/events:
         get:
             operationId: getCalendarPublicEvents
+            parameters:
+                - in: query
+                  name: from
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
+                - in: query
+                  name: to
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
             responses:
                 "200":
                     content:
@@ -5908,6 +5964,18 @@ paths:
                   required: true
                   schema:
                     type: string
+                - in: query
+                  name: from
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
+                - in: query
+                  name: to
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
             responses:
                 "200":
                     content:
@@ -10146,6 +10214,12 @@ paths:
                     maximum: 365
                     minimum: 1
                     type: integer
+                - in: query
+                  name: format
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
             responses:
                 "200":
                     content:
@@ -10167,6 +10241,13 @@ paths:
             description: |
                 Rota pública, rate-limited por IP. Lista os datasets disponíveis e seus campos. Todos os datasets aceitam `?format=json|csv|xml` (ou o header `Accept`).
             operationId: transparencyCatalog
+            parameters:
+                - in: query
+                  name: format
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
             responses:
                 "200":
                     content:
@@ -10186,6 +10267,13 @@ paths:
     /api/v1/transparencia/modulos:
         get:
             operationId: getTransparenciaModulos
+            parameters:
+                - in: query
+                  name: format
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
             responses:
                 "200":
                     $ref: '#/components/responses/Success'
@@ -10200,6 +10288,13 @@ paths:
     /api/v1/transparencia/plataforma:
         get:
             operationId: transparencyPlatform
+            parameters:
+                - in: query
+                  name: format
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
             responses:
                 "200":
                     content:

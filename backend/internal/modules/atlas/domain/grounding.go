@@ -179,18 +179,7 @@ func Temporalidade(c ClassificacaoTTDD) string {
 		if s.Recomendacao != "" {
 			fmt.Fprintf(&b, "Recomendação da subfunção: %s\n", s.Recomendacao)
 		}
-		o := s.Funcao.Orgao
-		fonte := fmt.Sprintf("TTDD da %s", o.Nome)
-		if o.Versao != "" {
-			fonte += ", versão " + o.Versao
-		}
-		if o.EdicaoDiario != "" {
-			fonte += ", Diário Oficial nº " + o.EdicaoDiario
-			if o.DataPublicacao != nil {
-				fonte += " de " + o.DataPublicacao.Format("02/01/2006")
-			}
-		}
-		fmt.Fprintf(&b, "Fonte: %s.\n", fonte)
+		fmt.Fprintf(&b, "Fonte: %s.\n", Fonte(s.Funcao.Orgao))
 	}
 	return b.String()
 }
@@ -236,4 +225,20 @@ func RelevanciaTTDD(c ClassificacaoTTDD, pergunta string) float64 {
 		return 0
 	}
 	return min(1, float64(matched)/float64(len(termos))+bonus)
+}
+
+// Fonte descreve a publicação da TTDD do órgão ("TTDD da Secretaria X,
+// versão II, Diário Oficial nº 6.275 de 11/09/2026").
+func Fonte(o OrgaoTTDD) string {
+	fonte := "TTDD da " + o.Nome
+	if o.Versao != "" {
+		fonte += ", versão " + o.Versao
+	}
+	if o.EdicaoDiario != "" {
+		fonte += ", Diário Oficial nº " + o.EdicaoDiario
+		if o.DataPublicacao != nil {
+			fonte += " de " + o.DataPublicacao.Format("02/01/2006")
+		}
+	}
+	return fonte
 }

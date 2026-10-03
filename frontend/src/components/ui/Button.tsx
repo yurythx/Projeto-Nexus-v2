@@ -20,6 +20,13 @@ const sizeClasses: Record<Size, string> = {
   md: "text-sm px-4 py-2 rounded-lg",
 };
 
+/** Mesmas classes do botão, para links com aparência de botão (<Link>). */
+export function buttonClass(variant: Variant = "primary", size: Size = "md", className = "") {
+  return `inline-flex items-center justify-center gap-2 font-medium transition-colors
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary
+        disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
@@ -41,9 +48,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <button
       ref={ref}
-      className={`inline-flex items-center justify-center gap-2 font-medium transition-colors
-        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary
-        disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={buttonClass(variant, size, className)}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...rest}

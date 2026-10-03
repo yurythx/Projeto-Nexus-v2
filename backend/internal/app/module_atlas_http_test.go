@@ -94,6 +94,15 @@ func TestAtlasCatalogoHTTP(t *testing.T) {
 		!strings.Contains(body, "2.0.02.01.02") || strings.Contains(body, "2.0.01.") {
 		t.Fatalf("filtro por função (prefixo hierárquico): %s", body)
 	}
+	// Exportação CSV (LAI): BOM + ";" para o Excel em português, filtro hierárquico.
+	csvRec := h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd/exportar?codigo=2.0.02", "", "")
+	csvBody := csvRec.Body.String()
+	if !strings.HasPrefix(csvBody, "\ufeffCódigo;Série documental;Órgão") || !strings.Contains(csvBody, "2.0.02.01.02;Processos de Dispensa de licitação;") ||
+		strings.Contains(csvBody, "2.0.01.") || !strings.HasPrefix(csvRec.Header().Get("Content-Type"), "text/csv") ||
+		!strings.Contains(csvRec.Header().Get("Content-Disposition"), "ttdd.csv") {
+		t.Fatalf("exportação CSV: %q %v", csvBody[:min(300, len(csvBody))], csvRec.Header())
+	}
+	h.expect(http.StatusBadRequest, http.MethodGet, "/api/v1/atlas/ttdd/exportar?codigo=x", "", "")
 	if body := h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd/estrutura", "", "").Body.String(); !strings.Contains(body, `"prefixo":"2.0"`) ||
 		!strings.Contains(body, `"codigo":"2.0.02.01"`) || !strings.Contains(body, `"total"`) {
 		t.Fatalf("estrutura da TTDD: %s", body)
