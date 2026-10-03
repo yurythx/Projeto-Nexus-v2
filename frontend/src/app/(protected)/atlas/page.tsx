@@ -100,9 +100,11 @@ function Procedimentos({ canManage }: { canManage: boolean }) {
 function Atlas() {
   const { can } = useNexus();
   const router = useRouter();
+  // ?ttdd=<código>: link de uma fonte do assistente — abre a TTDD filtrada.
+  const buscaTTDD = useSearchParams().get("ttdd") ?? "";
   const canManage = can("atlas:manage");
   const canAsk = can("atlas:read");
-  const [aba, setAba] = useState<Aba>("procedimentos");
+  const [aba, setAba] = useState<Aba>(buscaTTDD ? "ttdd" : "procedimentos");
   const [creating, setCreating] = useState(false);
   // Remonta a lista após um cadastro (busca de novo).
   const [versao, setVersao] = useState(0);
@@ -132,7 +134,7 @@ function Atlas() {
 
       <div role="tabpanel" aria-label={tabs.find((t) => t.value === aba)?.label}>
         {aba === "procedimentos" && <Procedimentos key={versao} canManage={canManage} />}
-        {aba === "ttdd" && <TTDDTable />}
+        {aba === "ttdd" && <TTDDTable key={buscaTTDD} busca={buscaTTDD} />}
         {aba === "assistente" && canAsk && <AssistentePanel />}
       </div>
 

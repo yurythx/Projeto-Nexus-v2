@@ -22,6 +22,7 @@ const SUGESTOES = [
   "Quais peças são obrigatórias no pregão eletrônico?",
   "Quais os prazos da TTDD para dispensa de licitação?",
   "Como transferir material permanente entre unidades?",
+  "Qual o prazo de guarda da pasta funcional do servidor?",
 ];
 
 function Fontes({ fontes }: { fontes: AtlasFonte[] }) {
@@ -30,14 +31,20 @@ function Fontes({ fontes }: { fontes: AtlasFonte[] }) {
     <p className="mt-1">
       Fontes:{" "}
       {fontes.map((f, i) => (
-        <span key={f.id}>
+        <span key={`${f.tipo}:${f.codigo}`}>
           {i > 0 && ", "}
           <a
-            href={`/atlas?procedimento=${f.id}`}
+            href={
+              f.tipo === "procedimento"
+                ? `/atlas?procedimento=${f.id}`
+                : `/atlas?ttdd=${encodeURIComponent(f.codigo)}`
+            }
+            title={f.titulo}
             className="font-mono text-primary hover:underline"
           >
-            {f.codigo_processual}
+            {f.codigo}
           </a>
+          {f.tipo === "ttdd" && <span className="sr-only"> (série da TTDD)</span>}
         </span>
       ))}
     </p>

@@ -644,14 +644,46 @@ export type NivelAcesso = "PUBLICO" | "RESTRITO" | "SIGILOSO";
 export type FormatoDocumento = "NATO_DIGITAL" | "EXTERNO_DIGITALIZADO";
 export type TipoAssinatura = "INDIVIDUAL" | "CONJUNTA_MULTINIVEL" | "EM_BLOCO";
 
+/** Órgão dono de uma TTDD, com a publicação oficial (Diário Oficial). */
+export interface OrgaoTTDD {
+  prefixo: string;
+  nome: string;
+  edicao_diario: string;
+  data_publicacao: string | null;
+  versao: string;
+}
+
+export interface SubfuncaoTTDD {
+  codigo: string;
+  nome: string;
+  recomendacao: string;
+  funcao: { codigo: string; nome: string; orgao: OrgaoTTDD };
+}
+
+/** Série documental da TTDD. Cada fase tem prazo em anos OU condição; sem
+ * os dois, a fase intermediária não existe (a corrente: não informado).
+ * destinacao_final null = a TTDD não define. */
 export interface ClassificacaoTTDD {
   codigo: string;
   descritor: string;
-  fase_corrente_anos: number;
-  fase_interm_anos: number;
-  destinacao_final: DestinacaoFinal;
+  fase_corrente_anos: number | null;
+  fase_corrente_condicao: string;
+  fase_interm_anos: number | null;
+  fase_interm_condicao: string;
+  destinacao_final: DestinacaoFinal | null;
   observacoes: string;
+  subfuncao?: SubfuncaoTTDD;
   created_at: string;
+}
+
+export interface EstruturaTTDD extends OrgaoTTDD {
+  total: number;
+  funcoes: {
+    codigo: string;
+    nome: string;
+    total: number;
+    subfuncoes: { codigo: string; nome: string; total: number }[];
+  }[];
 }
 
 export interface EtapaDocumento {
@@ -705,9 +737,11 @@ export interface Workflow {
   updated_at: string;
 }
 
+/** Fonte que sustentou a resposta: procedimento (com id) ou série da TTDD. */
 export interface AtlasFonte {
-  id: UUID;
-  codigo_processual: string;
+  tipo: "procedimento" | "ttdd";
+  id?: UUID;
+  codigo: string;
   titulo: string;
   relevancia: number;
 }

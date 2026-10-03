@@ -19,7 +19,7 @@ import { apiClient } from "@/lib/api/client";
 import { useApiQuery } from "@/lib/api/swr";
 import type { Etapa, Workflow } from "@/lib/nexus/types";
 
-import { ASSINATURA, DESTINACAO, FORMATO, NIVEL_ACESSO } from "./labels";
+import { ASSINATURA, destinacao, fase, fonteTTDD, FORMATO, NIVEL_ACESSO } from "./labels";
 
 function EtapaCard({ etapa }: { etapa: Etapa }) {
   return (
@@ -200,9 +200,30 @@ export function WorkflowDetail({
                 <div className="sm:col-span-2">
                   <dt className="font-semibold text-muted">Temporalidade</dt>
                   <dd className="text-foreground">
-                    {wf.classificacao.fase_corrente_anos} ano(s) na fase corrente,{" "}
-                    {wf.classificacao.fase_interm_anos} ano(s) na intermediária —{" "}
-                    {DESTINACAO[wf.classificacao.destinacao_final].label.toLowerCase()}
+                    Fase corrente:{" "}
+                    {fase(
+                      wf.classificacao.fase_corrente_anos,
+                      wf.classificacao.fase_corrente_condicao,
+                      true,
+                    )}{" "}
+                    · fase intermediária:{" "}
+                    {fase(
+                      wf.classificacao.fase_interm_anos,
+                      wf.classificacao.fase_interm_condicao,
+                      false,
+                    )}{" "}
+                    · destinação:{" "}
+                    {destinacao(wf.classificacao.destinacao_final).label.toLowerCase()}
+                    {wf.classificacao.subfuncao?.recomendacao && (
+                      <span className="mt-1 block text-warning">
+                        Recomendação: {wf.classificacao.subfuncao.recomendacao}
+                      </span>
+                    )}
+                    {wf.classificacao.subfuncao && (
+                      <span className="mt-1 block text-xs text-muted">
+                        Fonte: {fonteTTDD(wf.classificacao.subfuncao.funcao.orgao)}
+                      </span>
+                    )}
                   </dd>
                 </div>
               )}
