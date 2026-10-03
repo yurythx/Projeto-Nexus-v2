@@ -25,9 +25,14 @@ func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {
 	wf := domain.Workflow{ID: id, Etapas: []domain.Etapa{{ID: uuid.New(), Ordem: 1,
 		Documentos: []domain.EtapaDocumento{{ID: uuid.New()}}, Transicoes: []domain.EtapaTransicao{{ID: uuid.New(), DestinoOrdem: 1}}}}}
 	calls := map[string]func(db database.DBTX) error{
-		"ListTTDD": func(db database.DBTX) error { _, _, err := r.ListTTDD(ctx, db, "x", p); return err },
-		"GetTTDD":  func(db database.DBTX) error { _, err := r.GetTTDD(ctx, db, "x"); return err },
-		"LockTTDD": func(db database.DBTX) error { _, err := r.LockTTDD(ctx, db, "x"); return err },
+		"ListTTDD": func(db database.DBTX) error {
+			_, _, err := r.ListTTDD(ctx, db, domain.FiltroTTDD{Query: "x", Codigo: "2.0"}, p)
+			return err
+		},
+		"EstruturaTTDD":  func(db database.DBTX) error { _, err := r.EstruturaTTDD(ctx, db); return err },
+		"CandidatosTTDD": func(db database.DBTX) error { _, err := r.CandidatosTTDD(ctx, db, "x", 5); return err },
+		"GetTTDD":        func(db database.DBTX) error { _, err := r.GetTTDD(ctx, db, "x"); return err },
+		"LockTTDD":       func(db database.DBTX) error { _, err := r.LockTTDD(ctx, db, "x"); return err },
 		"List": func(db database.DBTX) error {
 			_, _, err := r.List(ctx, db, domain.Filter{Query: "x", CodigoTTDD: "y"}, p)
 			return err
@@ -43,7 +48,7 @@ func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {
 			t.Errorf("%s com o banco fora: %v", name, err)
 		}
 	}
-	for _, name := range []string{"Search", "Candidatos"} {
+	for _, name := range []string{"Search", "Candidatos", "EstruturaTTDD", "CandidatosTTDD"} {
 		if err := calls[name](dbtest.ScanFail{}); err == nil {
 			t.Errorf("%s com linha ilegível deveria falhar", name)
 		}
@@ -120,8 +125,9 @@ func etapaRows(wfID uuid.UUID) pgx.Rows {
 
 func workflowRow(id uuid.UUID) valRow {
 	now := time.Now()
-	return valRow{id, "ADM.X.1", "Título", "Objetivo", "Público", 1, true, "PUBLICO", "", "1.0", nil, now, now,
-		"Descritor", 1, 1, "ELIMINACAO", "", now, int64(1)}
+	// Procedimento (13 colunas) + nº de etapas + série da TTDD (9) e hierarquia (10, nulas).
+	return valRow{id, "ADM.X.1", "Título", "Objetivo", "Público", 1, true, "PUBLICO", "", "1.0", nil, now, now, int64(1),
+		"1.0", "Descritor", nil, "", nil, "", nil, "", now, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 }
 
 func TestRepositoryFailuresAfterSuccessfulReads(t *testing.T) {
@@ -178,7 +184,7 @@ func TestRepositoryFailuresAfterSuccessfulReads(t *testing.T) {
 		if _, _, err := r.List(ctx, &dbtest.Seq{Row: count, Queries: []dbtest.QueryResult{pages()[i]}}, domain.Filter{IncluirInativos: true}, p); err == nil {
 			t.Error("lista: página com falha")
 		}
-		if _, _, err := r.ListTTDD(ctx, &dbtest.Seq{Row: count, Queries: []dbtest.QueryResult{pages()[i]}}, "", p); err == nil {
+		if _, _, err := r.ListTTDD(ctx, &dbtest.Seq{Row: count, Queries: []dbtest.QueryResult{pages()[i]}}, domain.FiltroTTDD{}, p); err == nil {
 			t.Error("TTDD: página com falha")
 		}
 	}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -36,27 +37,69 @@ func wrap(err error) error {
 
 // ---------------------------------------------------------------- TTDD
 
-const ttddCols = `codigo, descritor, fase_corrente_anos, fase_interm_anos, destinacao_final, COALESCE(observacoes, ''), created_at`
+// ttddCols/ttddJoins: a série e a hierarquia oficial (LEFT JOIN — séries
+// antigas podem não ter subfunção). Alias "c" para a classificação.
+const ttddCols = `c.codigo, c.descritor, c.fase_corrente_anos, c.fase_corrente_condicao, c.fase_interm_anos, c.fase_interm_condicao,
+	c.destinacao_final, c.observacoes, c.created_at,
+	s.codigo, s.nome, s.recomendacao, f.codigo, f.nome, o.prefixo, o.nome, o.edicao_diario, o.data_publicacao, o.versao`
 
-func scanTTDD(row pgx.Row) (domain.ClassificacaoTTDD, error) {
-	var c domain.ClassificacaoTTDD
-	err := row.Scan(&c.Codigo, &c.Descritor, &c.FaseCorrenteAnos, &c.FaseIntermAnos, &c.DestinacaoFinal, &c.Observacoes, &c.CreatedAt)
-	return c, err
+const ttddJoins = ` LEFT JOIN atlas_ttdd_subfuncoes s ON s.codigo = c.subfuncao_codigo
+	LEFT JOIN atlas_ttdd_funcoes f ON f.codigo = s.funcao_codigo
+	LEFT JOIN atlas_ttdd_orgaos o ON o.prefixo = f.orgao_prefixo`
+
+// ttddDest devolve os destinos de Scan das colunas de ttddCols e a função
+// que monta a hierarquia depois do Scan.
+func ttddDest(c *domain.ClassificacaoTTDD) ([]any, func()) {
+	var sCod, sNome, sRec, fCod, fNome, oPref, oNome, oEd, oVer *string
+	var oData *time.Time
+	dest := []any{&c.Codigo, &c.Descritor, &c.FaseCorrenteAnos, &c.FaseCorrenteCondicao, &c.FaseIntermAnos, &c.FaseIntermCondicao,
+		&c.DestinacaoFinal, &c.Observacoes, &c.CreatedAt, &sCod, &sNome, &sRec, &fCod, &fNome, &oPref, &oNome, &oEd, &oData, &oVer}
+	return dest, func() {
+		if sCod == nil {
+			return
+		}
+		c.Subfuncao = &domain.SubfuncaoTTDD{Codigo: *sCod, Nome: *sNome, Recomendacao: *sRec,
+			Funcao: domain.FuncaoTTDD{Codigo: *fCod, Nome: *fNome,
+				Orgao: domain.OrgaoTTDD{Prefixo: *oPref, Nome: *oNome, EdicaoDiario: *oEd, DataPublicacao: oData, Versao: *oVer}}}
+	}
 }
 
-func (r *Repository) ListTTDD(ctx context.Context, db database.DBTX, query string, p pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
-	where, args := "", []any{}
-	if query != "" {
-		args = append(args, "%"+query+"%")
-		where = ` WHERE nexus_unaccent(codigo || ' ' || descritor) ILIKE nexus_unaccent($1)`
+func scanTTDD(row pgx.Row, extra ...any) (domain.ClassificacaoTTDD, error) {
+	var c domain.ClassificacaoTTDD
+	dest, montar := ttddDest(&c)
+	if err := row.Scan(append(dest, extra...)...); err != nil {
+		return c, err
+	}
+	montar()
+	return c, nil
+}
+
+// ordemTTDD ordena pelo código numericamente (2.0.01.00.10 depois de .09;
+// 10.0 depois de 9.0); o sufixo "-2" (código repetido no documento) por último.
+const ordemTTDD = `string_to_array(split_part(c.codigo, '-', 1), '.')::int[], c.codigo`
+
+func (r *Repository) ListTTDD(ctx context.Context, db database.DBTX, f domain.FiltroTTDD, p pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
+	conds, args := []string{}, []any{}
+	if f.Codigo != "" {
+		// Prefixo hierárquico: "2.0" pega o órgão, "2.0.01" a função...
+		args = append(args, f.Codigo)
+		conds = append(conds, fmt.Sprintf("(c.codigo = $%d OR c.codigo LIKE $%d || '.%%')", len(args), len(args)))
+	}
+	if f.Query != "" {
+		args = append(args, f.Query)
+		conds = append(conds, fmt.Sprintf("(c.search @@ nexus_search_tsquery('portuguese', $%d) OR c.codigo LIKE $%d || '%%')", len(args), len(args)))
+	}
+	where := ""
+	if len(conds) > 0 {
+		where = " WHERE " + strings.Join(conds, " AND ")
 	}
 	var total int64
-	if err := db.QueryRow(ctx, `SELECT COUNT(*) FROM atlas_classificacao_ttdd`+where, args...).Scan(&total); err != nil {
+	if err := db.QueryRow(ctx, `SELECT COUNT(*) FROM atlas_classificacao_ttdd c`+where, args...).Scan(&total); err != nil {
 		return nil, 0, wrap(err)
 	}
 	args = append(args, p.Limit(), p.Offset())
-	rows, err := db.Query(ctx, fmt.Sprintf(`SELECT %s FROM atlas_classificacao_ttdd%s ORDER BY codigo LIMIT $%d OFFSET $%d`,
-		ttddCols, where, len(args)-1, len(args)), args...)
+	rows, err := db.Query(ctx, fmt.Sprintf(`SELECT %s FROM atlas_classificacao_ttdd c%s%s ORDER BY %s LIMIT $%d OFFSET $%d`,
+		ttddCols, ttddJoins, where, ordemTTDD, len(args)-1, len(args)), args...)
 	if err != nil {
 		return nil, 0, wrap(err)
 	}
@@ -73,11 +116,68 @@ func (r *Repository) ListTTDD(ctx context.Context, db database.DBTX, query strin
 }
 
 func (r *Repository) GetTTDD(ctx context.Context, db database.DBTX, codigo string) (domain.ClassificacaoTTDD, error) {
-	c, err := scanTTDD(db.QueryRow(ctx, `SELECT `+ttddCols+` FROM atlas_classificacao_ttdd WHERE codigo = $1`, codigo))
+	c, err := scanTTDD(db.QueryRow(ctx, `SELECT `+ttddCols+` FROM atlas_classificacao_ttdd c`+ttddJoins+` WHERE c.codigo = $1`, codigo))
 	if database.IsNoRows(err) {
 		return c, domain.ErrTTDDNotFound
 	}
 	return c, wrap(err)
+}
+
+// EstruturaTTDD monta órgão > função > subfunção com a contagem de séries.
+func (r *Repository) EstruturaTTDD(ctx context.Context, db database.DBTX) ([]domain.EstruturaTTDD, error) {
+	rows, err := db.Query(ctx, `SELECT o.prefixo, o.nome, o.edicao_diario, o.data_publicacao, o.versao, f.codigo, f.nome, s.codigo, s.nome,
+			(SELECT COUNT(*) FROM atlas_classificacao_ttdd c WHERE c.subfuncao_codigo = s.codigo)
+		FROM atlas_ttdd_orgaos o JOIN atlas_ttdd_funcoes f ON f.orgao_prefixo = o.prefixo JOIN atlas_ttdd_subfuncoes s ON s.funcao_codigo = f.codigo
+		ORDER BY string_to_array(s.codigo, '.')::int[]`)
+	if err != nil {
+		return nil, wrap(err)
+	}
+	defer rows.Close()
+	out := []domain.EstruturaTTDD{}
+	for rows.Next() {
+		var o domain.OrgaoTTDD
+		var fCod, fNome string
+		var sub domain.EstruturaSubfuncaoTTDD
+		if err := rows.Scan(&o.Prefixo, &o.Nome, &o.EdicaoDiario, &o.DataPublicacao, &o.Versao, &fCod, &fNome, &sub.Codigo, &sub.Nome, &sub.Total); err != nil {
+			return nil, wrap(err)
+		}
+		if len(out) == 0 || out[len(out)-1].Prefixo != o.Prefixo {
+			out = append(out, domain.EstruturaTTDD{OrgaoTTDD: o, Funcoes: []domain.EstruturaFuncaoTTDD{}})
+		}
+		org := &out[len(out)-1]
+		if len(org.Funcoes) == 0 || org.Funcoes[len(org.Funcoes)-1].Codigo != fCod {
+			org.Funcoes = append(org.Funcoes, domain.EstruturaFuncaoTTDD{Codigo: fCod, Nome: fNome, Subfuncoes: []domain.EstruturaSubfuncaoTTDD{}})
+		}
+		fn := &org.Funcoes[len(org.Funcoes)-1]
+		fn.Subfuncoes = append(fn.Subfuncoes, sub)
+		fn.Total += sub.Total
+		org.Total += sub.Total
+	}
+	return out, wrap(rows.Err())
+}
+
+// CandidatosTTDD: basta um termo da pergunta casar (OR); a relevância real é
+// medida no domínio (domain.RelevanciaTTDD).
+func (r *Repository) CandidatosTTDD(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]domain.ClassificacaoTTDD, error) {
+	rows, err := db.Query(ctx, `WITH q AS (
+			SELECT NULLIF(replace(plainto_tsquery('portuguese', nexus_unaccent($1))::text, ' & ', ' | '), '')::tsquery AS q
+		)
+		SELECT `+ttddCols+`, ts_rank(c.search, q.q) AS rank FROM q, atlas_classificacao_ttdd c`+ttddJoins+`
+		WHERE c.search @@ q.q ORDER BY rank DESC, c.codigo LIMIT $2`, pergunta, limit)
+	if err != nil {
+		return nil, wrap(err)
+	}
+	defer rows.Close()
+	var out []domain.ClassificacaoTTDD
+	for rows.Next() {
+		var rank float32
+		c, err := scanTTDD(rows, &rank)
+		if err != nil {
+			return nil, wrap(err)
+		}
+		out = append(out, c)
+	}
+	return out, wrap(rows.Err())
 }
 
 func (r *Repository) LockTTDD(ctx context.Context, db database.DBTX, codigo string) (bool, error) {
@@ -90,21 +190,20 @@ func (r *Repository) LockTTDD(ctx context.Context, db database.DBTX, codigo stri
 
 const wfCols = `w.id, w.codigo_processual, w.titulo, w.objetivo, w.publico_alvo, w.versao, w.ativo, w.nivel_acesso,
 	COALESCE(w.hipotese_legal_restricao, ''), w.codigo_ttdd, w.created_by, w.created_at, w.updated_at,
-	c.descritor, c.fase_corrente_anos, c.fase_interm_anos, c.destinacao_final, COALESCE(c.observacoes, ''), c.created_at,
-	(SELECT COUNT(*) FROM atlas_etapas e WHERE e.workflow_id = w.id)`
+	(SELECT COUNT(*) FROM atlas_etapas e WHERE e.workflow_id = w.id), ` + ttddCols
 
-const wfFrom = ` FROM atlas_workflows w JOIN atlas_classificacao_ttdd c ON c.codigo = w.codigo_ttdd`
+const wfFrom = ` FROM atlas_workflows w JOIN atlas_classificacao_ttdd c ON c.codigo = w.codigo_ttdd` + ttddJoins
 
 func scanWorkflow(row pgx.Row, extra ...any) (domain.Workflow, error) {
 	var w domain.Workflow
 	c := &domain.ClassificacaoTTDD{}
-	dest := []any{&w.ID, &w.CodigoProcessual, &w.Titulo, &w.Objetivo, &w.PublicoAlvo, &w.Versao, &w.Ativo, &w.NivelAcesso,
-		&w.HipoteseLegal, &w.CodigoTTDD, &w.CreatedBy, &w.CreatedAt, &w.UpdatedAt,
-		&c.Descritor, &c.FaseCorrenteAnos, &c.FaseIntermAnos, &c.DestinacaoFinal, &c.Observacoes, &c.CreatedAt, &w.TotalEtapas}
+	cdest, montar := ttddDest(c)
+	dest := append([]any{&w.ID, &w.CodigoProcessual, &w.Titulo, &w.Objetivo, &w.PublicoAlvo, &w.Versao, &w.Ativo, &w.NivelAcesso,
+		&w.HipoteseLegal, &w.CodigoTTDD, &w.CreatedBy, &w.CreatedAt, &w.UpdatedAt, &w.TotalEtapas}, cdest...)
 	if err := row.Scan(append(dest, extra...)...); err != nil {
 		return w, err
 	}
-	c.Codigo = w.CodigoTTDD
+	montar()
 	w.Classificacao = c
 	w.Etapas = []domain.Etapa{}
 	return w, nil
@@ -297,8 +396,8 @@ func (r *Repository) SetAtivo(ctx context.Context, db database.DBTX, id uuid.UUI
 }
 
 func (r *Repository) Search(ctx context.Context, db database.DBTX, query string, limit int) ([]domain.Workflow, []float64, error) {
-	rows, err := db.Query(ctx, `SELECT `+wfCols+`, ts_rank(w.search, q)`+wfFrom+`, nexus_search_tsquery('portuguese', $1) q
-		WHERE w.ativo AND w.search @@ q ORDER BY 21 DESC LIMIT $2`, query, limit)
+	rows, err := db.Query(ctx, `SELECT `+wfCols+`, ts_rank(w.search, q) AS rank`+wfFrom+`, nexus_search_tsquery('portuguese', $1) q
+		WHERE w.ativo AND w.search @@ q ORDER BY rank DESC LIMIT $2`, query, limit)
 	if err != nil {
 		return nil, nil, wrap(err)
 	}

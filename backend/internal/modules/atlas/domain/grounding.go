@@ -133,8 +133,7 @@ func SinteseCanonica(w Workflow) string {
 	}
 	if c := w.Classificacao; c != nil {
 		fmt.Fprintf(&b, "\nEnquadramento na TTDD: %s — %s\n", c.Codigo, c.Descritor)
-		fmt.Fprintf(&b, "Temporalidade: %d ano(s) na fase corrente e %d ano(s) na intermediária; destinação final: %s.\n",
-			c.FaseCorrenteAnos, c.FaseIntermAnos, c.DestinacaoFinal)
+		b.WriteString(Temporalidade(*c))
 	}
 	b.WriteString("\nFluxo de tramitação:\n")
 	for _, e := range w.Etapas {
@@ -162,4 +161,79 @@ func SinteseCanonica(w Workflow) string {
 		}
 	}
 	return b.String()
+}
+
+// Temporalidade descreve prazos, destinação, recomendação e fonte de uma
+// série da TTDD (uma linha por informação).
+func Temporalidade(c ClassificacaoTTDD) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Temporalidade: fase corrente %s; fase intermediária %s; destinação final: %s.\n",
+		Fase(c.FaseCorrenteAnos, c.FaseCorrenteCondicao, true), Fase(c.FaseIntermAnos, c.FaseIntermCondicao, false), c.Destinacao())
+	if total, ok := c.PrazoTotalAnos(); ok {
+		fmt.Fprintf(&b, "Prazo total de guarda antes da destinação: %d ano(s).\n", total)
+	}
+	if c.Observacoes != "" {
+		fmt.Fprintf(&b, "Observações: %s\n", c.Observacoes)
+	}
+	if s := c.Subfuncao; s != nil {
+		if s.Recomendacao != "" {
+			fmt.Fprintf(&b, "Recomendação da subfunção: %s\n", s.Recomendacao)
+		}
+		o := s.Funcao.Orgao
+		fonte := fmt.Sprintf("TTDD da %s", o.Nome)
+		if o.Versao != "" {
+			fonte += ", versão " + o.Versao
+		}
+		if o.EdicaoDiario != "" {
+			fonte += ", Diário Oficial nº " + o.EdicaoDiario
+			if o.DataPublicacao != nil {
+				fonte += " de " + o.DataPublicacao.Format("02/01/2006")
+			}
+		}
+		fmt.Fprintf(&b, "Fonte: %s.\n", fonte)
+	}
+	return b.String()
+}
+
+// SinteseTTDD responde com os dados oficiais de uma série documental.
+func SinteseTTDD(c ClassificacaoTTDD) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "%s — %s\n", c.Codigo, c.Descritor)
+	if s := c.Subfuncao; s != nil {
+		fmt.Fprintf(&b, "Classificação: %s › %s › %s\n", s.Funcao.Orgao.Nome, s.Funcao.Nome, s.Nome)
+	}
+	b.WriteString(Temporalidade(c))
+	return b.String()
+}
+
+// RelevanciaTTDD mede (0..1) quanto uma série da TTDD sustenta a pergunta,
+// com a mesma regra dos procedimentos: fração dos termos presentes no
+// descritor (e na função/subfunção), bônus para o código exato e para
+// termos do próprio descritor.
+func RelevanciaTTDD(c ClassificacaoTTDD, pergunta string) float64 {
+	termos := Termos(pergunta)
+	if len(termos) == 0 {
+		return 0
+	}
+	descritor := Fold(c.Descritor)
+	texto := descritor + " " + Fold(c.Codigo) + " " + Fold(c.Observacoes)
+	if s := c.Subfuncao; s != nil {
+		texto += " " + Fold(s.Nome+" "+s.Funcao.Nome)
+	}
+	matched, bonus := 0, 0.0
+	for _, t := range termos {
+		if contem(texto, t) {
+			matched++
+		}
+		if t == Fold(c.Codigo) {
+			bonus += 0.3
+		}
+		if contem(descritor, t) {
+			bonus += 0.15
+		}
+	}
+	if matched == 0 {
+		return 0
+	}
+	return min(1, float64(matched)/float64(len(termos))+bonus)
 }

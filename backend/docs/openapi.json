@@ -218,16 +218,28 @@
               "ELIMINACAO",
               "GUARDA_PERMANENTE"
             ],
+            "nullable": true,
             "type": "string"
           },
           "fase_corrente_anos": {
+            "nullable": true,
             "type": "integer"
           },
+          "fase_corrente_condicao": {
+            "type": "string"
+          },
           "fase_interm_anos": {
+            "nullable": true,
             "type": "integer"
+          },
+          "fase_interm_condicao": {
+            "type": "string"
           },
           "observacoes": {
             "type": "string"
+          },
+          "subfuncao": {
+            "$ref": "#/components/schemas/AtlasSubfuncaoTTDD"
           }
         },
         "required": [
@@ -236,7 +248,9 @@
           "descritor",
           "destinacao_final",
           "fase_corrente_anos",
+          "fase_corrente_condicao",
           "fase_interm_anos",
+          "fase_interm_condicao",
           "observacoes"
         ],
         "type": "object",
@@ -337,6 +351,94 @@
           "formato",
           "nome_documento",
           "tipo_assinatura"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasEstruturaFuncaoTTDD": {
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "subfuncoes": {
+            "items": {
+              "$ref": "#/components/schemas/AtlasEstruturaSubfuncaoTTDD"
+            },
+            "type": "array"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "codigo",
+          "nome",
+          "subfuncoes",
+          "total"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasEstruturaSubfuncaoTTDD": {
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "codigo",
+          "nome",
+          "total"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasEstruturaTTDD": {
+        "properties": {
+          "data_publicacao": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "edicao_diario": {
+            "type": "string"
+          },
+          "funcoes": {
+            "items": {
+              "$ref": "#/components/schemas/AtlasEstruturaFuncaoTTDD"
+            },
+            "type": "array"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "prefixo": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "versao": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data_publicacao",
+          "edicao_diario",
+          "funcoes",
+          "nome",
+          "prefixo",
+          "total",
+          "versao"
         ],
         "type": "object",
         "x-nexus-generated": true
@@ -519,7 +621,7 @@
       },
       "AtlasFonte": {
         "properties": {
-          "codigo_processual": {
+          "codigo": {
             "type": "string"
           },
           "id": {
@@ -529,15 +631,68 @@
           "relevancia": {
             "type": "number"
           },
+          "tipo": {
+            "type": "string"
+          },
           "titulo": {
             "type": "string"
           }
         },
         "required": [
-          "codigo_processual",
-          "id",
+          "codigo",
           "relevancia",
+          "tipo",
           "titulo"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasFuncaoTTDD": {
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "orgao": {
+            "$ref": "#/components/schemas/AtlasOrgaoTTDD"
+          }
+        },
+        "required": [
+          "codigo",
+          "nome",
+          "orgao"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasOrgaoTTDD": {
+        "properties": {
+          "data_publicacao": {
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "edicao_diario": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "prefixo": {
+            "type": "string"
+          },
+          "versao": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "data_publicacao",
+          "edicao_diario",
+          "nome",
+          "prefixo",
+          "versao"
         ],
         "type": "object",
         "x-nexus-generated": true
@@ -574,6 +729,30 @@
           "refused",
           "score",
           "sources"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasSubfuncaoTTDD": {
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "funcao": {
+            "$ref": "#/components/schemas/AtlasFuncaoTTDD"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "recomendacao": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "codigo",
+          "funcao",
+          "nome",
+          "recomendacao"
         ],
         "type": "object",
         "x-nexus-generated": true
@@ -6215,6 +6394,16 @@
           },
           {
             "in": "query",
+            "name": "codigo",
+            "required": false,
+            "schema": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "x-nexus-generated": true
+          },
+          {
+            "in": "query",
             "name": "q",
             "required": false,
             "schema": {
@@ -6266,6 +6455,53 @@
         },
         "security": [],
         "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/ttdd/estrutura": {
+      "get": {
+        "operationId": "getAtlasTtddEstrutura",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtlasEstruturaTTDD"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd/estrutura",
         "tags": [
           "atlas"
         ]

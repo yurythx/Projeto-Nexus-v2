@@ -32,6 +32,7 @@ func NewHandlers(svc *application.Service, logger *slog.Logger, maxPageSize int)
 // procedimentos ativos. O módulo aplica o limite por IP.
 func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	r.Get("/atlas/ttdd", h.ListTTDD)
+	r.Get("/atlas/ttdd/estrutura", h.EstruturaTTDD)
 	r.Get("/atlas/ttdd/{codigo}", h.GetTTDD)
 	r.Get("/atlas/workflows", h.ListPublic)
 	r.Get("/atlas/workflows/{id}", h.GetPublic)
@@ -66,7 +67,14 @@ func (h *Handlers) fail(w http.ResponseWriter, r *http.Request, err error) {
 
 func (h *Handlers) ListTTDD(w http.ResponseWriter, r *http.Request) {
 	p := httputil.Page(r, h.maxPageSize)
-	items, total, err := h.svc.ListTTDD(r.Context(), httputil.Query(r, "q", 200), p)
+	// ?codigo= é um prefixo hierárquico: órgão (2.0), função (2.0.01),
+	// subfunção (2.0.01.00) ou a própria série.
+	codigo := httputil.Query(r, "codigo", 32)
+	if codigo != "" && !domain.CodigoTTDDValido(codigo) {
+		h.fail(w, r, apperrors.BadRequest("código TTDD inválido (ex.: 2.0, 2.0.01, 2.0.01.00 ou 2.0.01.00.00)"))
+		return
+	}
+	items, total, err := h.svc.ListTTDD(r.Context(), domain.FiltroTTDD{Query: httputil.Query(r, "q", 200), Codigo: codigo}, p)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -74,9 +82,19 @@ func (h *Handlers) ListTTDD(w http.ResponseWriter, r *http.Request) {
 	httputil.WritePage(w, items, p, total)
 }
 
+// EstruturaTTDD devolve órgão > função > subfunção com a contagem de séries.
+func (h *Handlers) EstruturaTTDD(w http.ResponseWriter, r *http.Request) {
+	e, err := h.svc.EstruturaTTDD(r.Context())
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, e)
+}
+
 func (h *Handlers) GetTTDD(w http.ResponseWriter, r *http.Request) {
 	codigo := strings.TrimSpace(chi.URLParam(r, "codigo"))
-	if codigo == "" || len(codigo) > 32 {
+	if !domain.CodigoTTDDValido(codigo) {
 		h.fail(w, r, apperrors.BadRequest("código TTDD inválido"))
 		return
 	}

@@ -70,16 +70,122 @@ const (
 	AssinaturaEmBloco            TipoAssinatura = "EM_BLOCO"
 )
 
-// ClassificacaoTTDD é uma linha da Tabela de Temporalidade.
+// ClassificacaoTTDD é uma série documental da Tabela de Temporalidade
+// (TTDD oficial: órgão > função > subfunção > série — ADR 017).
+//
+// Cada fase de guarda tem prazo em anos OU uma condição ("Enquanto estiver
+// vigorando", "30 dias após a data do evento"); nenhum dos dois na fase
+// intermediária = não há fase intermediária; na corrente = o documento
+// não informa. Destinação nil = a TTDD não define (ex.: "X — entregue ao
+// paciente").
 type ClassificacaoTTDD struct {
-	Codigo           string          `json:"codigo"`
-	Descritor        string          `json:"descritor"`
-	FaseCorrenteAnos int             `json:"fase_corrente_anos"`
-	FaseIntermAnos   int             `json:"fase_interm_anos"`
-	DestinacaoFinal  DestinacaoFinal `json:"destinacao_final"`
-	Observacoes      string          `json:"observacoes"`
-	CreatedAt        time.Time       `json:"created_at"`
+	Codigo               string           `json:"codigo"`
+	Descritor            string           `json:"descritor"`
+	FaseCorrenteAnos     *int             `json:"fase_corrente_anos"`
+	FaseCorrenteCondicao string           `json:"fase_corrente_condicao"`
+	FaseIntermAnos       *int             `json:"fase_interm_anos"`
+	FaseIntermCondicao   string           `json:"fase_interm_condicao"`
+	DestinacaoFinal      *DestinacaoFinal `json:"destinacao_final"`
+	Observacoes          string           `json:"observacoes"`
+	Subfuncao            *SubfuncaoTTDD   `json:"subfuncao,omitempty"`
+	CreatedAt            time.Time        `json:"created_at"`
 }
+
+// OrgaoTTDD é o órgão dono de uma TTDD, com a publicação oficial dela.
+type OrgaoTTDD struct {
+	Prefixo        string     `json:"prefixo"`
+	Nome           string     `json:"nome"`
+	EdicaoDiario   string     `json:"edicao_diario"`
+	DataPublicacao *time.Time `json:"data_publicacao"`
+	Versao         string     `json:"versao"`
+}
+
+// FuncaoTTDD agrupa subfunções de um órgão.
+type FuncaoTTDD struct {
+	Codigo string    `json:"codigo"`
+	Nome   string    `json:"nome"`
+	Orgao  OrgaoTTDD `json:"orgao"`
+}
+
+// SubfuncaoTTDD agrupa séries; a recomendação vale para todas elas.
+type SubfuncaoTTDD struct {
+	Codigo       string     `json:"codigo"`
+	Nome         string     `json:"nome"`
+	Recomendacao string     `json:"recomendacao"`
+	Funcao       FuncaoTTDD `json:"funcao"`
+}
+
+// EstruturaTTDD é a árvore órgão > função > subfunção com a contagem de séries.
+type EstruturaTTDD struct {
+	OrgaoTTDD
+	Total   int                   `json:"total"`
+	Funcoes []EstruturaFuncaoTTDD `json:"funcoes"`
+}
+
+type EstruturaFuncaoTTDD struct {
+	Codigo     string                   `json:"codigo"`
+	Nome       string                   `json:"nome"`
+	Total      int                      `json:"total"`
+	Subfuncoes []EstruturaSubfuncaoTTDD `json:"subfuncoes"`
+}
+
+type EstruturaSubfuncaoTTDD struct {
+	Codigo string `json:"codigo"`
+	Nome   string `json:"nome"`
+	Total  int    `json:"total"`
+}
+
+// FiltroTTDD filtra a consulta da TTDD. Os códigos são prefixos
+// hierárquicos (órgão "2.0", função "2.0.01", subfunção "2.0.01.00").
+type FiltroTTDD struct {
+	Query  string
+	Codigo string
+}
+
+// Fase descreve o prazo de uma fase para leitura humana.
+func Fase(anos *int, condicao string, corrente bool) string {
+	switch {
+	case anos != nil && *anos == 1:
+		return "1 ano"
+	case anos != nil:
+		return fmt.Sprintf("%d anos", *anos)
+	case condicao != "":
+		return condicao
+	case corrente:
+		return "não informado na TTDD"
+	}
+	return "não há"
+}
+
+// PrazoTotalAnos soma as fases quando ambas são em anos (fase intermediária
+// inexistente conta zero). Prazo por condição não tem total em anos.
+func (c ClassificacaoTTDD) PrazoTotalAnos() (int, bool) {
+	if c.FaseCorrenteAnos == nil || c.FaseCorrenteCondicao != "" || c.FaseIntermCondicao != "" {
+		return 0, false
+	}
+	total := *c.FaseCorrenteAnos
+	if c.FaseIntermAnos != nil {
+		total += *c.FaseIntermAnos
+	}
+	return total, true
+}
+
+// Destinacao descreve a destinação final para leitura humana.
+func (c ClassificacaoTTDD) Destinacao() string {
+	switch {
+	case c.DestinacaoFinal == nil:
+		return "não definida na TTDD"
+	case *c.DestinacaoFinal == DestinacaoGuardaPermanente:
+		return "guarda permanente"
+	}
+	return "eliminação"
+}
+
+var codigoTTDD = regexp.MustCompile(`^\d{1,2}\.0(\.\d{2}){0,3}(-\d)?$`)
+
+// CodigoTTDDValido aceita o código de uma série ou um prefixo hierárquico
+// (órgão, função, subfunção) — usado nos filtros e na consulta.
+func CodigoTTDDValido(c string) bool { return codigoTTDD.MatchString(c) }
 
 // Workflow é o procedimento canônico de um tipo de processo.
 type Workflow struct {
@@ -296,8 +402,11 @@ type Filter struct {
 
 // Repository é a persistência do Atlas.
 type Repository interface {
-	ListTTDD(ctx context.Context, db database.DBTX, query string, p pagination.Params) ([]ClassificacaoTTDD, int64, error)
+	ListTTDD(ctx context.Context, db database.DBTX, f FiltroTTDD, p pagination.Params) ([]ClassificacaoTTDD, int64, error)
 	GetTTDD(ctx context.Context, db database.DBTX, codigo string) (ClassificacaoTTDD, error)
+	EstruturaTTDD(ctx context.Context, db database.DBTX) ([]EstruturaTTDD, error)
+	// CandidatosTTDD devolve séries que casam com algum termo da pergunta.
+	CandidatosTTDD(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]ClassificacaoTTDD, error)
 	// LockTTDD confirma que a classificação existe e a trava (FOR SHARE)
 	// até o fim da transação de cadastro.
 	LockTTDD(ctx context.Context, db database.DBTX, codigo string) (bool, error)
@@ -315,8 +424,9 @@ type Repository interface {
 	Candidatos(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]Workflow, error)
 }
 
-// Assistente redige a orientação a partir EXCLUSIVAMENTE dos procedimentos
-// fornecidos (porta implementada por um LLM compatível com a API OpenAI).
+// Assistente redige a orientação a partir EXCLUSIVAMENTE do contexto
+// fornecido — as sínteses canônicas dos procedimentos e das séries da TTDD
+// selecionados (porta implementada por um LLM compatível com a API OpenAI).
 type Assistente interface {
-	Responder(ctx context.Context, pergunta string, contexto []Workflow) (string, error)
+	Responder(ctx context.Context, pergunta string, contexto []string) (string, error)
 }

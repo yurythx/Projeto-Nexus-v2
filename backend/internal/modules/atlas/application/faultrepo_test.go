@@ -50,14 +50,14 @@ func (fr *faultRepo) post(ctx context.Context, db database.DBTX) {
 	_, _ = db.Exec(ctx, `SELECT 1/0`)
 }
 
-func (fr *faultRepo) ListTTDD(ctx context.Context, db database.DBTX, query string, p pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
+func (fr *faultRepo) ListTTDD(ctx context.Context, db database.DBTX, f domain.FiltroTTDD, p pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
 	if err := fr.hook("ListTTDD"); err != nil {
 		var z0 []domain.ClassificacaoTTDD
 		var z1 int64
 		return z0, z1, err
 	}
 	defer fr.post(ctx, db)
-	return fr.inner.ListTTDD(ctx, db, query, p)
+	return fr.inner.ListTTDD(ctx, db, f, p)
 }
 
 func (fr *faultRepo) GetTTDD(ctx context.Context, db database.DBTX, codigo string) (domain.ClassificacaoTTDD, error) {
@@ -130,4 +130,22 @@ func (fr *faultRepo) Candidatos(ctx context.Context, db database.DBTX, pergunta 
 	}
 	defer fr.post(ctx, db)
 	return fr.inner.Candidatos(ctx, db, pergunta, limit)
+}
+
+func (fr *faultRepo) EstruturaTTDD(ctx context.Context, db database.DBTX) ([]domain.EstruturaTTDD, error) {
+	if err := fr.hook("EstruturaTTDD"); err != nil {
+		var z0 []domain.EstruturaTTDD
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.EstruturaTTDD(ctx, db)
+}
+
+func (fr *faultRepo) CandidatosTTDD(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]domain.ClassificacaoTTDD, error) {
+	if err := fr.hook("CandidatosTTDD"); err != nil {
+		var z0 []domain.ClassificacaoTTDD
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.CandidatosTTDD(ctx, db, pergunta, limit)
 }

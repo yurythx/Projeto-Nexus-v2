@@ -68,9 +68,14 @@ func MapError(err error) error {
 }
 
 // ListTTDD lista a Tabela de Temporalidade.
-func (s *Service) ListTTDD(ctx context.Context, query string, p pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
-	items, total, err := s.repo.ListTTDD(ctx, s.pool, query, p)
+func (s *Service) ListTTDD(ctx context.Context, f domain.FiltroTTDD, p pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
+	items, total, err := s.repo.ListTTDD(ctx, s.pool, f, p)
 	return items, total, MapError(err)
+}
+
+// EstruturaTTDD devolve a árvore órgão > função > subfunção da TTDD.
+func (s *Service) EstruturaTTDD(ctx context.Context) ([]domain.EstruturaTTDD, error) {
+	return s.repo.EstruturaTTDD(ctx, s.pool)
 }
 
 // GetTTDD devolve uma classificação.
@@ -188,19 +193,26 @@ func summary(w domain.Workflow) map[string]any {
 		"titulo": w.Titulo, "codigo_ttdd": w.CodigoTTDD, "nivel_acesso": w.NivelAcesso, "ativo": w.Ativo, "etapas": len(w.Etapas)}
 }
 
-// Fonte é um procedimento que sustentou a resposta do assistente.
+// Tipos de fonte do assistente.
+const (
+	FonteProcedimento = "procedimento"
+	FonteTTDD         = "ttdd"
+)
+
+// Fonte é o procedimento ou a série da TTDD que sustentou a resposta.
 type Fonte struct {
-	ID               uuid.UUID `json:"id"`
-	CodigoProcessual string    `json:"codigo_processual"`
-	Titulo           string    `json:"titulo"`
-	Relevancia       float64   `json:"relevancia"`
+	Tipo       string     `json:"tipo"`
+	ID         *uuid.UUID `json:"id,omitempty"`
+	Codigo     string     `json:"codigo"`
+	Titulo     string     `json:"titulo"`
+	Relevancia float64    `json:"relevancia"`
 }
 
 // Modos de resposta do assistente.
 const (
 	ModoIA       = "ia"       // redigida pelo modelo de linguagem
 	ModoSintese  = "sintese"  // síntese canônica (IA desligada ou indisponível)
-	ModoRecusada = "recusada" // nenhum procedimento acima do limiar
+	ModoRecusada = "recusada" // nenhuma fonte acima do limiar
 )
 
 // Resposta do assistente procedural.
@@ -213,51 +225,64 @@ type Resposta struct {
 	GeneratedAt time.Time `json:"generated_at"`
 }
 
-// Perguntar responde com grounding estrito: só procedimentos homologados
-// com relevância >= domain.LimiarRelevancia sustentam a resposta; abaixo
-// disso, a recusa canônica. Exige atlas:read (na rota).
+// Perguntar responde com grounding estrito: só procedimentos homologados e
+// séries da TTDD oficial com relevância >= domain.LimiarRelevancia sustentam
+// a resposta (até maxFontes); abaixo disso, a recusa canônica. Exige
+// atlas:read (na rota).
 func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, error) {
 	pergunta = strings.TrimSpace(pergunta)
 	resp := Resposta{Sources: []Fonte{}, GeneratedAt: s.now()}
 
-	candidatos, err := s.repo.Candidatos(ctx, s.pool, pergunta, maxCandidatos)
+	procs, err := s.repo.Candidatos(ctx, s.pool, pergunta, maxCandidatos)
 	if err != nil {
 		return resp, MapError(err)
 	}
-	type scored struct {
-		w     domain.Workflow
-		score float64
+	series, err := s.repo.CandidatosTTDD(ctx, s.pool, pergunta, maxCandidatos)
+	if err != nil {
+		return resp, MapError(err)
 	}
-	var hits []scored
-	for _, w := range candidatos {
+	type candidato struct {
+		fonte   Fonte
+		sintese string
+	}
+	var hits []candidato
+	for _, w := range procs {
 		if r := domain.Relevancia(w, pergunta); r > 0 {
-			hits = append(hits, scored{w, r})
+			id := w.ID
+			hits = append(hits, candidato{Fonte{Tipo: FonteProcedimento, ID: &id, Codigo: w.CodigoProcessual, Titulo: w.Titulo, Relevancia: r},
+				domain.SinteseCanonica(w)})
 		}
 	}
-	sort.SliceStable(hits, func(i, j int) bool { return hits[i].score > hits[j].score })
+	for _, c := range series {
+		if r := domain.RelevanciaTTDD(c, pergunta); r > 0 {
+			hits = append(hits, candidato{Fonte{Tipo: FonteTTDD, Codigo: c.Codigo, Titulo: c.Descritor, Relevancia: r}, domain.SinteseTTDD(c)})
+		}
+	}
+	sort.SliceStable(hits, func(i, j int) bool { return hits[i].fonte.Relevancia > hits[j].fonte.Relevancia })
 	if len(hits) > 0 {
-		resp.Score = hits[0].score
+		resp.Score = hits[0].fonte.Relevancia
 	}
 
-	var contexto []domain.Workflow
+	var contexto []string
 	for _, h := range hits {
-		if h.score < domain.LimiarRelevancia || len(contexto) == maxFontes {
+		if h.fonte.Relevancia < domain.LimiarRelevancia || len(contexto) == maxFontes {
 			break
 		}
-		contexto = append(contexto, h.w)
-		resp.Sources = append(resp.Sources, Fonte{ID: h.w.ID, CodigoProcessual: h.w.CodigoProcessual, Titulo: h.w.Titulo, Relevancia: h.score})
+		contexto = append(contexto, h.sintese)
+		resp.Sources = append(resp.Sources, h.fonte)
 	}
+	sintese := strings.Join(contexto, "\n\n")
 
 	switch {
 	case len(contexto) == 0:
 		resp.Answer, resp.Refused, resp.Mode = domain.MensagemRecusa, true, ModoRecusada
 	case s.assistente == nil:
-		resp.Answer, resp.Mode = domain.SinteseCanonica(contexto[0]), ModoSintese
+		resp.Answer, resp.Mode = sintese, ModoSintese
 	default:
 		answer, err := s.assistente.Responder(ctx, pergunta, contexto)
 		if err != nil {
 			s.logger.WarnContext(ctx, "atlas: assistente de IA indisponível, usando a síntese canônica", "error", err)
-			resp.Answer, resp.Mode = domain.SinteseCanonica(contexto[0]), ModoSintese
+			resp.Answer, resp.Mode = sintese, ModoSintese
 		} else {
 			resp.Answer, resp.Mode = answer, ModoIA
 		}
@@ -267,7 +292,7 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 	// 6º III): ela pode trazer dados pessoais de terceiros.
 	codigos := make([]string, len(resp.Sources))
 	for i, f := range resp.Sources {
-		codigos[i] = f.CodigoProcessual
+		codigos[i] = f.Codigo
 	}
 	if err := audit.NewWriter(s.pool).Record(ctx, audit.Meta(ctx, "atlas.assistente.consulta", "atlas_assistente", "", nil,
 		map[string]any{"modo": resp.Mode, "relevancia": resp.Score, "fontes": codigos, "tamanho_pergunta": len([]rune(pergunta))})); err != nil {

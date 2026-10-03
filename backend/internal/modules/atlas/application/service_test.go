@@ -21,24 +21,30 @@ import (
 type fakeRepo struct {
 	domain.Repository
 	candidatos []domain.Workflow
+	series     []domain.ClassificacaoTTDD
 	err        error
+	errTTDD    error
+}
+
+func (f fakeRepo) CandidatosTTDD(context.Context, database.DBTX, string, int) ([]domain.ClassificacaoTTDD, error) {
+	return f.series, f.errTTDD
 }
 
 func (f fakeRepo) Candidatos(context.Context, database.DBTX, string, int) ([]domain.Workflow, error) {
 	return f.candidatos, f.err
 }
 
-func (f fakeRepo) ListTTDD(context.Context, database.DBTX, string, pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
+func (f fakeRepo) ListTTDD(context.Context, database.DBTX, domain.FiltroTTDD, pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
 	return nil, 0, f.err
 }
 
 type fakeAssistente struct {
 	answer   string
 	err      error
-	contexto []domain.Workflow
+	contexto []string
 }
 
-func (f *fakeAssistente) Responder(_ context.Context, _ string, ctx []domain.Workflow) (string, error) {
+func (f *fakeAssistente) Responder(_ context.Context, _ string, ctx []string) (string, error) {
 	f.contexto = ctx
 	return f.answer, f.err
 }
@@ -65,7 +71,8 @@ func TestPerguntar(t *testing.T) {
 		if err != nil || r.Mode != ModoIA || r.Answer != "Orientação do modelo" || r.Refused {
 			t.Fatalf("resposta = %+v, %v", r, err)
 		}
-		if len(ia.contexto) != 1 || ia.contexto[0].CodigoProcessual != "ADM.LIC.001" || len(r.Sources) != 1 {
+		if len(ia.contexto) != 1 || !strings.Contains(ia.contexto[0], "ADM.LIC.001") || len(r.Sources) != 1 ||
+			r.Sources[0].Tipo != FonteProcedimento || r.Sources[0].ID == nil || r.Sources[0].Codigo != "ADM.LIC.001" {
 			t.Fatalf("contexto enviado ao modelo: %+v / fontes %+v", ia.contexto, r.Sources)
 		}
 	})
@@ -90,9 +97,28 @@ func TestPerguntar(t *testing.T) {
 		}
 	})
 	t.Run("falha do repositório propaga", func(t *testing.T) {
-		_, err := NewService(pool, fakeRepo{err: errors.New("db")}, outbox.NewWriter("t"), nil, logger).Perguntar(ctx, "pregão")
-		if err == nil {
-			t.Fatal("esperado erro")
+		for _, r := range []fakeRepo{{err: errors.New("db")}, {errTTDD: errors.New("db")}} {
+			if _, err := NewService(pool, r, outbox.NewWriter("t"), nil, logger).Perguntar(ctx, "pregão"); err == nil {
+				t.Fatal("esperado erro")
+			}
+		}
+	})
+	t.Run("série da TTDD sustenta a resposta junto com o procedimento", func(t *testing.T) {
+		um := 1
+		serie := domain.ClassificacaoTTDD{Codigo: "2.0.02.00.07", Descritor: "Processos relativos a Pregão Presencial/Pregão Eletrônico",
+			FaseCorrenteAnos: &um, FaseIntermAnos: &um}
+		alheia := domain.ClassificacaoTTDD{Codigo: "2.0.01.00.01", Descritor: "Organogramas"}
+		r, err := NewService(pool, fakeRepo{candidatos: []domain.Workflow{pregao()}, series: []domain.ClassificacaoTTDD{alheia, serie}},
+			outbox.NewWriter("t"), nil, logger).Perguntar(ctx, "prazo de guarda do pregão eletrônico")
+		if err != nil || r.Refused || len(r.Sources) != 2 {
+			t.Fatalf("resposta = %+v, %v", r, err)
+		}
+		tipos := map[string]bool{}
+		for _, f := range r.Sources {
+			tipos[f.Tipo] = true
+		}
+		if !tipos[FonteTTDD] || !tipos[FonteProcedimento] || !strings.Contains(r.Answer, "2.0.02.00.07") || !strings.Contains(r.Answer, "ADM.LIC.001") {
+			t.Fatalf("fontes e síntese: %+v\n%s", r.Sources, r.Answer)
 		}
 	})
 }

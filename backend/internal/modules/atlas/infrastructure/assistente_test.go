@@ -30,7 +30,7 @@ func TestLLMResponder(t *testing.T) {
 
 	l := NewLLM(srv.URL+"/", "k", "modelo", time.Second)
 	wf := domain.Workflow{CodigoProcessual: "ADM.LIC.001", Titulo: "Pregão", Etapas: []domain.Etapa{{Ordem: 1, NomeSetor: "Licitações"}}}
-	answer, err := l.Responder(context.Background(), "como licitar?", []domain.Workflow{wf})
+	answer, err := l.Responder(context.Background(), "como licitar?", []string{domain.SinteseCanonica(wf)})
 	if err != nil || answer != "Orientação" {
 		t.Fatalf("resposta = %q, %v", answer, err)
 	}

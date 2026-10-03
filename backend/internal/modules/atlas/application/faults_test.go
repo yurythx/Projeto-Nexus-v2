@@ -77,7 +77,13 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 	type op = func() func(s *application.Service) error
 	ops := map[string]op{
 		"ListTTDD": func() func(*application.Service) error {
-			return func(s *application.Service) error { _, _, err := s.ListTTDD(ctx, "", p); return err }
+			return func(s *application.Service) error {
+				_, _, err := s.ListTTDD(ctx, domain.FiltroTTDD{Codigo: "2.0"}, p)
+				return err
+			}
+		},
+		"EstruturaTTDD": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.EstruturaTTDD(ctx); return err }
 		},
 		"GetTTDD": func() func(*application.Service) error {
 			return func(s *application.Service) error { _, err := s.GetTTDD(ctx, "2.0.02.00.07"); return err }
@@ -170,6 +176,7 @@ func TestHandlersReportServiceFailures(t *testing.T) {
 	id := uuid.NewString()
 	for _, c := range []struct{ method, path, body string }{
 		{http.MethodGet, "/atlas/ttdd", ""},
+		{http.MethodGet, "/atlas/ttdd/estrutura", ""},
 		{http.MethodGet, "/atlas/ttdd/2.0.02.00.07", ""},
 		{http.MethodGet, "/atlas/workflows", ""},
 		{http.MethodGet, "/atlas/workflows/" + id, ""},

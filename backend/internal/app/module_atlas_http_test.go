@@ -66,7 +66,38 @@ func TestAtlasCatalogoHTTP(t *testing.T) {
 		t.Fatalf("TTDD por descritor com acento: %s", body)
 	}
 	h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd/2.0.02.00.07", "", "")
-	h.expect(http.StatusNotFound, http.MethodGet, "/api/v1/atlas/ttdd/9.9.99", "", "")
+	h.expect(http.StatusNotFound, http.MethodGet, "/api/v1/atlas/ttdd/9.0.99.99.99", "", "")
+	h.expect(http.StatusBadRequest, http.MethodGet, "/api/v1/atlas/ttdd/abc", "", "")
+	h.expect(http.StatusBadRequest, http.MethodGet, "/api/v1/atlas/ttdd?codigo=abc", "", "")
+
+	// TTDD oficial (ADR 017): série com a hierarquia e a publicação; a
+	// semente antiga trazia 5/50 anos e guarda permanente para esta série.
+	serie := data[struct {
+		FaseCorrenteAnos *int    `json:"fase_corrente_anos"`
+		FaseIntermAnos   *int    `json:"fase_interm_anos"`
+		DestinacaoFinal  *string `json:"destinacao_final"`
+		Subfuncao        *struct {
+			Codigo string `json:"codigo"`
+			Funcao struct {
+				Orgao struct {
+					EdicaoDiario string `json:"edicao_diario"`
+				} `json:"orgao"`
+			} `json:"funcao"`
+		} `json:"subfuncao"`
+	}](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd/2.0.07.00.00", "", ""))
+	if serie.FaseCorrenteAnos == nil || *serie.FaseCorrenteAnos != 1 || serie.FaseIntermAnos == nil || *serie.FaseIntermAnos != 99 ||
+		serie.DestinacaoFinal == nil || *serie.DestinacaoFinal != "ELIMINACAO" || serie.Subfuncao == nil ||
+		serie.Subfuncao.Codigo != "2.0.07.00" || serie.Subfuncao.Funcao.Orgao.EdicaoDiario != "6.017" {
+		t.Fatalf("série oficial 2.0.07.00.00: %+v", serie)
+	}
+	if body := h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd?codigo=2.0.02&page_size=100", "", "").Body.String(); !strings.Contains(body, "2.0.02.00.07") ||
+		!strings.Contains(body, "2.0.02.01.02") || strings.Contains(body, "2.0.01.") {
+		t.Fatalf("filtro por função (prefixo hierárquico): %s", body)
+	}
+	if body := h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd/estrutura", "", "").Body.String(); !strings.Contains(body, `"prefixo":"2.0"`) ||
+		!strings.Contains(body, `"codigo":"2.0.02.01"`) || !strings.Contains(body, `"total"`) {
+		t.Fatalf("estrutura da TTDD: %s", body)
+	}
 	h.expect(http.StatusBadRequest, http.MethodGet, "/api/v1/atlas/ttdd/"+strings.Repeat("9", 33), "", "")
 	if body := h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/workflows?q=pregao&page_size=5", "", "").Body.String(); !strings.Contains(body, "ADM.LIC.001") ||
 		!strings.Contains(body, `"total_items"`) {
@@ -155,7 +186,8 @@ type atlasResposta struct {
 	Refused bool    `json:"refused"`
 	Mode    string  `json:"mode"`
 	Sources []struct {
-		CodigoProcessual string `json:"codigo_processual"`
+		Tipo   string `json:"tipo"`
+		Codigo string `json:"codigo"`
 	} `json:"sources"`
 }
 
@@ -172,9 +204,16 @@ func TestAtlasAssistenteHTTP(t *testing.T) {
 	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/atlas/chat", leitor, `{"query":"oi"}`)
 
 	r := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta))
-	if r.Refused || r.Mode != "sintese" || r.Score < 0.65 || len(r.Sources) == 0 || r.Sources[0].CodigoProcessual != "ADM.LIC.001" ||
+	if r.Refused || r.Mode != "sintese" || r.Score < 0.65 || len(r.Sources) == 0 || r.Sources[0].Codigo != "ADM.LIC.001" ||
 		!strings.Contains(r.Answer, "ADM.LIC.001") {
 		t.Fatalf("resposta fundamentada: %+v", r)
+	}
+	// Pergunta só de temporalidade: a série da TTDD sustenta a resposta.
+	ttdd := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
+		`{"query":"Qual o prazo de guarda da pasta funcional de servidores?"}`))
+	if ttdd.Refused || len(ttdd.Sources) == 0 || ttdd.Sources[0].Tipo != "ttdd" || ttdd.Sources[0].Codigo != "2.0.07.00.00" ||
+		!strings.Contains(ttdd.Answer, "99 anos") || !strings.Contains(ttdd.Answer, "eliminação") {
+		t.Fatalf("resposta pela TTDD: %+v", ttdd)
 	}
 	recusa := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
 		`{"query":"licença para viagem internacional de férias"}`))
@@ -187,9 +226,8 @@ func TestAtlasAssistenteHTTP(t *testing.T) {
 		t.Fatalf("auditoria não guarda o texto da pergunta: %d %v", vazou, err)
 	}
 
-	// Limite por identidade (5/min no harness): 3 usadas acima (2 OK + 1
+	// Limite por identidade (5/min no harness): 4 usadas acima (3 OK + 1
 	// 422 também conta), a 6ª é barrada.
-	h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta)
 	h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta)
 	h.expect(http.StatusTooManyRequests, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta)
 }
