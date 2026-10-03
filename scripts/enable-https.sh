@@ -34,7 +34,8 @@ cp -p .env ".env.bak-$(date +%Y%m%d-%H%M%S)"
 set_kv HTTPS_PUBLIC_HOST "$host"
 set_kv FRONTEND_URL "https://$host"
 set_kv API_PUBLIC_URL "https://$host:8443"
-set_kv WEBSOCKET_PUBLIC_URL "wss://$host:8443/ws"
+# WebSocket na mesma origem do site (o Caddy encaminha /ws para a API).
+set_kv WEBSOCKET_PUBLIC_URL "wss://$host/ws"
 set_kv MINIO_PUBLIC_URL "https://$host:9443"
 if grep -q "^KEYCLOAK_PUBLIC_URL=" .env; then
   set_kv KEYCLOAK_PUBLIC_URL "https://$host:8543"

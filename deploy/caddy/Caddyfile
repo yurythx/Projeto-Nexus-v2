@@ -28,14 +28,23 @@
 	}
 }
 
-# Frontend (NextAuth, BFF, site público)
+# Frontend (NextAuth, BFF, site público) e o WebSocket de notificações na
+# MESMA origem: o navegador não mostra aviso de certificado para WebSocket —
+# numa porta à parte, quem só aceitou o aviso do site (sem instalar a CA)
+# ficava sem tempo real, recusado em silêncio.
 https://{$PUBLIC_HOST} {
 	import tls_local
 	log
-	reverse_proxy frontend:3000
+	handle /ws {
+		reverse_proxy backend-api:{$HTTP_PORT}
+	}
+	handle {
+		reverse_proxy frontend:3000
+	}
 }
 
-# API: WebSocket de notificações (o REST do navegador passa pelo BFF)
+# API direta (health, integrações; o REST do navegador passa pelo BFF). O
+# /ws também responde aqui, para quem ainda aponta para esta porta.
 https://{$PUBLIC_HOST}:8443 {
 	import tls_local
 	reverse_proxy backend-api:{$HTTP_PORT}

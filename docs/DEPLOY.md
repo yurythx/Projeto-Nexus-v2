@@ -92,8 +92,8 @@ Idempotente. Coloca o Caddy (`docker-compose.https.yml`,
 
 | Serviço | Endereço |
 |---|---|
-| Nexus | `https://<host>` |
-| API / WebSocket | `https://<host>:8443` (`wss://…/ws`) |
+| Nexus e WebSocket de notificações | `https://<host>` (`wss://<host>/ws`) |
+| API direta (health, integrações) | `https://<host>:8443` |
 | MinIO (URLs pré-assinadas) | `https://<host>:9443` |
 | Keycloak de teste | `https://<host>:8543` |
 | Raiz da CA (para instalar) | `http://<host>/nexus-ca.crt` |
