@@ -565,13 +565,30 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     como endereço `http(s)` completo;
   - transições apontam para outra etapa existente; devolução em diligência
     exige a descrição da diligência.
-- **TTDD:** prazos em anos na fase corrente e na intermediária (≥ 0) e
-  destinação final `GUARDA_PERMANENTE` ou `ELIMINACAO`.
+- **TTDD (somente leitura — norma da CCPAD, ADR 017):** a tabela oficial
+  (`docs/ttdd.pdf`, carga `make ttdd-aplicar`) com 1.686 séries de 9
+  órgãos, organizada como no documento:
+  - **hierarquia:** órgão (`2.0`) > função (`2.0.01`) > subfunção
+    (`2.0.01.00`) > série (`2.0.01.00.00`); a consulta filtra por qualquer
+    prefixo;
+  - **prazo de cada fase:** em anos **ou** por condição ("Enquanto estiver
+    vigorando", "30 dias após a data do evento"); fase intermediária pode
+    não existir ("não há"); fase corrente em branco no documento aparece
+    como "não informado na TTDD";
+  - **prazo total** só quando as duas fases são em anos (sem fase
+    intermediária, conta só a corrente);
+  - **destinação final:** guarda permanente, eliminação ou **não definida**
+    (quando a TTDD marca "X");
+  - observações da série, **recomendação da subfunção** (vale para todas
+    as séries dela) e **fonte** — versão e edição/data do Diário Oficial;
+  - cada procedimento é enquadrado numa série existente.
 - **Assistente (`atlas:read`, limite por pessoa — padrão 10 por minuto):**
-  - só responde quando um procedimento homologado cobre a pergunta:
-    relevância ≥ **0,65** (fração dos termos da pergunta presentes no
-    procedimento, sem acentos e sem palavras vazias, com bônus para o
-    código exato e o título); usa até 3 procedimentos;
+  - só responde quando um procedimento homologado **ou uma série da TTDD**
+    cobre a pergunta: relevância ≥ **0,65** (fração dos termos da pergunta
+    presentes, sem acentos e sem palavras vazias, com bônus para o código
+    exato e o título/descritor); usa até 3 fontes, de qualquer tipo;
+  - sobre temporalidade, repete os prazos exatamente como na TTDD
+    (inclusive condições), a destinação, a recomendação e a fonte;
   - abaixo do limiar: **recusa padronizada**, sem chamar o modelo;
   - com IA configurada (`ATLAS_AI_ENDPOINT`): o modelo redige a resposta
     só com os procedimentos encontrados (temperatura 0,05); sem IA, ou se

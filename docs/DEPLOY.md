@@ -144,6 +144,21 @@ volumes do Keycloak de teste e da CA do Caddy (se existirem), `.env` +
 `<dir>/config/secrets` antes de restaurar. Os backups ficam no mesmo disco —
 copie-os para fora do servidor.
 
+## Atlas — TTDD oficial
+
+As migrations criam o modelo e corrigem as séries usadas pelos
+procedimentos de exemplo. A **TTDD completa** (1.686 séries de 9 órgãos,
+extraídas de `docs/ttdd.pdf`) é carregada à parte, e pode rodar de novo a
+qualquer momento:
+
+```bash
+make ttdd-aplicar
+```
+
+Nova versão publicada no Diário Oficial: troque `docs/ttdd.pdf`, rode
+`cd scripts/ttdd && npm ci && npm run tudo`, revise `divergencias` em
+`deploy/ttdd/ttdd.json` e aplique de novo (ver `scripts/ttdd/README.md`).
+
 ## Atlas — assistente procedural com IA (opcional)
 
 Sem configuração nenhuma, o assistente do Atlas já funciona: responde com
