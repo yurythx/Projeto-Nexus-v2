@@ -88,6 +88,46 @@ export interface paths {
         patch: operations["patchAdminModulesKey"];
         trace?: never;
     };
+    "/api/v1/atlas/admin/ttdd/carga/aplicar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/ttdd/carga/aplicar
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtlasAdminTtddCargaAplicar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/admin/ttdd/carga/simular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/ttdd/carga/simular
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtlasAdminTtddCargaSimular"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atlas/admin/workflows": {
         parameters: {
             query?: never;
@@ -2985,6 +3025,16 @@ export interface components {
             /** Format: date-time */
             registrado_em: string;
         };
+        AtlasImpactoCarga: {
+            aplicada: boolean;
+            hash: string;
+            orgaos: components["schemas"]["AtlasOrgaoTTDD"][];
+            procedimentos: components["schemas"]["AtlasProcedimentoAfetado"][];
+            series: components["schemas"]["AtlasSerieImpacto"][];
+            totais: {
+                [key: string]: number;
+            };
+        };
         AtlasOrgaoTTDD: {
             /** Format: date-time */
             data_publicacao: string | null;
@@ -3003,6 +3053,15 @@ export interface components {
             fase_interm_condicao: string;
             observacoes: string;
         };
+        AtlasProcedimentoAfetado: {
+            ativo: boolean;
+            codigo_processual: string;
+            codigo_ttdd: string;
+            /** Format: uuid */
+            id: string;
+            situacao: string;
+            versao: number;
+        };
         AtlasResposta: {
             answer: string;
             /** Format: date-time */
@@ -3011,6 +3070,13 @@ export interface components {
             refused: boolean;
             score: number;
             sources: components["schemas"]["AtlasFonte"][];
+        };
+        AtlasSerieImpacto: {
+            antes: components["schemas"]["AtlasPrazosTTDD"] | null;
+            codigo: string;
+            depois: components["schemas"]["AtlasPrazosTTDD"] | null;
+            descritor: string;
+            situacao: string;
         };
         AtlasSubfuncaoTTDD: {
             codigo: string;
@@ -4795,6 +4861,72 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtlasAdminTtddCargaAplicar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasImpactoCarga"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtlasAdminTtddCargaSimular: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasImpactoCarga"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
             422: components["responses"]["ValidationError"];
             429: components["responses"]["TooManyRequests"];
         };

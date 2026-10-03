@@ -111,11 +111,11 @@ func TestObjetivoDoAssistente(t *testing.T) {
 		}
 	}
 	for p, want := range map[string]bool{
-		"Como tramitar o processo de pregão?":             true,
-		"quais etapas e setores do pedido de diárias":     true,
-		"quem assina o termo de referência?":              true,
-		"qual o prazo de guarda do processo de pregão?":   false, // fala de temporalidade
-		"receita de bolo":                                 false, // fora do objetivo, mas não é procedimento
+		"Como tramitar o processo de pregão?":           true,
+		"quais etapas e setores do pedido de diárias":   true,
+		"quem assina o termo de referência?":            true,
+		"qual o prazo de guarda do processo de pregão?": false, // fala de temporalidade
+		"receita de bolo":                               false, // fora do objetivo, mas não é procedimento
 	} {
 		if PedidoDeProcedimento(p) != want {
 			t.Errorf("PedidoDeProcedimento(%q) != %v", p, want)

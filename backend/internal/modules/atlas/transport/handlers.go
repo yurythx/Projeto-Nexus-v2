@@ -3,6 +3,7 @@ package transport
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -55,6 +56,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router, chatLimiter httpserver.Limiter) 
 		r.Post("/atlas/admin/workflows/{id}/ativar", h.Ativar)
 		r.Post("/atlas/admin/workflows/{id}/desativar", h.Desativar)
 		r.Post("/atlas/admin/workflows/{id}/versoes", h.NovaVersao)
+		r.Post("/atlas/admin/ttdd/carga/simular", h.SimularCarga)
+		r.Post("/atlas/admin/ttdd/carga/aplicar", h.AplicarCarga)
 	})
 }
 
@@ -343,3 +346,38 @@ func (h *Handlers) Chat(w http.ResponseWriter, r *http.Request) {
 	}
 	httputil.WriteOK(w, resp)
 }
+
+// maxCarga limita o arquivo da TTDD (a tabela inteira tem ~600 KB).
+const maxCarga = 10 << 20
+
+type cargaRequest struct {
+	Formato  string `json:"formato" validate:"required,oneof=csv json"`
+	Conteudo string `json:"conteudo" validate:"required"`
+	// Hash devolvido pela simulação: aplicar exige o mesmo arquivo.
+	Hash string `json:"hash" validate:"omitempty,len=64"`
+}
+
+func (h *Handlers) carga(w http.ResponseWriter, r *http.Request, aplicar bool) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxCarga)
+	var req cargaRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.fail(w, r, apperrors.BadRequest("corpo inválido ou acima de 10 MB"))
+		return
+	}
+	if err := httputil.Validate(req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	out, err := h.svc.ImpactoTTDD(r.Context(), req.Formato, req.Conteudo, req.Hash, aplicar)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+// SimularCarga mostra o que a nova TTDD muda, sem gravar (ADR 022).
+func (h *Handlers) SimularCarga(w http.ResponseWriter, r *http.Request) { h.carga(w, r, false) }
+
+// AplicarCarga grava a nova TTDD (o mesmo arquivo simulado — hash).
+func (h *Handlers) AplicarCarga(w http.ResponseWriter, r *http.Request) { h.carga(w, r, true) }

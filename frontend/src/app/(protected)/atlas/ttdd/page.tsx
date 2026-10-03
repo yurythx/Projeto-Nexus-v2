@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Search } from "lucide-react";
+import { Download, FileUp, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button, buttonClass } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
+import { useNexus } from "@/lib/nexus/NexusProvider";
 import type { ClassificacaoTTDD, EstruturaTTDD } from "@/lib/nexus/types";
 
 /** Séries consecutivas da mesma subfunção: a recomendação aparece uma vez. */
@@ -59,6 +60,7 @@ function Serie({ c }: { c: ClassificacaoTTDD }) {
 /** Consulta da TTDD oficial: plano de classificação à esquerda, séries à
  * direita. Filtros na URL (?codigo, ?q, ?page) — o link é compartilhável. */
 function Consulta() {
+  const { can } = useNexus();
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -99,13 +101,20 @@ function Consulta() {
         title="Tabela de Temporalidade e Destinação de Documentos"
         description="Por quanto tempo guardar cada série documental e o que fazer depois — conforme a TTDD publicada no Diário Oficial."
         actions={
-          <a
-            href={`/api/backend/${withQuery("v1/atlas/ttdd/exportar", { codigo, q })}`}
-            download="ttdd.csv"
-            className={buttonClass("secondary")}
-          >
-            <Download size={16} aria-hidden="true" /> Exportar CSV
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={`/api/backend/${withQuery("v1/atlas/ttdd/exportar", { codigo, q })}`}
+              download="ttdd.csv"
+              className={buttonClass("secondary")}
+            >
+              <Download size={16} aria-hidden="true" /> Exportar CSV
+            </a>
+            {can("atlas:manage") && (
+              <Link href="/atlas/ttdd/atualizar" className={buttonClass("secondary")}>
+                <FileUp size={16} aria-hidden="true" /> Atualizar TTDD
+              </Link>
+            )}
+          </div>
         }
       />
 

@@ -167,3 +167,12 @@ func (fr *faultRepo) CandidatosTTDD(ctx context.Context, db database.DBTX, pergu
 	defer fr.post(ctx, db)
 	return fr.inner.CandidatosTTDD(ctx, db, pergunta, limit)
 }
+
+func (fr *faultRepo) CargaTTDD(ctx context.Context, db database.DBTX, c domain.CargaTTDD, aplicar bool) (domain.ImpactoCarga, error) {
+	if err := fr.hook("CargaTTDD"); err != nil {
+		var z0 domain.ImpactoCarga
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.CargaTTDD(ctx, db, c, aplicar)
+}

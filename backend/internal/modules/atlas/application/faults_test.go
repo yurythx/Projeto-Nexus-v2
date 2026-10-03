@@ -2,6 +2,7 @@ package application_test
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -70,6 +71,13 @@ func (e *env) workflow(ativo bool) domain.Workflow {
 	return w
 }
 
+// cargaTeste é uma TTDD de um órgão fictício (98.0): aplicá-la não toca
+// nas séries dos outros órgãos.
+const cargaTeste = `{"orgaos":{"98.0":{"nome":"Órgão de teste","edicao":"1","data":"2026-01-01","versao":"I"}},
+	"funcoes":{"98.0.01":"Função"},"subfuncoes":{"98.0.01.00":{"nome":"Subfunção","recomendacao":""}},
+	"itens":[{"codigo":"98.0.01.00.01","subfuncao":"98.0.01.00","descritor":"Série de teste","corrente_anos":1,
+		"corrente_condicao":"","intermediaria_anos":2,"intermediaria_condicao":"","destinacao":"ELIMINACAO","observacoes":""}]}`
+
 func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 	e := &env{t: t, pool: dbtest.Pool(t)}
 	ctx := context.Background()
@@ -110,6 +118,12 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 		"NovaVersao": func() func(*application.Service) error {
 			w := e.workflow(true)
 			return func(s *application.Service) error { _, err := s.NovaVersao(ctx, gestor, w.ID, novo()); return err }
+		},
+		"AplicarCarga": func() func(*application.Service) error {
+			return func(s *application.Service) error {
+				_, err := s.ImpactoTTDD(ctx, application.FormatoJSON, cargaTeste, application.HashCarga(cargaTeste), true)
+				return err
+			}
 		},
 		"Desativar": func() func(*application.Service) error {
 			w := e.workflow(true)
@@ -190,6 +204,7 @@ func TestHandlersReportServiceFailures(t *testing.T) {
 		{http.MethodGet, "/atlas/ttdd/exportar", ""},
 		{http.MethodGet, "/atlas/ttdd/2.0.02.00.07", ""},
 		{http.MethodGet, "/atlas/ttdd/2.0.02.00.07/historico", ""},
+		{http.MethodPost, "/atlas/admin/ttdd/carga/simular", cargaCorpo()},
 		{http.MethodPost, "/atlas/admin/workflows/" + id + "/versoes", `{"codigo_processual":"X.Y","titulo":"t","objetivo":"o","publico_alvo":"p","nivel_acesso":"PUBLICO",
 			"codigo_ttdd":"2.0.02.00.07","etapas":[{"ordem":1,"unidade_administrativa":"A","nome_setor":"S","atribuicoes_setor":"x"}]}`},
 		{http.MethodGet, "/atlas/workflows", ""},
@@ -233,4 +248,9 @@ func TestModule(t *testing.T) {
 	if _, err := prov.Search(cctx, auth.Identity{}, "x", 5); err == nil {
 		t.Fatal("busca com o banco indisponível falha")
 	}
+}
+
+func cargaCorpo() string {
+	b, _ := json.Marshal(map[string]string{"formato": "json", "conteudo": cargaTeste})
+	return string(b)
 }

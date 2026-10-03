@@ -835,3 +835,31 @@ export interface UsoIA {
   updated_by: string;
   ambiente: ConexaoIA | null;
 }
+
+/** Valores de uma série num lado da comparação (antes/depois da carga). */
+export type PrazosTTDD = HistoricoTTDD["anterior"];
+
+export type SituacaoCarga = "NOVA" | "ALTERADA" | "REVOGADA" | "RESTABELECIDA" | "INALTERADA";
+
+/** Impacto de uma nova TTDD (ADR 022): o que muda e quem é afetado. */
+export interface ImpactoCargaTTDD {
+  hash: string;
+  aplicada: boolean;
+  orgaos: OrgaoTTDD[];
+  totais: Partial<Record<SituacaoCarga, number>>;
+  series: {
+    codigo: string;
+    descritor: string;
+    situacao: SituacaoCarga;
+    antes: PrazosTTDD | null;
+    depois: PrazosTTDD | null;
+  }[];
+  procedimentos: {
+    id: UUID;
+    codigo_processual: string;
+    versao: number;
+    ativo: boolean;
+    codigo_ttdd: string;
+    situacao: SituacaoCarga;
+  }[];
+}

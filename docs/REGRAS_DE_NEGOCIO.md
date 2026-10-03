@@ -583,9 +583,13 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     as séries dela) e **fonte** — versão e edição/data do Diário Oficial;
   - cada procedimento é enquadrado numa série existente **e vigente**.
 - **Vigência da TTDD (ADR 019):**
-  - nova publicação: `make ttdd-impacto` mostra, sem gravar, as séries
-    novas, alteradas (prazos antes → depois), revogadas e restabelecidas e
-    os procedimentos afetados; `make ttdd-aplicar` grava;
+  - nova publicação, **pela tela** (Atlas → Tabela de Temporalidade →
+    Atualizar TTDD, `atlas:manage` — ADR 022): enviar o CSV da exportação
+    revisado no Excel (ou o `ttdd.json` do PDF), **simular** — séries
+    novas, alteradas (antes → depois), revogadas e restabelecidas e os
+    procedimentos afetados, sem gravar — e **aplicar** só o arquivo
+    simulado (hash), depois de confirmar; auditado. Pelo servidor:
+    `make ttdd-impacto` / `make ttdd-aplicar` (mesmas regras);
   - série que sai da tabela fica **revogada** (data e edição do Diário
     Oficial), nunca apagada: some da consulta, da árvore, da exportação e
     do assistente, mas abre pelo código com o aviso; só são revogadas

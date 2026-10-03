@@ -166,7 +166,9 @@ make ttdd-impacto   # mostra o que mudaria, sem gravar
 make ttdd-aplicar   # mostra o mesmo relatório e grava
 ```
 
-Nova versão publicada no Diário Oficial (ADR 019):
+Nova versão publicada no Diário Oficial: a gestão do Atlas faz pela tela
+(**Atlas → Tabela de Temporalidade → Atualizar TTDD** — envia o CSV revisado
+ou o `ttdd.json`, confere o impacto e aplica; ADR 022). Pelo servidor (ADR 019):
 
 1. troque `docs/ttdd.pdf` e rode `cd scripts/ttdd && npm ci && npm run tudo`;
 2. revise `divergencias` em `deploy/ttdd/ttdd.json`;

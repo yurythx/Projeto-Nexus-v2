@@ -458,6 +458,10 @@ type Repository interface {
 	// LockTTDD confere a série (inexistente, vigente ou revogada) e a trava
 	// (FOR SHARE) até o fim da transação de cadastro.
 	LockTTDD(ctx context.Context, db database.DBTX, codigo string) (SituacaoTTDD, error)
+	// CargaTTDD compara a carga com o banco (séries novas, alteradas,
+	// revogadas, restabelecidas e procedimentos afetados) e, com aplicar, grava
+	// — na transação db (a simulação é desfeita por quem chama).
+	CargaTTDD(ctx context.Context, db database.DBTX, c CargaTTDD, aplicar bool) (ImpactoCarga, error)
 	// HistoricoTTDD devolve as mudanças da série, da mais recente à mais antiga.
 	HistoricoTTDD(ctx context.Context, db database.DBTX, codigo string) ([]HistoricoTTDD, error)
 

@@ -698,6 +698,50 @@
         "type": "object",
         "x-nexus-generated": true
       },
+      "AtlasImpactoCarga": {
+        "properties": {
+          "aplicada": {
+            "type": "boolean"
+          },
+          "hash": {
+            "type": "string"
+          },
+          "orgaos": {
+            "items": {
+              "$ref": "#/components/schemas/AtlasOrgaoTTDD"
+            },
+            "type": "array"
+          },
+          "procedimentos": {
+            "items": {
+              "$ref": "#/components/schemas/AtlasProcedimentoAfetado"
+            },
+            "type": "array"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/AtlasSerieImpacto"
+            },
+            "type": "array"
+          },
+          "totais": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "aplicada",
+          "hash",
+          "orgaos",
+          "procedimentos",
+          "series",
+          "totais"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "AtlasOrgaoTTDD": {
         "properties": {
           "data_publicacao": {
@@ -771,6 +815,39 @@
         "type": "object",
         "x-nexus-generated": true
       },
+      "AtlasProcedimentoAfetado": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "codigo_processual": {
+            "type": "string"
+          },
+          "codigo_ttdd": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "situacao": {
+            "type": "string"
+          },
+          "versao": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ativo",
+          "codigo_processual",
+          "codigo_ttdd",
+          "id",
+          "situacao",
+          "versao"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "AtlasResposta": {
         "properties": {
           "answer": {
@@ -803,6 +880,44 @@
           "refused",
           "score",
           "sources"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasSerieImpacto": {
+        "properties": {
+          "antes": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AtlasPrazosTTDD"
+              }
+            ],
+            "nullable": true
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "depois": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AtlasPrazosTTDD"
+              }
+            ],
+            "nullable": true
+          },
+          "descritor": {
+            "type": "string"
+          },
+          "situacao": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "antes",
+          "codigo",
+          "depois",
+          "descritor",
+          "situacao"
         ],
         "type": "object",
         "x-nexus-generated": true
@@ -6291,6 +6406,126 @@
         "summary": "Alterar /admin/modules/{key}",
         "tags": [
           "kernel"
+        ]
+      }
+    },
+    "/api/v1/atlas/admin/ttdd/carga/aplicar": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtlasAdminTtddCargaAplicar",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasImpactoCarga"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/ttdd/carga/aplicar",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/admin/ttdd/carga/simular": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtlasAdminTtddCargaSimular",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasImpactoCarga"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/ttdd/carga/simular",
+        "tags": [
+          "atlas"
         ]
       }
     },
