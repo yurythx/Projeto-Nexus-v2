@@ -2,9 +2,10 @@
 
 import { Bot, FileClock, Search, Workflow as WorkflowIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import { useApiPage, withQuery } from "@/lib/api/swr";
+import { useAtrasado } from "@/lib/atlas/useAtrasado";
 import type { ClassificacaoTTDD, Workflow } from "@/lib/nexus/types";
 
 import { useAssistente } from "./AssistenteGaveta";
@@ -16,16 +17,6 @@ interface Opcao {
   label: string;
   detalhe?: string;
   acao: () => void;
-}
-
-/** Espera o usuário parar de digitar antes de consultar a API. */
-function useAtrasado(valor: string, ms = 250) {
-  const [v, setV] = useState(valor);
-  useEffect(() => {
-    const t = setTimeout(() => setV(valor), ms);
-    return () => clearTimeout(t);
-  }, [valor, ms]);
-  return v;
 }
 
 /** Busca unificada do Atlas (combobox WAI-ARIA): procedimentos e séries da

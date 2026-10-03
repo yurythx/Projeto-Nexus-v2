@@ -88,8 +88,51 @@ type ClassificacaoTTDD struct {
 	DestinacaoFinal      *DestinacaoFinal `json:"destinacao_final"`
 	Observacoes          string           `json:"observacoes"`
 	Subfuncao            *SubfuncaoTTDD   `json:"subfuncao,omitempty"`
-	CreatedAt            time.Time        `json:"created_at"`
+	// RevogadaEm: a série saiu da TTDD na publicação RevogadaEdicao (nil =
+	// vigente). Continua consultável: documentos já produzidos seguem nela.
+	RevogadaEm     *time.Time `json:"revogada_em"`
+	RevogadaEdicao string     `json:"revogada_edicao"`
+	CreatedAt      time.Time  `json:"created_at"`
 }
+
+// Vigente informa se a série está na TTDD em vigor.
+func (c ClassificacaoTTDD) Vigente() bool { return c.RevogadaEm == nil }
+
+// Eventos do histórico de uma série (gatilho da migration 000135).
+const (
+	HistoricoAlterada      = "ALTERADA"
+	HistoricoRevogada      = "REVOGADA"
+	HistoricoRestabelecida = "RESTABELECIDA"
+)
+
+// PrazosTTDD são os valores de uma série guardados no histórico.
+type PrazosTTDD struct {
+	Descritor            string           `json:"descritor"`
+	FaseCorrenteAnos     *int             `json:"fase_corrente_anos"`
+	FaseCorrenteCondicao string           `json:"fase_corrente_condicao"`
+	FaseIntermAnos       *int             `json:"fase_interm_anos"`
+	FaseIntermCondicao   string           `json:"fase_interm_condicao"`
+	DestinacaoFinal      *DestinacaoFinal `json:"destinacao_final"`
+	Observacoes          string           `json:"observacoes"`
+}
+
+// HistoricoTTDD é uma mudança da série: o evento, os valores anteriores e
+// a publicação que a trouxe.
+type HistoricoTTDD struct {
+	Evento       string     `json:"evento"`
+	Anterior     PrazosTTDD `json:"anterior"`
+	EdicaoDiario string     `json:"edicao_diario"`
+	RegistradoEm time.Time  `json:"registrado_em"`
+}
+
+// SituacaoTTDD é o resultado da conferência da série no cadastro.
+type SituacaoTTDD int
+
+const (
+	TTDDInexistente SituacaoTTDD = iota
+	TTDDVigente
+	TTDDRevogada
+)
 
 // OrgaoTTDD é o órgão dono de uma TTDD, com a publicação oficial dela.
 type OrgaoTTDD struct {
@@ -396,6 +439,8 @@ func httpURL(raw string) bool {
 type Filter struct {
 	Query      string
 	CodigoTTDD string
+	// CodigoProcessual: todas as versões de um procedimento (código exato).
+	CodigoProcessual string
 	// IncluirInativos: só a gestão (atlas:manage) vê os desativados.
 	IncluirInativos bool
 }
@@ -407,9 +452,11 @@ type Repository interface {
 	EstruturaTTDD(ctx context.Context, db database.DBTX) ([]EstruturaTTDD, error)
 	// CandidatosTTDD devolve séries que casam com algum termo da pergunta.
 	CandidatosTTDD(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]ClassificacaoTTDD, error)
-	// LockTTDD confirma que a classificação existe e a trava (FOR SHARE)
-	// até o fim da transação de cadastro.
-	LockTTDD(ctx context.Context, db database.DBTX, codigo string) (bool, error)
+	// LockTTDD confere a série (inexistente, vigente ou revogada) e a trava
+	// (FOR SHARE) até o fim da transação de cadastro.
+	LockTTDD(ctx context.Context, db database.DBTX, codigo string) (SituacaoTTDD, error)
+	// HistoricoTTDD devolve as mudanças da série, da mais recente à mais antiga.
+	HistoricoTTDD(ctx context.Context, db database.DBTX, codigo string) ([]HistoricoTTDD, error)
 
 	List(ctx context.Context, db database.DBTX, f Filter, p pagination.Params) ([]Workflow, int64, error)
 	// Get devolve o procedimento completo (etapas, peças e transições).
@@ -417,6 +464,12 @@ type Repository interface {
 	// Insert grava o procedimento com etapas, peças e transições.
 	Insert(ctx context.Context, db database.DBTX, w Workflow) error
 	SetAtivo(ctx context.Context, db database.DBTX, id uuid.UUID, ativo bool) error
+	// MaxVersao devolve a maior versão do código processual (0 se nenhuma),
+	// travando as versões existentes até o fim da transação.
+	MaxVersao(ctx context.Context, db database.DBTX, codigo string) (int, error)
+	// DesativarVersoes desativa as versões ativas do código, exceto `exceto`,
+	// e devolve as que mudaram.
+	DesativarVersoes(ctx context.Context, db database.DBTX, codigo string, exceto uuid.UUID) ([]uuid.UUID, error)
 	// Search é a busca full-text (ativos) com o rank de cada resultado.
 	Search(ctx context.Context, db database.DBTX, query string, limit int) ([]Workflow, []float64, error)
 	// Candidatos devolve os procedimentos ativos (completos) que casam com

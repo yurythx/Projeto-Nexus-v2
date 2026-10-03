@@ -673,7 +673,28 @@ export interface ClassificacaoTTDD {
   destinacao_final: DestinacaoFinal | null;
   observacoes: string;
   subfuncao?: SubfuncaoTTDD;
+  /** Data em que a série saiu da TTDD em vigor (null = vigente) e a edição
+   * do Diário Oficial que a retirou. */
+  revogada_em: string | null;
+  revogada_edicao: string;
   created_at: string;
+}
+
+/** Mudança de uma série: os valores ANTERIORES e a publicação que a trouxe. */
+export interface HistoricoTTDD {
+  evento: "ALTERADA" | "REVOGADA" | "RESTABELECIDA";
+  anterior: Pick<
+    ClassificacaoTTDD,
+    | "descritor"
+    | "fase_corrente_anos"
+    | "fase_corrente_condicao"
+    | "fase_interm_anos"
+    | "fase_interm_condicao"
+    | "destinacao_final"
+    | "observacoes"
+  >;
+  edicao_diario: string;
+  registrado_em: string;
 }
 
 export interface EstruturaTTDD extends OrgaoTTDD {

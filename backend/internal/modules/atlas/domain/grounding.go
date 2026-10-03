@@ -167,6 +167,10 @@ func SinteseCanonica(w Workflow) string {
 // série da TTDD (uma linha por informação).
 func Temporalidade(c ClassificacaoTTDD) string {
 	var b strings.Builder
+	if !c.Vigente() {
+		fmt.Fprintf(&b, "ATENÇÃO: série revogada em %s%s — não está na TTDD em vigor; confirme a classificação com a gestão documental.\n",
+			c.RevogadaEm.Format("02/01/2006"), edicaoDiario(c.RevogadaEdicao))
+	}
 	fmt.Fprintf(&b, "Temporalidade: fase corrente %s; fase intermediária %s; destinação final: %s.\n",
 		Fase(c.FaseCorrenteAnos, c.FaseCorrenteCondicao, true), Fase(c.FaseIntermAnos, c.FaseIntermCondicao, false), c.Destinacao())
 	if total, ok := c.PrazoTotalAnos(); ok {
@@ -241,4 +245,12 @@ func Fonte(o OrgaoTTDD) string {
 		}
 	}
 	return fonte
+}
+
+// edicaoDiario descreve a edição do Diário Oficial (vazia = não informada).
+func edicaoDiario(e string) string {
+	if e == "" {
+		return ""
+	}
+	return " (Diário Oficial nº " + e + ")"
 }

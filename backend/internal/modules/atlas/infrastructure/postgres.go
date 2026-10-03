@@ -40,7 +40,7 @@ func wrap(err error) error {
 // ttddCols/ttddJoins: a série e a hierarquia oficial (LEFT JOIN — séries
 // antigas podem não ter subfunção). Alias "c" para a classificação.
 const ttddCols = `c.codigo, c.descritor, c.fase_corrente_anos, c.fase_corrente_condicao, c.fase_interm_anos, c.fase_interm_condicao,
-	c.destinacao_final, c.observacoes, c.created_at,
+	c.destinacao_final, c.observacoes, c.revogada_em, c.revogada_edicao, c.created_at,
 	s.codigo, s.nome, s.recomendacao, f.codigo, f.nome, o.prefixo, o.nome, o.edicao_diario, o.data_publicacao, o.versao`
 
 const ttddJoins = ` LEFT JOIN atlas_ttdd_subfuncoes s ON s.codigo = c.subfuncao_codigo
@@ -53,7 +53,7 @@ func ttddDest(c *domain.ClassificacaoTTDD) ([]any, func()) {
 	var sCod, sNome, sRec, fCod, fNome, oPref, oNome, oEd, oVer *string
 	var oData *time.Time
 	dest := []any{&c.Codigo, &c.Descritor, &c.FaseCorrenteAnos, &c.FaseCorrenteCondicao, &c.FaseIntermAnos, &c.FaseIntermCondicao,
-		&c.DestinacaoFinal, &c.Observacoes, &c.CreatedAt, &sCod, &sNome, &sRec, &fCod, &fNome, &oPref, &oNome, &oEd, &oData, &oVer}
+		&c.DestinacaoFinal, &c.Observacoes, &c.RevogadaEm, &c.RevogadaEdicao, &c.CreatedAt, &sCod, &sNome, &sRec, &fCod, &fNome, &oPref, &oNome, &oEd, &oData, &oVer}
 	return dest, func() {
 		if sCod == nil {
 			return
@@ -78,8 +78,9 @@ func scanTTDD(row pgx.Row, extra ...any) (domain.ClassificacaoTTDD, error) {
 // 10.0 depois de 9.0); o sufixo "-2" (código repetido no documento) por último.
 const ordemTTDD = `string_to_array(split_part(c.codigo, '-', 1), '.')::int[], c.codigo`
 
+// ListTTDD consulta a TTDD em vigor (as revogadas só por código, em GetTTDD).
 func (r *Repository) ListTTDD(ctx context.Context, db database.DBTX, f domain.FiltroTTDD, p pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
-	conds, args := []string{}, []any{}
+	conds, args := []string{"c.revogada_em IS NULL"}, []any{}
 	if f.Codigo != "" {
 		// Prefixo hierárquico: "2.0" pega o órgão, "2.0.01" a função...
 		args = append(args, f.Codigo)
@@ -89,10 +90,7 @@ func (r *Repository) ListTTDD(ctx context.Context, db database.DBTX, f domain.Fi
 		args = append(args, f.Query)
 		conds = append(conds, fmt.Sprintf("(c.search @@ nexus_search_tsquery('portuguese', $%d) OR c.codigo LIKE $%d || '%%')", len(args), len(args)))
 	}
-	where := ""
-	if len(conds) > 0 {
-		where = " WHERE " + strings.Join(conds, " AND ")
-	}
+	where := " WHERE " + strings.Join(conds, " AND ")
 	var total int64
 	if err := db.QueryRow(ctx, `SELECT COUNT(*) FROM atlas_classificacao_ttdd c`+where, args...).Scan(&total); err != nil {
 		return nil, 0, wrap(err)
@@ -126,7 +124,7 @@ func (r *Repository) GetTTDD(ctx context.Context, db database.DBTX, codigo strin
 // EstruturaTTDD monta órgão > função > subfunção com a contagem de séries.
 func (r *Repository) EstruturaTTDD(ctx context.Context, db database.DBTX) ([]domain.EstruturaTTDD, error) {
 	rows, err := db.Query(ctx, `SELECT o.prefixo, o.nome, o.edicao_diario, o.data_publicacao, o.versao, f.codigo, f.nome, s.codigo, s.nome,
-			(SELECT COUNT(*) FROM atlas_classificacao_ttdd c WHERE c.subfuncao_codigo = s.codigo)
+			(SELECT COUNT(*) FROM atlas_classificacao_ttdd c WHERE c.subfuncao_codigo = s.codigo AND c.revogada_em IS NULL)
 		FROM atlas_ttdd_orgaos o JOIN atlas_ttdd_funcoes f ON f.orgao_prefixo = o.prefixo JOIN atlas_ttdd_subfuncoes s ON s.funcao_codigo = f.codigo
 		ORDER BY string_to_array(s.codigo, '.')::int[]`)
 	if err != nil {
@@ -163,7 +161,7 @@ func (r *Repository) CandidatosTTDD(ctx context.Context, db database.DBTX, pergu
 			SELECT NULLIF(replace(plainto_tsquery('portuguese', nexus_unaccent($1))::text, ' & ', ' | '), '')::tsquery AS q
 		)
 		SELECT `+ttddCols+`, ts_rank(c.search, q.q) AS rank FROM q, atlas_classificacao_ttdd c`+ttddJoins+`
-		WHERE c.search @@ q.q ORDER BY rank DESC, c.codigo LIMIT $2`, pergunta, limit)
+		WHERE c.search @@ q.q AND c.revogada_em IS NULL ORDER BY rank DESC, c.codigo LIMIT $2`, pergunta, limit)
 	if err != nil {
 		return nil, wrap(err)
 	}
@@ -180,10 +178,36 @@ func (r *Repository) CandidatosTTDD(ctx context.Context, db database.DBTX, pergu
 	return out, wrap(rows.Err())
 }
 
-func (r *Repository) LockTTDD(ctx context.Context, db database.DBTX, codigo string) (bool, error) {
-	var ok bool
-	err := db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM atlas_classificacao_ttdd WHERE codigo = $1 FOR SHARE)`, codigo).Scan(&ok)
-	return ok, wrap(err)
+func (r *Repository) LockTTDD(ctx context.Context, db database.DBTX, codigo string) (domain.SituacaoTTDD, error) {
+	var vigente bool
+	err := db.QueryRow(ctx, `SELECT revogada_em IS NULL FROM atlas_classificacao_ttdd WHERE codigo = $1 FOR SHARE`, codigo).Scan(&vigente)
+	switch {
+	case database.IsNoRows(err):
+		return domain.TTDDInexistente, nil
+	case err != nil:
+		return domain.TTDDInexistente, wrap(err)
+	case vigente:
+		return domain.TTDDVigente, nil
+	}
+	return domain.TTDDRevogada, nil
+}
+
+func (r *Repository) HistoricoTTDD(ctx context.Context, db database.DBTX, codigo string) ([]domain.HistoricoTTDD, error) {
+	rows, err := db.Query(ctx, `SELECT evento, anterior, edicao_diario, registrado_em FROM atlas_ttdd_historico
+		WHERE codigo = $1 ORDER BY registrado_em DESC, id DESC`, codigo)
+	if err != nil {
+		return nil, wrap(err)
+	}
+	defer rows.Close()
+	out := []domain.HistoricoTTDD{}
+	for rows.Next() {
+		var h domain.HistoricoTTDD
+		if err := rows.Scan(&h.Evento, &h.Anterior, &h.EdicaoDiario, &h.RegistradoEm); err != nil {
+			return nil, wrap(err)
+		}
+		out = append(out, h)
+	}
+	return out, wrap(rows.Err())
 }
 
 // ----------------------------------------------------------- Workflows
@@ -217,6 +241,10 @@ func (r *Repository) List(ctx context.Context, db database.DBTX, f domain.Filter
 	if f.CodigoTTDD != "" {
 		args = append(args, f.CodigoTTDD)
 		conds = append(conds, fmt.Sprintf("w.codigo_ttdd = $%d", len(args)))
+	}
+	if f.CodigoProcessual != "" {
+		args = append(args, strings.ToUpper(f.CodigoProcessual))
+		conds = append(conds, fmt.Sprintf("w.codigo_processual = $%d", len(args)))
 	}
 	if f.Query != "" {
 		args = append(args, f.Query)
@@ -393,6 +421,43 @@ func (r *Repository) SetAtivo(ctx context.Context, db database.DBTX, id uuid.UUI
 		return domain.ErrNotFound
 	}
 	return nil
+}
+
+func (r *Repository) MaxVersao(ctx context.Context, db database.DBTX, codigo string) (int, error) {
+	// FOR UPDATE nas versões: duas "novas versões" simultâneas do mesmo
+	// procedimento se serializam (a segunda vê a versão da primeira).
+	rows, err := db.Query(ctx, `SELECT versao FROM atlas_workflows WHERE codigo_processual = $1 FOR UPDATE`, codigo)
+	if err != nil {
+		return 0, wrap(err)
+	}
+	defer rows.Close()
+	maior := 0
+	for rows.Next() {
+		var v int
+		if err := rows.Scan(&v); err != nil {
+			return 0, wrap(err)
+		}
+		maior = max(maior, v)
+	}
+	return maior, wrap(rows.Err())
+}
+
+func (r *Repository) DesativarVersoes(ctx context.Context, db database.DBTX, codigo string, exceto uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := db.Query(ctx, `UPDATE atlas_workflows SET ativo = FALSE
+		WHERE codigo_processual = $1 AND id <> $2 AND ativo RETURNING id`, codigo, exceto)
+	if err != nil {
+		return nil, wrap(err)
+	}
+	defer rows.Close()
+	var ids []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, wrap(err)
+		}
+		ids = append(ids, id)
+	}
+	return ids, wrap(rows.Err())
 }
 
 func (r *Repository) Search(ctx context.Context, db database.DBTX, query string, limit int) ([]domain.Workflow, []float64, error) {

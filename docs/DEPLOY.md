@@ -152,12 +152,24 @@ extraídas de `docs/ttdd.pdf`) é carregada à parte, e pode rodar de novo a
 qualquer momento:
 
 ```bash
-make ttdd-aplicar
+make ttdd-impacto   # mostra o que mudaria, sem gravar
+make ttdd-aplicar   # mostra o mesmo relatório e grava
 ```
 
-Nova versão publicada no Diário Oficial: troque `docs/ttdd.pdf`, rode
-`cd scripts/ttdd && npm ci && npm run tudo`, revise `divergencias` em
-`deploy/ttdd/ttdd.json` e aplique de novo (ver `scripts/ttdd/README.md`).
+Nova versão publicada no Diário Oficial (ADR 019):
+
+1. troque `docs/ttdd.pdf` e rode `cd scripts/ttdd && npm ci && npm run tudo`;
+2. revise `divergencias` em `deploy/ttdd/ttdd.json`;
+3. `make ttdd-impacto` — séries **novas**, **alteradas** (prazos antes →
+   depois), **revogadas** (saíram da tabela) e **restabelecidas**, e os
+   **procedimentos afetados** (que apontam para série alterada ou
+   revogada);
+4. `make ttdd-aplicar`; depois, na página de cada procedimento afetado, a
+   gestão revisa e publica uma **nova versão** quando preciso.
+
+Série que sai da tabela não é apagada: fica **revogada** (data e edição do
+Diário Oficial), some da consulta e do assistente, mas continua acessível
+pelo código, com o histórico dos prazos anteriores.
 
 ## Atlas — assistente procedural com IA (opcional)
 

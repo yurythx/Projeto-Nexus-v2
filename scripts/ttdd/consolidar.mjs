@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Consolida a TTDD oficial (docs/ttdd.pdf) em deploy/ttdd/ttdd.json e
-// deploy/ttdd/ttdd.sql (carga idempotente: make ttdd-aplicar).
+// deploy/ttdd/ttdd.sql (dados para deploy/ttdd/carga.sql: make ttdd-impacto e
+// make ttdd-aplicar).
 //
 // Fontes:
 //   - dados/extraida.json — páginas com texto (analisar.mjs);
@@ -186,28 +187,29 @@ for (const s of Object.keys(subfuncoes)) if (!funcoes[s.split(".").slice(0, 3).j
 
 // ------------------------------------------------------------- saída
 const q = (v) => (v === null || v === undefined ? "NULL" : typeof v === "number" ? String(v) : `'${String(v).replace(/'/g, "''")}'`);
+// Só os dados, em tabelas temporárias da sessão: quem compara com o banco e
+// grava é deploy/ttdd/carga.sql (make ttdd-impacto / make ttdd-aplicar).
 const sql = [
   "-- GERADO por scripts/ttdd/consolidar.mjs a partir de docs/ttdd.pdf — não edite à mão.",
-  "-- TTDD oficial (CCPAD / Diário Oficial de Rondonópolis). Idempotente: make ttdd-aplicar",
-  "BEGIN;", "",
+  "-- TTDD oficial (CCPAD / Diário Oficial de Rondonópolis) em tabelas temporárias;",
+  "-- deploy/ttdd/carga.sql mostra o impacto e grava (make ttdd-impacto / make ttdd-aplicar).",
+  "CREATE TEMP TABLE carga_orgaos (prefixo TEXT PRIMARY KEY, nome TEXT NOT NULL, edicao_diario TEXT NOT NULL, data_publicacao DATE, versao TEXT NOT NULL);",
+  "CREATE TEMP TABLE carga_funcoes (codigo TEXT PRIMARY KEY, orgao_prefixo TEXT NOT NULL, nome TEXT NOT NULL);",
+  "CREATE TEMP TABLE carga_subfuncoes (codigo TEXT PRIMARY KEY, funcao_codigo TEXT NOT NULL, nome TEXT NOT NULL, recomendacao TEXT NOT NULL);",
+  "CREATE TEMP TABLE carga_series (codigo TEXT PRIMARY KEY, subfuncao_codigo TEXT NOT NULL, descritor TEXT NOT NULL, fase_corrente_anos INT,",
+  "  fase_corrente_condicao TEXT NOT NULL, fase_interm_anos INT, fase_interm_condicao TEXT NOT NULL, destinacao_final TEXT, observacoes TEXT NOT NULL);",
+  "",
 ];
-for (const [p, o] of Object.entries(ORGAOS))
-  sql.push(`INSERT INTO atlas_ttdd_orgaos (prefixo, nome, edicao_diario, data_publicacao, versao) VALUES (${q(p)}, ${q(o.nome)}, ${q(o.edicao)}, ${q(o.data)}, ${q(o.versao)})
-  ON CONFLICT (prefixo) DO UPDATE SET nome = EXCLUDED.nome, edicao_diario = EXCLUDED.edicao_diario, data_publicacao = EXCLUDED.data_publicacao, versao = EXCLUDED.versao;`);
-for (const [c, n] of Object.entries(funcoes))
-  sql.push(`INSERT INTO atlas_ttdd_funcoes (codigo, orgao_prefixo, nome) VALUES (${q(c)}, ${q(c.split(".").slice(0, 2).join("."))}, ${q(n)})
-  ON CONFLICT (codigo) DO UPDATE SET nome = EXCLUDED.nome;`);
-for (const [c, s] of Object.entries(subfuncoes))
-  sql.push(`INSERT INTO atlas_ttdd_subfuncoes (codigo, funcao_codigo, nome, recomendacao) VALUES (${q(c)}, ${q(c.split(".").slice(0, 3).join("."))}, ${q(s.nome)}, ${q(s.recomendacao)})
-  ON CONFLICT (codigo) DO UPDATE SET nome = EXCLUDED.nome, recomendacao = EXCLUDED.recomendacao;`);
+const valores = (tabela, linhas) => {
+  for (let i = 0; i < linhas.length; i += 200)
+    sql.push(`INSERT INTO ${tabela} VALUES\n  ${linhas.slice(i, i + 200).map((l) => `(${l.map(q).join(", ")})`).join(",\n  ")};`);
+};
+valores("carga_orgaos", Object.entries(ORGAOS).map(([p, o]) => [p, o.nome, o.edicao, o.data, o.versao]));
+valores("carga_funcoes", Object.entries(funcoes).map(([c, n]) => [c, c.split(".").slice(0, 2).join("."), n]));
+valores("carga_subfuncoes", Object.entries(subfuncoes).map(([c, s]) => [c, c.split(".").slice(0, 3).join("."), s.nome, s.recomendacao]));
+valores("carga_series", saida.map((i) => [i.codigo, i.subfuncao, i.descritor, i.corrente_anos, i.corrente_condicao,
+  i.intermediaria_anos, i.intermediaria_condicao, i.destinacao, i.observacoes]));
 sql.push("");
-for (const i of saida)
-  sql.push(`INSERT INTO atlas_classificacao_ttdd (codigo, subfuncao_codigo, descritor, fase_corrente_anos, fase_corrente_condicao, fase_interm_anos, fase_interm_condicao, destinacao_final, observacoes)
-  VALUES (${q(i.codigo)}, ${q(i.subfuncao)}, ${q(i.descritor)}, ${q(i.corrente_anos)}, ${q(i.corrente_condicao)}, ${q(i.intermediaria_anos)}, ${q(i.intermediaria_condicao)}, ${q(i.destinacao)}, ${q(i.observacoes)})
-  ON CONFLICT (codigo) DO UPDATE SET subfuncao_codigo = EXCLUDED.subfuncao_codigo, descritor = EXCLUDED.descritor, fase_corrente_anos = EXCLUDED.fase_corrente_anos,
-    fase_corrente_condicao = EXCLUDED.fase_corrente_condicao, fase_interm_anos = EXCLUDED.fase_interm_anos, fase_interm_condicao = EXCLUDED.fase_interm_condicao,
-    destinacao_final = EXCLUDED.destinacao_final, observacoes = EXCLUDED.observacoes;`);
-sql.push("", "COMMIT;", "");
 
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, "ttdd.json"), JSON.stringify({ fonte: "docs/ttdd.pdf", orgaos: ORGAOS, funcoes, subfuncoes, itens: saida, divergencias }, null, 1) + "\n");

@@ -164,6 +164,12 @@ components:
                     type: string
                 observacoes:
                     type: string
+                revogada_edicao:
+                    type: string
+                revogada_em:
+                    format: date-time
+                    nullable: true
+                    type: string
                 subfuncao:
                     $ref: '#/components/schemas/AtlasSubfuncaoTTDD'
             required:
@@ -176,6 +182,8 @@ components:
                 - fase_interm_anos
                 - fase_interm_condicao
                 - observacoes
+                - revogada_edicao
+                - revogada_em
             type: object
             x-nexus-generated: true
         AtlasCreateRequest:
@@ -478,6 +486,24 @@ components:
                 - orgao
             type: object
             x-nexus-generated: true
+        AtlasHistoricoTTDD:
+            properties:
+                anterior:
+                    $ref: '#/components/schemas/AtlasPrazosTTDD'
+                edicao_diario:
+                    type: string
+                evento:
+                    type: string
+                registrado_em:
+                    format: date-time
+                    type: string
+            required:
+                - anterior
+                - edicao_diario
+                - evento
+                - registrado_em
+            type: object
+            x-nexus-generated: true
         AtlasOrgaoTTDD:
             properties:
                 data_publicacao:
@@ -498,6 +524,38 @@ components:
                 - nome
                 - prefixo
                 - versao
+            type: object
+            x-nexus-generated: true
+        AtlasPrazosTTDD:
+            properties:
+                descritor:
+                    type: string
+                destinacao_final:
+                    enum:
+                        - ELIMINACAO
+                        - GUARDA_PERMANENTE
+                    nullable: true
+                    type: string
+                fase_corrente_anos:
+                    nullable: true
+                    type: integer
+                fase_corrente_condicao:
+                    type: string
+                fase_interm_anos:
+                    nullable: true
+                    type: integer
+                fase_interm_condicao:
+                    type: string
+                observacoes:
+                    type: string
+            required:
+                - descritor
+                - destinacao_final
+                - fase_corrente_anos
+                - fase_corrente_condicao
+                - fase_interm_anos
+                - fase_interm_condicao
+                - observacoes
             type: object
             x-nexus-generated: true
         AtlasResposta:
@@ -4389,6 +4447,13 @@ paths:
                     maxLength: 32
                     type: string
                   x-nexus-generated: true
+                - in: query
+                  name: codigo_processual
+                  required: false
+                  schema:
+                    maxLength: 64
+                    type: string
+                  x-nexus-generated: true
             responses:
                 "200":
                     content:
@@ -4577,6 +4642,52 @@ paths:
             summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/desativar
             tags:
                 - atlas
+    /api/v1/atlas/admin/workflows/{id}/versoes:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflowsIdVersoes
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtlasCreateRequest'
+                required: true
+                x-nexus-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasWorkflow'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/versoes
+            tags:
+                - atlas
     /api/v1/atlas/chat:
         post:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -4697,6 +4808,40 @@ paths:
             summary: Atlas — Procedimentos e Temporalidade — Obter /atlas/ttdd/{codigo}
             tags:
                 - atlas
+    /api/v1/atlas/ttdd/{codigo}/historico:
+        get:
+            operationId: getAtlasTtddCodigoHistorico
+            parameters:
+                - in: path
+                  name: codigo
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtlasHistoricoTTDD'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd/{codigo}/historico
+            tags:
+                - atlas
     /api/v1/atlas/ttdd/estrutura:
         get:
             operationId: getAtlasTtddEstrutura
@@ -4774,6 +4919,13 @@ paths:
                   required: false
                   schema:
                     maxLength: 32
+                    type: string
+                  x-nexus-generated: true
+                - in: query
+                  name: codigo_processual
+                  required: false
+                  schema:
+                    maxLength: 64
                     type: string
                   x-nexus-generated: true
             responses:

@@ -69,13 +69,40 @@ func (fr *faultRepo) GetTTDD(ctx context.Context, db database.DBTX, codigo strin
 	return fr.inner.GetTTDD(ctx, db, codigo)
 }
 
-func (fr *faultRepo) LockTTDD(ctx context.Context, db database.DBTX, codigo string) (bool, error) {
+func (fr *faultRepo) LockTTDD(ctx context.Context, db database.DBTX, codigo string) (domain.SituacaoTTDD, error) {
 	if err := fr.hook("LockTTDD"); err != nil {
-		var z0 bool
+		var z0 domain.SituacaoTTDD
 		return z0, err
 	}
 	defer fr.post(ctx, db)
 	return fr.inner.LockTTDD(ctx, db, codigo)
+}
+
+func (fr *faultRepo) HistoricoTTDD(ctx context.Context, db database.DBTX, codigo string) ([]domain.HistoricoTTDD, error) {
+	if err := fr.hook("HistoricoTTDD"); err != nil {
+		var z0 []domain.HistoricoTTDD
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.HistoricoTTDD(ctx, db, codigo)
+}
+
+func (fr *faultRepo) MaxVersao(ctx context.Context, db database.DBTX, codigo string) (int, error) {
+	if err := fr.hook("MaxVersao"); err != nil {
+		var z0 int
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.MaxVersao(ctx, db, codigo)
+}
+
+func (fr *faultRepo) DesativarVersoes(ctx context.Context, db database.DBTX, codigo string, exceto uuid.UUID) ([]uuid.UUID, error) {
+	if err := fr.hook("DesativarVersoes"); err != nil {
+		var z0 []uuid.UUID
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.DesativarVersoes(ctx, db, codigo, exceto)
 }
 
 func (fr *faultRepo) List(ctx context.Context, db database.DBTX, f domain.Filter, p pagination.Params) ([]domain.Workflow, int64, error) {

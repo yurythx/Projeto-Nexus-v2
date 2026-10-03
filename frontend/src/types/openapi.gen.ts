@@ -172,6 +172,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/atlas/admin/workflows/{id}/versoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/versoes
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtlasAdminWorkflowsIdVersoes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atlas/chat": {
         parameters: {
             query?: never;
@@ -252,6 +272,23 @@ export interface paths {
         };
         /** Atlas — Procedimentos e Temporalidade — Obter /atlas/ttdd/{codigo} */
         get: operations["getAtlasTtddCodigo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/ttdd/{codigo}/historico": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd/{codigo}/historico */
+        get: operations["getAtlasTtddCodigoHistorico"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2728,6 +2765,9 @@ export interface components {
             fase_interm_anos: number | null;
             fase_interm_condicao: string;
             observacoes: string;
+            revogada_edicao: string;
+            /** Format: date-time */
+            revogada_em: string | null;
             subfuncao?: components["schemas"]["AtlasSubfuncaoTTDD"];
         };
         AtlasCreateRequest: {
@@ -2828,6 +2868,13 @@ export interface components {
             nome: string;
             orgao: components["schemas"]["AtlasOrgaoTTDD"];
         };
+        AtlasHistoricoTTDD: {
+            anterior: components["schemas"]["AtlasPrazosTTDD"];
+            edicao_diario: string;
+            evento: string;
+            /** Format: date-time */
+            registrado_em: string;
+        };
         AtlasOrgaoTTDD: {
             /** Format: date-time */
             data_publicacao: string | null;
@@ -2835,6 +2882,16 @@ export interface components {
             nome: string;
             prefixo: string;
             versao: string;
+        };
+        AtlasPrazosTTDD: {
+            descritor: string;
+            /** @enum {string|null} */
+            destinacao_final: "ELIMINACAO" | "GUARDA_PERMANENTE" | null;
+            fase_corrente_anos: number | null;
+            fase_corrente_condicao: string;
+            fase_interm_anos: number | null;
+            fase_interm_condicao: string;
+            observacoes: string;
         };
         AtlasResposta: {
             answer: string;
@@ -4572,6 +4629,7 @@ export interface operations {
                 page_size?: components["parameters"]["PageSize"];
                 q?: string;
                 codigo_ttdd?: string;
+                codigo_processual?: string;
             };
             header?: never;
             path?: never;
@@ -4734,6 +4792,45 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    postAtlasAdminWorkflowsIdVersoes: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtlasCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasWorkflow"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postAtlasChat: {
         parameters: {
             query?: never;
@@ -4872,6 +4969,33 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtlasTtddCodigoHistorico: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                codigo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasHistoricoTTDD"][];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getAtlasWorkflows: {
         parameters: {
             query?: {
@@ -4879,6 +5003,7 @@ export interface operations {
                 page_size?: components["parameters"]["PageSize"];
                 q?: string;
                 codigo_ttdd?: string;
+                codigo_processual?: string;
             };
             header?: never;
             path?: never;

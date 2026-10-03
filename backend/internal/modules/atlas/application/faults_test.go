@@ -104,6 +104,13 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 		"Create": func() func(*application.Service) error {
 			return func(s *application.Service) error { _, err := s.Create(ctx, gestor, novo()); return err }
 		},
+		"HistoricoTTDD": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.HistoricoTTDD(ctx, "2.0.02.00.07"); return err }
+		},
+		"NovaVersao": func() func(*application.Service) error {
+			w := e.workflow(true)
+			return func(s *application.Service) error { _, err := s.NovaVersao(ctx, gestor, w.ID, novo()); return err }
+		},
 		"Desativar": func() func(*application.Service) error {
 			w := e.workflow(true)
 			return func(s *application.Service) error { _, err := s.SetAtivo(ctx, w.ID, false); return err }
@@ -182,6 +189,9 @@ func TestHandlersReportServiceFailures(t *testing.T) {
 		{http.MethodGet, "/atlas/ttdd/estrutura", ""},
 		{http.MethodGet, "/atlas/ttdd/exportar", ""},
 		{http.MethodGet, "/atlas/ttdd/2.0.02.00.07", ""},
+		{http.MethodGet, "/atlas/ttdd/2.0.02.00.07/historico", ""},
+		{http.MethodPost, "/atlas/admin/workflows/" + id + "/versoes", `{"codigo_processual":"X.Y","titulo":"t","objetivo":"o","publico_alvo":"p","nivel_acesso":"PUBLICO",
+			"codigo_ttdd":"2.0.02.00.07","etapas":[{"ordem":1,"unidade_administrativa":"A","nome_setor":"S","atribuicoes_setor":"x"}]}`},
 		{http.MethodGet, "/atlas/workflows", ""},
 		{http.MethodGet, "/atlas/workflows/" + id, ""},
 		{http.MethodGet, "/atlas/admin/workflows", ""},

@@ -105,6 +105,16 @@ func (s *Service) GetTTDD(ctx context.Context, codigo string) (domain.Classifica
 	return c, MapError(err)
 }
 
+// HistoricoTTDD devolve as mudanças da série (prazos anteriores, revogação
+// e restabelecimento), da mais recente à mais antiga.
+func (s *Service) HistoricoTTDD(ctx context.Context, codigo string) ([]domain.HistoricoTTDD, error) {
+	if _, err := s.repo.GetTTDD(ctx, s.pool, codigo); err != nil {
+		return nil, MapError(err)
+	}
+	h, err := s.repo.HistoricoTTDD(ctx, s.pool, codigo)
+	return h, MapError(err)
+}
+
 // List lista procedimentos (inativos só com f.IncluirInativos — a rota de
 // gestão exige atlas:manage).
 func (s *Service) List(ctx context.Context, f domain.Filter, p pagination.Params) ([]domain.Workflow, int64, error) {
@@ -136,6 +146,67 @@ func (s *Service) Create(ctx context.Context, identity auth.Identity, w domain.W
 	if err := w.Validate(); err != nil {
 		return domain.Workflow{}, MapError(err)
 	}
+	var out domain.Workflow
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) (err error) {
+		out, err = s.inserir(ctx, tx, identity, w)
+		return err
+	})
+	return out, MapError(err)
+}
+
+// NovaVersao cadastra a versão seguinte do procedimento `origem` (mesmo
+// código processual, conteúdo de w) e desativa as outras versões ativas,
+// tudo na mesma transação: a consulta pública nunca vê duas versões
+// vigentes nem nenhuma.
+func (s *Service) NovaVersao(ctx context.Context, identity auth.Identity, origem uuid.UUID, w domain.Workflow) (domain.Workflow, error) {
+	var out domain.Workflow
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		base, err := s.repo.Get(ctx, tx, origem, true)
+		if err != nil {
+			return err
+		}
+		maior, err := s.repo.MaxVersao(ctx, tx, base.CodigoProcessual)
+		if err != nil {
+			return err
+		}
+		w.Normalize()
+		w.CodigoProcessual, w.Versao = base.CodigoProcessual, maior+1
+		if err := w.Validate(); err != nil {
+			return err
+		}
+		if out, err = s.inserir(ctx, tx, identity, w); err != nil {
+			return err
+		}
+		ids, err := s.repo.DesativarVersoes(ctx, tx, out.CodigoProcessual, out.ID)
+		if err != nil {
+			return err
+		}
+		for _, id := range ids {
+			antiga, err := s.repo.Get(ctx, tx, id, false)
+			if err != nil {
+				return err
+			}
+			if err := s.substituida(ctx, tx, antiga, out); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	return out, MapError(err)
+}
+
+// substituida registra (evento e auditoria) a versão desativada por `nova`.
+func (s *Service) substituida(ctx context.Context, tx pgx.Tx, antiga, nova domain.Workflow) error {
+	if err := s.event(ctx, tx, EventWorkflowDeactivated, antiga); err != nil {
+		return err
+	}
+	return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventWorkflowDeactivated, "atlas_workflow", antiga.ID.String(),
+		map[string]any{"ativo": true}, map[string]any{"ativo": false, "substituido_por": nova.ID.String(), "versao": nova.Versao}))
+}
+
+// inserir grava o procedimento (já validado) ativo, com evento e auditoria,
+// na transação: a série da TTDD tem de existir e estar vigente.
+func (s *Service) inserir(ctx context.Context, tx pgx.Tx, identity auth.Identity, w domain.Workflow) (domain.Workflow, error) {
 	w.ID, w.Ativo = uuid.New(), true
 	if identity.UserID != uuid.Nil {
 		uid := identity.UserID
@@ -150,27 +221,27 @@ func (s *Service) Create(ctx context.Context, identity auth.Identity, w domain.W
 			w.Etapas[i].Transicoes[j].ID = uuid.New()
 		}
 	}
-	var out domain.Workflow
-	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
-		ok, err := s.repo.LockTTDD(ctx, tx, w.CodigoTTDD)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			return domain.InvalidError{Msg: "código TTDD inexistente na Tabela de Temporalidade: " + w.CodigoTTDD}
-		}
-		if err := s.repo.Insert(ctx, tx, w); err != nil {
-			return err
-		}
-		if out, err = s.repo.Get(ctx, tx, w.ID, false); err != nil {
-			return err
-		}
-		if err := s.event(ctx, tx, EventWorkflowCreated, out); err != nil {
-			return err
-		}
-		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventWorkflowCreated, "atlas_workflow", out.ID.String(), nil, summary(out)))
-	})
-	return out, MapError(err)
+	situacao, err := s.repo.LockTTDD(ctx, tx, w.CodigoTTDD)
+	if err != nil {
+		return w, err
+	}
+	switch situacao {
+	case domain.TTDDInexistente:
+		return w, domain.InvalidError{Msg: "código TTDD inexistente na Tabela de Temporalidade: " + w.CodigoTTDD}
+	case domain.TTDDRevogada:
+		return w, domain.InvalidError{Msg: "a série " + w.CodigoTTDD + " foi revogada na TTDD em vigor: enquadre o procedimento numa série vigente"}
+	}
+	if err := s.repo.Insert(ctx, tx, w); err != nil {
+		return w, err
+	}
+	out, err := s.repo.Get(ctx, tx, w.ID, false)
+	if err != nil {
+		return w, err
+	}
+	if err := s.event(ctx, tx, EventWorkflowCreated, out); err != nil {
+		return w, err
+	}
+	return out, audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventWorkflowCreated, "atlas_workflow", out.ID.String(), nil, summary(out)))
 }
 
 // SetAtivo ativa ou desativa um procedimento (atlas:manage na rota).

@@ -219,6 +219,23 @@ func TestSinteseTTDD(t *testing.T) {
 	}
 }
 
+// Série revogada: a síntese avisa antes dos prazos (com e sem a edição).
+func TestTemporalidadeRevogada(t *testing.T) {
+	c := serieOficial()
+	if !c.Vigente() || strings.Contains(Temporalidade(c), "revogada") {
+		t.Fatal("série vigente não tem aviso")
+	}
+	em := time.Date(2027, 3, 1, 0, 0, 0, 0, time.UTC)
+	c.RevogadaEm, c.RevogadaEdicao = &em, "6.400"
+	if c.Vigente() || !strings.HasPrefix(Temporalidade(c), "ATENÇÃO: série revogada em 01/03/2027 (Diário Oficial nº 6.400) —") {
+		t.Fatalf("aviso de revogação: %s", Temporalidade(c))
+	}
+	c.RevogadaEdicao = ""
+	if !strings.HasPrefix(Temporalidade(c), "ATENÇÃO: série revogada em 01/03/2027 —") {
+		t.Fatalf("revogação sem edição: %s", Temporalidade(c))
+	}
+}
+
 func TestRelevanciaTTDD(t *testing.T) {
 	c := serieOficial()
 	if r := RelevanciaTTDD(c, "Qual o prazo de guarda do processo de empenho?"); r < LimiarRelevancia {

@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Clock, FolderClock } from "lucide-react";
+import { AlertTriangle, Archive, Clock, FolderClock, History } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -9,11 +9,11 @@ import { CalculadoraTemporalidade } from "@/components/atlas/CalculadoraTemporal
 import { SeloVigencia } from "@/components/atlas/SeloVigencia";
 import { Trilha } from "@/components/atlas/Trilha";
 import { WorkflowList } from "@/components/atlas/WorkflowList";
-import { destinacao, fase } from "@/components/atlas/labels";
+import { destinacao, fase, revogacao } from "@/components/atlas/labels";
 import { DataState } from "@/components/nexus/DataState";
 import { Badge } from "@/components/ui/Badge";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
-import type { ClassificacaoTTDD, Workflow } from "@/lib/nexus/types";
+import type { ClassificacaoTTDD, HistoricoTTDD, Workflow } from "@/lib/nexus/types";
 
 function Prazo({
   titulo,
@@ -60,6 +60,66 @@ function Procedimentos({ codigo }: { codigo: string }) {
 
 /** Página da série documental: prazos, destinação, recomendação, fonte
  * oficial, calculadora e os procedimentos que a produzem. */
+const EVENTO: Record<HistoricoTTDD["evento"], string> = {
+  ALTERADA: "Prazos ou descrição alterados",
+  REVOGADA: "Série revogada",
+  RESTABELECIDA: "Série restabelecida",
+};
+
+/** Histórico da série: cada mudança com os valores que valiam ANTES dela e
+ * a publicação que a trouxe (documentos antigos seguem a regra da época). */
+function Historico({ codigo }: { codigo: string }) {
+  const hist = useApiQuery<HistoricoTTDD[]>(
+    `v1/atlas/ttdd/${encodeURIComponent(codigo)}/historico`,
+  );
+  const itens = hist.data ?? [];
+  return (
+    <section aria-labelledby="atlas-serie-hist">
+      <h2
+        id="atlas-serie-hist"
+        className="mb-3 flex items-center gap-2 text-lg font-bold text-foreground"
+      >
+        <History size={18} aria-hidden="true" className="text-primary" /> Histórico
+      </h2>
+      <DataState
+        loading={hist.isLoading}
+        error={hist.error}
+        onRetry={() => void hist.mutate()}
+        empty={itens.length === 0}
+        emptyTitle="Sem alterações registradas"
+        emptyDescription="Os prazos não mudaram desde a carga da TTDD no sistema."
+      >
+        <ol className="flex flex-col gap-3">
+          {itens.map((h, i) => {
+            const a = h.anterior;
+            return (
+              <li
+                key={i}
+                className="rounded-lg border border-surface-border bg-surface p-3 text-sm"
+              >
+                <p className="flex flex-wrap items-baseline justify-between gap-2">
+                  <strong className="text-foreground">{EVENTO[h.evento]}</strong>
+                  <span className="text-xs text-muted">
+                    {new Date(h.registrado_em).toLocaleDateString("pt-BR")}
+                    {h.edicao_diario && ` · Diário Oficial nº ${h.edicao_diario}`}
+                  </span>
+                </p>
+                <p className="mt-1 text-muted">
+                  Antes: corrente{" "}
+                  {fase(a.fase_corrente_anos, a.fase_corrente_condicao, true).toLowerCase()} ·
+                  intermediária{" "}
+                  {fase(a.fase_interm_anos, a.fase_interm_condicao, false).toLowerCase()} ·{" "}
+                  {destinacao(a.destinacao_final).label.toLowerCase()}
+                </p>
+              </li>
+            );
+          })}
+        </ol>
+      </DataState>
+    </section>
+  );
+}
+
 export default function SeriePage() {
   const { codigo: bruto } = useParams<{ codigo: string }>();
   const codigo = decodeURIComponent(bruto);
@@ -108,7 +168,25 @@ export default function SeriePage() {
                   {sub.funcao.nome} › {sub.nome}
                 </p>
               )}
-              <SeloVigencia orgao={sub?.funcao.orgao} />
+              {revogacao(c) ? (
+                <p
+                  role="status"
+                  className="flex max-w-3xl items-start gap-2 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-foreground"
+                >
+                  <AlertTriangle
+                    size={16}
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0 text-danger"
+                  />
+                  <span>
+                    Série {revogacao(c)}: não está na TTDD em vigor. Os prazos abaixo valem para os
+                    documentos produzidos enquanto ela vigorava; para documentos novos, use a série
+                    vigente indicada pela gestão documental.
+                  </span>
+                </p>
+              ) : (
+                <SeloVigencia orgao={sub?.funcao.orgao} />
+              )}
               <AcoesPagina
                 rotulo="Perguntar sobre esta série"
                 pergunta={`Por quanto tempo guardar "${c.descritor}" (${c.codigo}) e qual a destinação?`}
@@ -159,6 +237,8 @@ export default function SeriePage() {
             </div>
 
             <Procedimentos codigo={c.codigo} />
+
+            <Historico codigo={c.codigo} />
 
             <p className="text-xs text-muted print:hidden">
               <Link

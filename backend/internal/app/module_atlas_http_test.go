@@ -240,3 +240,120 @@ func TestAtlasAssistenteHTTP(t *testing.T) {
 	h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta)
 	h.expect(http.StatusTooManyRequests, http.MethodPost, "/api/v1/atlas/chat", leitor, pergunta)
 }
+
+type atlasVersao struct {
+	ID               string `json:"id"`
+	CodigoProcessual string `json:"codigo_processual"`
+	Versao           int    `json:"versao"`
+	Ativo            bool   `json:"ativo"`
+	Classificacao    struct {
+		RevogadaEm     *string `json:"revogada_em"`
+		RevogadaEdicao string  `json:"revogada_edicao"`
+	} `json:"classificacao"`
+}
+
+// Vigência da TTDD (ADR 019): série revogada sai da consulta mas continua
+// por código, com o histórico de prazos; não aceita procedimento novo; o
+// procedimento que já aponta para ela mostra a revogação. Nova versão de
+// procedimento: mesmo código, versão seguinte, demais versões desativadas.
+func TestAtlasVigenciaEVersoesHTTP(t *testing.T) {
+	h := newHarness(t)
+	ctx := context.Background()
+	gestor := h.globalCom(t, "atlas:manage")
+	codigo := "TST.VERS." + strings.ToUpper(strings.ReplaceAll(uuid.NewString()[:8], "-", ""))
+	const serie = "2.0.02.00.97"
+	naSerie := func(body string) string { return strings.Replace(body, `"2.0.05.00.00"`, `"`+serie+`"`, 1) }
+
+	if _, err := h.d.DB.Exec(ctx, `INSERT INTO atlas_classificacao_ttdd (codigo, subfuncao_codigo, descritor, fase_corrente_anos,
+		fase_interm_anos, destinacao_final) VALUES ($1, '2.0.02.00', 'Série de teste da vigência', 1, 2, 'ELIMINACAO')`, serie); err != nil {
+		t.Fatal(err)
+	}
+	v1 := data[atlasVersao](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/atlas/admin/workflows", gestor, naSerie(atlasBody(codigo, ""))))
+
+	// Nova publicação: muda o prazo (histórico ALTERADA, edição do órgão)
+	// e depois retira a série (REVOGADA). Regravar igual não gera histórico.
+	for _, sql := range []string{
+		`UPDATE atlas_classificacao_ttdd SET fase_interm_anos = 5 WHERE codigo = $1`,
+		`UPDATE atlas_classificacao_ttdd SET fase_interm_anos = 5 WHERE codigo = $1`,
+		`UPDATE atlas_classificacao_ttdd SET revogada_em = '2027-03-01', revogada_edicao = '6.400' WHERE codigo = $1`,
+	} {
+		if _, err := h.d.DB.Exec(ctx, sql, serie); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, path := range []string{"/api/v1/atlas/ttdd?q=vig%C3%AAncia", "/api/v1/atlas/ttdd?codigo=2.0.02.00&page_size=100", "/api/v1/atlas/ttdd/exportar"} {
+		if body := h.expect(http.StatusOK, http.MethodGet, path, "", "").Body.String(); strings.Contains(body, serie) {
+			t.Fatalf("série revogada na consulta %s: %s", path, body)
+		}
+	}
+	rev := data[struct {
+		RevogadaEm     *string `json:"revogada_em"`
+		RevogadaEdicao string  `json:"revogada_edicao"`
+	}](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd/"+serie, "", ""))
+	if rev.RevogadaEm == nil || !strings.HasPrefix(*rev.RevogadaEm, "2027-03-01") || rev.RevogadaEdicao != "6.400" {
+		t.Fatalf("série revogada por código: %+v", rev)
+	}
+	type evento struct {
+		Evento   string `json:"evento"`
+		Anterior struct {
+			FaseIntermAnos *int `json:"fase_interm_anos"`
+		} `json:"anterior"`
+		EdicaoDiario string `json:"edicao_diario"`
+	}
+	hist := data[[]evento](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd/"+serie+"/historico", "", ""))
+	if len(hist) != 2 || hist[0].Evento != "REVOGADA" || hist[0].EdicaoDiario != "6.400" || *hist[0].Anterior.FaseIntermAnos != 5 ||
+		hist[1].Evento != "ALTERADA" || hist[1].EdicaoDiario != "6.017" || *hist[1].Anterior.FaseIntermAnos != 2 {
+		t.Fatalf("histórico da série: %+v", hist)
+	}
+	h.expect(http.StatusNotFound, http.MethodGet, "/api/v1/atlas/ttdd/9.0.99.99.99/historico", "", "")
+	h.expect(http.StatusBadRequest, http.MethodGet, "/api/v1/atlas/ttdd/abc/historico", "", "")
+
+	// O procedimento que já apontava continua, com a revogação visível; um
+	// cadastro novo (ou nova versão) na série revogada é recusado.
+	if got := data[atlasVersao](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/admin/workflows/"+v1.ID, gestor, "")); got.Classificacao.RevogadaEm == nil {
+		t.Fatalf("procedimento sem a revogação da série: %+v", got)
+	}
+	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/atlas/admin/workflows", gestor, naSerie(atlasBody(codigo+".X", "")))
+	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/atlas/admin/workflows/"+v1.ID+"/versoes", gestor, naSerie(atlasBody(codigo, "")))
+
+	// Nova versão (o código e a versão enviados são ignorados).
+	v2 := data[atlasVersao](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/atlas/admin/workflows/"+v1.ID+"/versoes", gestor,
+		atlasBody("OUTRO.CODIGO", `,"versao":9`)))
+	if v2.CodigoProcessual != codigo || v2.Versao != 2 || !v2.Ativo || v2.Classificacao.RevogadaEm != nil {
+		t.Fatalf("nova versão: %+v", v2)
+	}
+	if antiga := data[atlasVersao](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/admin/workflows/"+v1.ID, gestor, "")); antiga.Ativo {
+		t.Fatal("versão anterior continua ativa")
+	}
+	h.expect(http.StatusNotFound, http.MethodGet, "/api/v1/atlas/workflows/"+v1.ID, "", "")
+	if outboxCount(t, h, "atlas.workflow.deactivated", v1.ID) != 1 || outboxCount(t, h, "atlas.workflow.created", v2.ID) != 1 {
+		t.Fatal("eventos da nova versão")
+	}
+	var audits int
+	if err := h.d.DB.QueryRow(ctx, `SELECT count(*) FROM audit_logs a WHERE action = 'atlas.workflow.deactivated' AND resource_id = $1
+		AND row_to_json(a)::text LIKE '%' || $2 || '%'`, v1.ID, v2.ID).Scan(&audits); err != nil || audits != 1 {
+		t.Fatalf("auditoria da substituição: %d %v", audits, err)
+	}
+	// A partir da versão antiga também: vira a 3 e desativa a 2.
+	v3 := data[atlasVersao](t, h.expect(http.StatusCreated, http.MethodPost, "/api/v1/atlas/admin/workflows/"+v1.ID+"/versoes", gestor, atlasBody(codigo, "")))
+	if v3.Versao != 3 {
+		t.Fatalf("terceira versão: %+v", v3)
+	}
+	versoes := data[[]atlasVersao](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/admin/workflows?codigo_processual="+strings.ToLower(codigo), gestor, ""))
+	if len(versoes) != 3 || versoes[0].Versao != 3 || !versoes[0].Ativo || versoes[1].Ativo || versoes[2].Ativo {
+		t.Fatalf("versões do procedimento: %+v", versoes)
+	}
+	h.expect(http.StatusBadRequest, http.MethodPost, "/api/v1/atlas/admin/workflows/x/versoes", gestor, atlasBody(codigo, ""))
+	h.expect(http.StatusBadRequest, http.MethodPost, "/api/v1/atlas/admin/workflows/"+v1.ID+"/versoes", gestor, `{`)
+	h.expect(http.StatusNotFound, http.MethodPost, "/api/v1/atlas/admin/workflows/"+uuid.NewString()+"/versoes", gestor, atlasBody(codigo, ""))
+	h.expect(http.StatusUnprocessableEntity, http.MethodPost, "/api/v1/atlas/admin/workflows/"+v1.ID+"/versoes", gestor,
+		strings.Replace(atlasBody(codigo, ""), `"destino_ordem":2`, `"destino_ordem":7`, 1))
+
+	// Série de volta numa publicação seguinte: RESTABELECIDA.
+	if _, err := h.d.DB.Exec(ctx, `UPDATE atlas_classificacao_ttdd SET revogada_em = NULL, revogada_edicao = '' WHERE codigo = $1`, serie); err != nil {
+		t.Fatal(err)
+	}
+	if hist := data[[]evento](t, h.expect(http.StatusOK, http.MethodGet, "/api/v1/atlas/ttdd/"+serie+"/historico", "", "")); len(hist) != 3 || hist[0].Evento != "RESTABELECIDA" {
+		t.Fatalf("restabelecimento no histórico: %+v", hist)
+	}
+}

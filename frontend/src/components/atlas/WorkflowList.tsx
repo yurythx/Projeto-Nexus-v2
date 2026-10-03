@@ -24,6 +24,7 @@ export function WorkflowList({ items }: { items: Workflow[] }) {
                 </span>
                 <span className="flex gap-1">
                   {!wf.ativo && <Badge tone="danger">Inativo</Badge>}
+                  {wf.classificacao?.revogada_em && <Badge tone="warning">Série revogada</Badge>}
                   <Badge tone={nivel.tone}>{nivel.label}</Badge>
                 </span>
               </span>

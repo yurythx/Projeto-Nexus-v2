@@ -581,7 +581,25 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     (quando a TTDD marca "X");
   - observações da série, **recomendação da subfunção** (vale para todas
     as séries dela) e **fonte** — versão e edição/data do Diário Oficial;
-  - cada procedimento é enquadrado numa série existente.
+  - cada procedimento é enquadrado numa série existente **e vigente**.
+- **Vigência da TTDD (ADR 019):**
+  - nova publicação: `make ttdd-impacto` mostra, sem gravar, as séries
+    novas, alteradas (prazos antes → depois), revogadas e restabelecidas e
+    os procedimentos afetados; `make ttdd-aplicar` grava;
+  - série que sai da tabela fica **revogada** (data e edição do Diário
+    Oficial), nunca apagada: some da consulta, da árvore, da exportação e
+    do assistente, mas abre pelo código com o aviso; só são revogadas
+    séries dos órgãos presentes na carga;
+  - toda mudança de série guarda os **valores anteriores** e a edição que
+    a trouxe (`GET /atlas/ttdd/{codigo}/historico`, na página da série);
+  - série revogada não aceita procedimento novo nem nova versão (422); o
+    procedimento que já apontava para ela mostra o aviso.
+- **Nova versão de procedimento (`atlas:manage`):** a partir da página do
+  procedimento; o formulário vem preenchido com a versão atual (peças com
+  formato e assinatura, transições). Ao publicar, a versão seguinte do
+  mesmo código fica ativa e as demais são desativadas na mesma transação
+  (eventos e auditoria com a versão que substituiu); a gestão vê todas as
+  versões na página.
   - **exportação CSV** (`GET /atlas/ttdd/exportar`, pública, mesmos
     filtros `codigo` e `q` da consulta): separador `;` e BOM UTF-8 (abre
     direto no Excel), com órgão, função, subfunção, prazos, destinação,

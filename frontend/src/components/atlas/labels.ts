@@ -53,3 +53,14 @@ export function fonteTTDD(o: OrgaoTTDD): string {
   }
   return s;
 }
+
+/** "revogada em 10/05/2027 (Diário Oficial nº 6.500)"; null = vigente. */
+export function revogacao(c: {
+  revogada_em: string | null;
+  revogada_edicao: string;
+}): string | null {
+  if (!c.revogada_em) return null;
+  let s = `revogada em ${new Date(c.revogada_em).toLocaleDateString("pt-BR", { timeZone: "UTC" })}`;
+  if (c.revogada_edicao) s += ` (Diário Oficial nº ${c.revogada_edicao})`;
+  return s;
+}

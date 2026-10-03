@@ -36,6 +36,8 @@ const CLASSIFICACAO = {
   fase_interm_condicao: "",
   destinacao_final: "GUARDA_PERMANENTE",
   observacoes: "Processo integral",
+  revogada_em: null,
+  revogada_edicao: "",
   subfuncao: {
     codigo: "2.0.02.00",
     nome: "Processo de Compra",
@@ -143,6 +145,7 @@ const base = (perms: string[]) => ({
     },
   ]),
   "GET v1/atlas/ttdd/estrutura": { data: ESTRUTURA },
+  "GET v1/atlas/ttdd/2.0.02.00.07/historico": { data: [] },
 });
 
 /** As páginas do Atlas rodam dentro do layout (assistente em gaveta). */
@@ -271,8 +274,9 @@ describe("Atlas — início", () => {
     await fill(screen.getByLabelText("Título do procedimento *"), "Adiantamento");
     await fill(screen.getByLabelText("Objetivo *"), "Prestar contas");
     await fill(screen.getByLabelText("Público-alvo *"), "Supridos");
-    await screen.findByRole("option", { name: /2\.0\.02\.00\.07/ });
-    await userEvent.selectOptions(screen.getByLabelText("Classificação TTDD *"), "2.0.02.00.07");
+    // Série por busca (código ou descritor): a sugestão mostra o descritor.
+    await fill(screen.getByLabelText("Classificação TTDD *"), "2.0.02.00.07");
+    expect(await screen.findByText("Pregão Presencial / Eletrônico")).toBeInTheDocument();
 
     const setores = () => screen.getAllByLabelText("Setor *");
     await fill(setores()[0]!, "Gabinete");
@@ -290,11 +294,13 @@ describe("Atlas — início", () => {
     await userEvent.click(screen.getByRole("button", { name: "Cadastrar procedimento" }));
     const body = backend.to("POST v1/atlas/admin/workflows")[0]!.body as {
       codigo_processual: string;
+      codigo_ttdd: string;
       nivel_acesso: string;
       hipotese_legal_restricao: string;
       etapas: { ordem: number; nome_setor: string; documentos: { nome_documento: string }[] }[];
     };
     expect(body.codigo_processual).toBe("adm.fin.021");
+    expect(body.codigo_ttdd).toBe("2.0.02.00.07");
     expect(body.nivel_acesso).toBe("RESTRITO");
     expect(body.hipotese_legal_restricao).toBe("LAI, art. 31");
     expect(body.etapas.map((e) => [e.ordem, e.nome_setor])).toEqual([
@@ -670,5 +676,199 @@ describe("Atlas — assistente em gaveta", () => {
     expect(
       await within(gaveta).findByText("Muitas consultas; aguarde um minuto."),
     ).toBeInTheDocument();
+  });
+});
+
+describe("Atlas — vigência da TTDD e versões", () => {
+  const REVOGADA = {
+    ...CLASSIFICACAO,
+    revogada_em: "2027-05-10T00:00:00Z",
+    revogada_edicao: "6.500",
+  };
+  // Duas etapas com ida e volta (diligência) e peça com atributos próprios.
+  const BASE = {
+    ...DETALHE,
+    classificacao: REVOGADA,
+    etapas: [
+      {
+        ...DETALHE.etapas[0]!,
+        documentos: [
+          {
+            ...DETALHE.etapas[0]!.documentos[0]!,
+            formato: "EXTERNO_DIGITALIZADO",
+            exige_conferencia_copia: true,
+          },
+        ],
+      },
+      {
+        id: "et-2",
+        ordem: 2,
+        unidade_administrativa: "SEMAD/LIC",
+        nome_setor: "Licitações",
+        atribuicoes_setor: "Conduzir o certame",
+        prazo_sla_em_dias: 10,
+        manter_aberto_apos_remessa: false,
+        documentos: [],
+        transicoes: [
+          {
+            id: "tr-2",
+            destino_ordem: 1,
+            condicao_transicao: "Pendência",
+            is_devolucao_diligencia: true,
+            descricao_diligencia: "Completar o TR",
+          },
+        ],
+      },
+    ],
+  };
+
+  beforeEach(() => resetNavigation({ id: "wf-1" }, "/atlas/procedimentos/wf-1"));
+
+  it("procedimento numa série revogada: aviso, versões e nova versão sem perder peças nem transições", async () => {
+    const backend = mockBackend({
+      ...base(["atlas:manage"]),
+      "GET v1/atlas/admin/workflows/wf-1": { data: BASE },
+      "GET v1/atlas/admin/workflows": page([
+        { ...RESUMO, id: "wf-1", versao: 2 },
+        { ...RESUMO, id: "wf-0", versao: 1, ativo: false },
+      ]),
+      "POST v1/atlas/admin/workflows/wf-1/versoes": {
+        status: 201,
+        data: { ...DETALHE, id: "wf-3", versao: 3 },
+      },
+    });
+    renderAtlas(<ProcedimentoPage />);
+
+    expect(await screen.findByText(/deste procedimento foi revogada em/)).toHaveTextContent(
+      "A série 2.0.02.00.07 deste procedimento foi revogada em 10/05/2027 (Diário Oficial nº 6.500)",
+    );
+    const temp = screen.getByRole("region", { name: "Temporalidade" });
+    expect(within(temp).getByText(/Série revogada em 10\/05\/2027/)).toBeInTheDocument();
+    expect(within(temp).queryByText(/Vigente/)).not.toBeInTheDocument();
+
+    const versoes = await screen.findByRole("region", { name: "Versões" });
+    expect(within(versoes).getByRole("link", { name: "Versão 1" })).toHaveAttribute(
+      "href",
+      "/atlas/procedimentos/wf-0",
+    );
+    expect(backend.to("GET v1/atlas/admin/workflows").at(-1)!.query.get("codigo_processual")).toBe(
+      "ADM.LIC.001",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Nova versão" }));
+    const dialogo = await screen.findByRole("dialog", { name: /Nova versão de ADM\.LIC\.001/ });
+    const d = within(dialogo);
+    expect(d.getByLabelText("Código processual *")).toHaveAttribute("readonly");
+    expect(d.getByLabelText("Título do procedimento *")).toHaveValue("Pregão Eletrônico");
+    // A série revogada não vem preenchida: é preciso escolher uma vigente.
+    expect(d.getByLabelText("Classificação TTDD *")).toHaveValue("");
+    expect(d.getByText(/A série 2\.0\.02\.00\.07 foi revogada/)).toBeInTheDocument();
+    expect(d.getByText("TR aprovado → etapa 2")).toBeInTheDocument();
+    expect(d.getByText("Pendência → etapa 1")).toBeInTheDocument();
+
+    await fill(d.getByLabelText("Classificação TTDD *"), "2.0.02.01.02");
+    await fill(d.getAllByLabelText("Peças exigidas (uma por linha)")[0]!, "\nEstudo Técnico");
+    await userEvent.click(d.getByRole("button", { name: "Publicar nova versão" }));
+
+    const body = backend.to("POST v1/atlas/admin/workflows/wf-1/versoes")[0]!.body as {
+      codigo_processual: string;
+      codigo_ttdd: string;
+      etapas: { documentos: unknown[]; transicoes: unknown[] }[];
+    };
+    expect(body.codigo_processual).toBe("ADM.LIC.001");
+    expect(body.codigo_ttdd).toBe("2.0.02.01.02");
+    // Peça existente mantém formato/assinatura; a nova entra com o padrão.
+    expect(body.etapas[0]!.documentos).toEqual([
+      expect.objectContaining({
+        nome_documento: "Termo de Referência",
+        formato: "EXTERNO_DIGITALIZADO",
+        tipo_assinatura: "CONJUNTA_MULTINIVEL",
+        exige_conferencia_copia: true,
+      }),
+      expect.objectContaining({
+        nome_documento: "Estudo Técnico",
+        formato: "NATO_DIGITAL",
+        tipo_assinatura: "INDIVIDUAL",
+      }),
+    ]);
+    expect(body.etapas[1]!.transicoes).toEqual([
+      expect.objectContaining({
+        destino_ordem: 1,
+        is_devolucao_diligencia: true,
+        descricao_diligencia: "Completar o TR",
+      }),
+    ]);
+    expect(router.push).toHaveBeenCalledWith("/atlas/procedimentos/wf-3");
+  });
+
+  it("remover a etapa de destino descarta a transição para ela", async () => {
+    const backend = mockBackend({
+      ...base(["atlas:manage"]),
+      "GET v1/atlas/admin/workflows/wf-1": { data: { ...BASE, classificacao: CLASSIFICACAO } },
+      "POST v1/atlas/admin/workflows/wf-1/versoes": {
+        status: 201,
+        data: { ...DETALHE, id: "wf-3" },
+      },
+    });
+    renderAtlas(<ProcedimentoPage />);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Nova versão" }));
+    const d = within(await screen.findByRole("dialog"));
+    expect(d.getByLabelText("Classificação TTDD *")).toHaveValue("2.0.02.00.07");
+    await userEvent.click(d.getByRole("button", { name: "Remover etapa 1" }));
+    expect(d.getByText("Pendência — removida (a etapa de destino saiu)")).toBeInTheDocument();
+    await userEvent.click(d.getByRole("button", { name: "Publicar nova versão" }));
+    const body = backend.to("POST v1/atlas/admin/workflows/wf-1/versoes")[0]!.body as {
+      etapas: unknown[];
+    };
+    expect(body.etapas).toEqual([
+      expect.objectContaining({ ordem: 1, nome_setor: "Licitações", transicoes: [] }),
+    ]);
+  });
+
+  it("série revogada: aviso no lugar do selo e histórico com os prazos anteriores", async () => {
+    resetNavigation({ codigo: "2.0.02.00.07" }, "/atlas/ttdd/2.0.02.00.07");
+    mockBackend({
+      ...base([]),
+      "GET v1/atlas/ttdd/2.0.02.00.07": { data: REVOGADA },
+      "GET v1/atlas/ttdd/2.0.02.00.07/historico": {
+        data: [
+          {
+            evento: "REVOGADA",
+            anterior: { ...CLASSIFICACAO, fase_interm_anos: 4 },
+            edicao_diario: "6.500",
+            registrado_em: "2027-05-10T12:00:00Z",
+          },
+          {
+            evento: "ALTERADA",
+            anterior: { ...CLASSIFICACAO, fase_interm_anos: 2, destinacao_final: "ELIMINACAO" },
+            edicao_diario: "",
+            registrado_em: "2026-01-10T12:00:00Z",
+          },
+        ],
+      },
+    });
+    renderAtlas(<SeriePage />);
+
+    expect(await screen.findByText(/não está na TTDD em vigor./)).toHaveTextContent(
+      "Série revogada em 10/05/2027 (Diário Oficial nº 6.500): não está na TTDD em vigor.",
+    );
+    const hist = screen.getByRole("region", { name: "Histórico" });
+    expect(await within(hist).findByText("Série revogada")).toBeInTheDocument();
+    expect(within(hist).getByText(/Diário Oficial nº 6\.500/)).toBeInTheDocument();
+    expect(within(hist).getByText("Prazos ou descrição alterados")).toBeInTheDocument();
+    expect(within(hist).getByText(/intermediária 2 anos · eliminação/)).toBeInTheDocument();
+  });
+
+  it("série sem alterações e cartão de procedimento com série revogada", async () => {
+    resetNavigation({ codigo: "2.0.02.00.07" }, "/atlas/ttdd/2.0.02.00.07");
+    mockBackend({
+      ...base([]),
+      "GET v1/atlas/ttdd/2.0.02.00.07": { data: CLASSIFICACAO },
+      "GET v1/atlas/workflows": page([{ ...RESUMO, classificacao: REVOGADA }]),
+    });
+    renderAtlas(<SeriePage />);
+    expect(await screen.findByText("Sem alterações registradas")).toBeInTheDocument();
+    expect(await screen.findByText("Série revogada")).toBeInTheDocument();
   });
 });

@@ -2,11 +2,15 @@
 
 Converte `docs/ttdd.pdf` (Tabelas de Temporalidade e Destinação de Documentos
 publicadas no Diário Oficial de Rondonópolis, aprovadas pela CCPAD) em
-`deploy/ttdd/ttdd.json` (revisão) e `deploy/ttdd/ttdd.sql` (carga idempotente).
+`deploy/ttdd/ttdd.json` (revisão) e `deploy/ttdd/ttdd.sql` (os dados, em tabelas
+temporárias). Quem compara com o banco e grava é `deploy/ttdd/carga.sql`: séries
+novas, alteradas (histórico dos prazos anteriores), revogadas (nunca apagadas) e
+restabelecidas, com a lista de procedimentos afetados — ADR 019.
 
 ```bash
 cd scripts/ttdd && npm ci && npm run tudo   # regera deploy/ttdd/
-make ttdd-aplicar                           # carrega no Postgres (servidor)
+make ttdd-impacto                           # relatório do que mudaria (não grava)
+make ttdd-aplicar                           # mesmo relatório + gravação (servidor)
 ```
 
 ## Como os dados são obtidos
@@ -25,7 +29,7 @@ make ttdd-aplicar                           # carrega no Postgres (servidor)
    visualmente** contra as páginas renderizadas (`prazos-*.tsv/txt`).
 4. **`consolidar.mjs`** — junta tudo, aplica as correções de divergências do
    próprio documento (cada uma registrada em `divergencias` no JSON) e gera
-   o SQL.
+   o SQL dos dados.
 
 ## Divergências do documento oficial
 

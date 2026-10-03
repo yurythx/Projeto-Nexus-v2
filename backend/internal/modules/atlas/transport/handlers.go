@@ -36,6 +36,7 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	r.Get("/atlas/ttdd/estrutura", h.EstruturaTTDD)
 	r.Get("/atlas/ttdd/exportar", h.ExportarTTDD)
 	r.Get("/atlas/ttdd/{codigo}", h.GetTTDD)
+	r.Get("/atlas/ttdd/{codigo}/historico", h.HistoricoTTDD)
 	r.Get("/atlas/workflows", h.ListPublic)
 	r.Get("/atlas/workflows/{id}", h.GetPublic)
 }
@@ -53,6 +54,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router, chatLimiter httpserver.Limiter) 
 		r.Get("/atlas/admin/workflows/{id}", h.GetAdmin)
 		r.Post("/atlas/admin/workflows/{id}/ativar", h.Ativar)
 		r.Post("/atlas/admin/workflows/{id}/desativar", h.Desativar)
+		r.Post("/atlas/admin/workflows/{id}/versoes", h.NovaVersao)
 	})
 }
 
@@ -136,10 +138,19 @@ func (h *Handlers) EstruturaTTDD(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteOK(w, e)
 }
 
-func (h *Handlers) GetTTDD(w http.ResponseWriter, r *http.Request) {
+// codigoSerie lê o {codigo} da rota (400 se não for um código TTDD).
+func codigoSerie(r *http.Request) (string, error) {
 	codigo := strings.TrimSpace(chi.URLParam(r, "codigo"))
 	if !domain.CodigoTTDDValido(codigo) {
-		h.fail(w, r, apperrors.BadRequest("código TTDD inválido"))
+		return "", apperrors.BadRequest("código TTDD inválido")
+	}
+	return codigo, nil
+}
+
+func (h *Handlers) GetTTDD(w http.ResponseWriter, r *http.Request) {
+	codigo, err := codigoSerie(r)
+	if err != nil {
+		h.fail(w, r, err)
 		return
 	}
 	c, err := h.svc.GetTTDD(r.Context(), codigo)
@@ -150,10 +161,26 @@ func (h *Handlers) GetTTDD(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteOK(w, c)
 }
 
+// HistoricoTTDD devolve as mudanças da série (valores anteriores, revogação).
+func (h *Handlers) HistoricoTTDD(w http.ResponseWriter, r *http.Request) {
+	codigo, err := codigoSerie(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	hist, err := h.svc.HistoricoTTDD(r.Context(), codigo)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, hist)
+}
+
 func (h *Handlers) list(w http.ResponseWriter, r *http.Request, incluirInativos bool) {
 	p := httputil.Page(r, h.maxPageSize)
 	items, total, err := h.svc.List(r.Context(), domain.Filter{
-		Query: httputil.Query(r, "q", 200), CodigoTTDD: httputil.Query(r, "codigo_ttdd", 32), IncluirInativos: incluirInativos,
+		Query: httputil.Query(r, "q", 200), CodigoTTDD: httputil.Query(r, "codigo_ttdd", 32),
+		CodigoProcessual: httputil.Query(r, "codigo_processual", 64), IncluirInativos: incluirInativos,
 	}, p)
 	if err != nil {
 		h.fail(w, r, err)
@@ -252,6 +279,29 @@ func (h *Handlers) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	identity, _ := auth.IdentityFromContext(r.Context())
 	wf, err := h.svc.Create(r.Context(), identity, req.toDomain())
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteCreated(w, wf)
+}
+
+// NovaVersao cria a versão seguinte do procedimento {id} com o conteúdo
+// enviado (o código processual e a versão vêm do original) e desativa as
+// demais versões.
+func (h *Handlers) NovaVersao(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req createRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	wf, err := h.svc.NovaVersao(r.Context(), identity, id, req.toDomain())
 	if err != nil {
 		h.fail(w, r, err)
 		return

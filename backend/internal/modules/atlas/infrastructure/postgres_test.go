@@ -37,18 +37,21 @@ func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {
 			_, _, err := r.List(ctx, db, domain.Filter{Query: "x", CodigoTTDD: "y"}, p)
 			return err
 		},
-		"Get":        func(db database.DBTX) error { _, err := r.Get(ctx, db, id, true); return err },
-		"Insert":     func(db database.DBTX) error { return r.Insert(ctx, db, wf) },
-		"SetAtivo":   func(db database.DBTX) error { return r.SetAtivo(ctx, db, id, true) },
-		"Search":     func(db database.DBTX) error { _, _, err := r.Search(ctx, db, "x", 5); return err },
-		"Candidatos": func(db database.DBTX) error { _, err := r.Candidatos(ctx, db, "x", 5); return err },
+		"Get":              func(db database.DBTX) error { _, err := r.Get(ctx, db, id, true); return err },
+		"Insert":           func(db database.DBTX) error { return r.Insert(ctx, db, wf) },
+		"SetAtivo":         func(db database.DBTX) error { return r.SetAtivo(ctx, db, id, true) },
+		"Search":           func(db database.DBTX) error { _, _, err := r.Search(ctx, db, "x", 5); return err },
+		"Candidatos":       func(db database.DBTX) error { _, err := r.Candidatos(ctx, db, "x", 5); return err },
+		"HistoricoTTDD":    func(db database.DBTX) error { _, err := r.HistoricoTTDD(ctx, db, "x"); return err },
+		"MaxVersao":        func(db database.DBTX) error { _, err := r.MaxVersao(ctx, db, "X"); return err },
+		"DesativarVersoes": func(db database.DBTX) error { _, err := r.DesativarVersoes(ctx, db, "X", id); return err },
 	}
 	for name, call := range calls {
 		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {
 			t.Errorf("%s com o banco fora: %v", name, err)
 		}
 	}
-	for _, name := range []string{"Search", "Candidatos", "EstruturaTTDD", "CandidatosTTDD"} {
+	for _, name := range []string{"Search", "Candidatos", "EstruturaTTDD", "CandidatosTTDD", "HistoricoTTDD", "MaxVersao", "DesativarVersoes"} {
 		if err := calls[name](dbtest.ScanFail{}); err == nil {
 			t.Errorf("%s com linha ilegível deveria falhar", name)
 		}
@@ -65,6 +68,14 @@ func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {
 	}
 	if _, err := r.Get(ctx, noRows{}, id, false); !errors.Is(err, domain.ErrNotFound) {
 		t.Errorf("procedimento inexistente: %v", err)
+	}
+	// Situação da série no cadastro: inexistente, vigente ou revogada.
+	for db, want := range map[database.DBTX]domain.SituacaoTTDD{
+		noRows{}: domain.TTDDInexistente, &dbtest.Seq{Row: valRow{true}}: domain.TTDDVigente, &dbtest.Seq{Row: valRow{false}}: domain.TTDDRevogada,
+	} {
+		if got, err := r.LockTTDD(ctx, db, "x"); err != nil || got != want {
+			t.Errorf("LockTTDD: %v %v, quero %v", got, err, want)
+		}
 	}
 }
 
@@ -125,9 +136,9 @@ func etapaRows(wfID uuid.UUID) pgx.Rows {
 
 func workflowRow(id uuid.UUID) valRow {
 	now := time.Now()
-	// Procedimento (13 colunas) + nº de etapas + série da TTDD (9) e hierarquia (10, nulas).
+	// Procedimento (13 colunas) + nº de etapas + série da TTDD (11) e hierarquia (10, nulas).
 	return valRow{id, "ADM.X.1", "Título", "Objetivo", "Público", 1, true, "PUBLICO", "", "1.0", nil, now, now, int64(1),
-		"1.0", "Descritor", nil, "", nil, "", nil, "", now, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+		"1.0", "Descritor", nil, "", nil, "", nil, "", nil, "", now, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 }
 
 func TestRepositoryFailuresAfterSuccessfulReads(t *testing.T) {
