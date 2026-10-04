@@ -336,18 +336,29 @@ func (r *Repository) loadEtapas(ctx context.Context, db database.DBTX, wfs []dom
 		return wfs, nil
 	}
 
-	rows, err = db.Query(ctx, `SELECT id, etapa_id, nome_documento, obrigatorio, formato, tipo_assinatura, exige_conferencia_copia,
-		COALESCE(modelo_minuta_padrao_url, '') FROM atlas_etapa_documentos WHERE etapa_id = ANY($1) ORDER BY nome_documento`, etapaIDs)
+	// Peça ligada a um modelo da biblioteca (ADR 024): nome e versão atual.
+	rows, err = db.Query(ctx, `SELECT d.id, d.etapa_id, d.nome_documento, d.obrigatorio, d.formato, d.tipo_assinatura,
+		d.exige_conferencia_copia, COALESCE(d.modelo_minuta_padrao_url, ''), d.modelo_id, m.nome, v.versao, v.arquivo_nome
+		FROM atlas_etapa_documentos d
+		LEFT JOIN atlas_modelos m ON m.id = d.modelo_id
+		LEFT JOIN LATERAL (SELECT versao, arquivo_nome FROM atlas_modelo_versoes WHERE modelo_id = d.modelo_id
+			ORDER BY versao DESC LIMIT 1) v ON TRUE
+		WHERE d.etapa_id = ANY($1) ORDER BY d.nome_documento`, etapaIDs)
 	if err != nil {
 		return nil, wrap(err)
 	}
 	for rows.Next() {
 		var d domain.EtapaDocumento
 		var etapaID uuid.UUID
+		var modeloNome, arquivo *string
+		var versao *int
 		if err := rows.Scan(&d.ID, &etapaID, &d.NomeDocumento, &d.Obrigatorio, &d.Formato, &d.TipoAssinatura,
-			&d.ExigeConferenciaCopia, &d.ModeloMinutaPadraoURL); err != nil {
+			&d.ExigeConferenciaCopia, &d.ModeloMinutaPadraoURL, &d.ModeloID, &modeloNome, &versao, &arquivo); err != nil {
 			rows.Close()
 			return nil, wrap(err)
+		}
+		if d.ModeloID != nil && modeloNome != nil && versao != nil && arquivo != nil {
+			d.Modelo = &domain.ModeloResumo{ID: *d.ModeloID, Nome: *modeloNome, Versao: *versao, ArquivoNome: *arquivo}
 		}
 		p := etapaPos[etapaID]
 		wfs[p.wf].Etapas[p.etapa].Documentos = append(wfs[p.wf].Etapas[p.etapa].Documentos, d)
@@ -393,8 +404,9 @@ func (r *Repository) Insert(ctx context.Context, db database.DBTX, w domain.Work
 		}
 		for _, d := range e.Documentos {
 			if _, err := db.Exec(ctx, `INSERT INTO atlas_etapa_documentos (id, etapa_id, nome_documento, obrigatorio, formato,
-				tipo_assinatura, exige_conferencia_copia, modelo_minuta_padrao_url) VALUES ($1,$2,$3,$4,$5,$6,$7,NULLIF($8,''))`,
-				d.ID, e.ID, d.NomeDocumento, d.Obrigatorio, string(d.Formato), string(d.TipoAssinatura), d.ExigeConferenciaCopia, d.ModeloMinutaPadraoURL); err != nil {
+				tipo_assinatura, exige_conferencia_copia, modelo_minuta_padrao_url, modelo_id) VALUES ($1,$2,$3,$4,$5,$6,$7,NULLIF($8,''),$9)`,
+				d.ID, e.ID, d.NomeDocumento, d.Obrigatorio, string(d.Formato), string(d.TipoAssinatura), d.ExigeConferenciaCopia,
+				d.ModeloMinutaPadraoURL, d.ModeloID); err != nil {
 				return wrap(err)
 			}
 		}

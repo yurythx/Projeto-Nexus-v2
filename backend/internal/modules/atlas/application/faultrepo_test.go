@@ -185,3 +185,59 @@ func (fr *faultRepo) Candidatos(ctx context.Context, db database.DBTX, pergunta 
 	defer fr.post(ctx, db)
 	return fr.inner.Candidatos(ctx, db, pergunta, limit)
 }
+
+func (fr *faultRepo) ListModelos(ctx context.Context, db database.DBTX, incluirInativos bool) ([]domain.Modelo, error) {
+	if err := fr.hook("ListModelos"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.ListModelos(ctx, db, incluirInativos)
+}
+
+func (fr *faultRepo) GetModelo(ctx context.Context, db database.DBTX, id uuid.UUID) (domain.Modelo, error) {
+	if err := fr.hook("GetModelo"); err != nil {
+		return domain.Modelo{}, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.GetModelo(ctx, db, id)
+}
+
+func (fr *faultRepo) InsertModelo(ctx context.Context, db database.DBTX, m domain.Modelo, v domain.ModeloVersao, por string) error {
+	if err := fr.hook("InsertModelo"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.InsertModelo(ctx, db, m, v, por)
+}
+
+func (fr *faultRepo) InsertModeloVersao(ctx context.Context, db database.DBTX, id uuid.UUID, v domain.ModeloVersao) (int, error) {
+	if err := fr.hook("InsertModeloVersao"); err != nil {
+		return 0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.InsertModeloVersao(ctx, db, id, v)
+}
+
+func (fr *faultRepo) UpdateModelo(ctx context.Context, db database.DBTX, m domain.Modelo, por string) error {
+	if err := fr.hook("UpdateModelo"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.UpdateModelo(ctx, db, m, por)
+}
+
+func (fr *faultRepo) VersaoModelo(ctx context.Context, db database.DBTX, id uuid.UUID, versao int) (domain.ModeloVersao, error) {
+	if err := fr.hook("VersaoModelo"); err != nil {
+		return domain.ModeloVersao{}, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.VersaoModelo(ctx, db, id, versao)
+}
+
+func (fr *faultRepo) ModelosAtivos(ctx context.Context, db database.DBTX, ids []uuid.UUID) (int, error) {
+	if err := fr.hook("ModelosAtivos"); err != nil {
+		return 0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.ModelosAtivos(ctx, db, ids)
+}

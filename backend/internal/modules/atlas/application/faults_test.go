@@ -33,12 +33,16 @@ var (
 )
 
 type env struct {
-	t    *testing.T
-	pool *pgxpool.Pool
+	t     *testing.T
+	pool  *pgxpool.Pool
+	store *gravador
 }
 
 func (e *env) svc(repo domain.Repository) *application.Service {
-	return application.NewService(e.pool, repo, outbox.NewWriter("test"), nil, logger)
+	if e.store == nil {
+		e.store = novoGravador()
+	}
+	return application.NewService(e.pool, repo, outbox.NewWriter("test"), nil, logger).WithStorage(e.store, bucket)
 }
 
 func (e *env) real() *application.Service { return e.svc(infrastructure.NewRepository()) }
@@ -132,6 +136,47 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 		"Ativar": func() func(*application.Service) error {
 			w := e.workflow(false)
 			return func(s *application.Service) error { _, err := s.SetAtivo(ctx, w.ID, true); return err }
+		},
+		"ListModelos": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.ListModelos(ctx, true); return err }
+		},
+		"GetModelo": func() func(*application.Service) error {
+			m := e.modelo()
+			return func(s *application.Service) error { _, err := s.GetModelo(ctx, m.ID); return err }
+		},
+		"ArquivoModelo": func() func(*application.Service) error {
+			m := e.modelo()
+			return func(s *application.Service) error {
+				_, rc, err := s.ArquivoModelo(ctx, m.ID, 0)
+				if err == nil {
+					rc.Close()
+				}
+				return err
+			}
+		},
+		"CriarModelo": func() func(*application.Service) error {
+			return func(s *application.Service) error {
+				_, err := s.CriarModelo(ctx, gestor, modeloNovo(), docx())
+				return err
+			}
+		},
+		"NovaVersaoModelo": func() func(*application.Service) error {
+			m := e.modelo()
+			return func(s *application.Service) error {
+				_, err := s.NovaVersaoModelo(ctx, gestor, m.ID, docx())
+				return err
+			}
+		},
+		"AlterarModelo": func() func(*application.Service) error {
+			m := e.modelo()
+			return func(s *application.Service) error {
+				_, err := s.AlterarModelo(ctx, gestor, domain.Modelo{ID: m.ID, Nome: m.Nome, Ativo: false})
+				return err
+			}
+		},
+		"CreateComModelo": func() func(*application.Service) error {
+			w := comModelo(novo(), e.modelo().ID)
+			return func(s *application.Service) error { _, err := s.Create(ctx, gestor, w); return err }
 		},
 		"Perguntar": func() func(*application.Service) error {
 			return func(s *application.Service) error { _, err := s.Perguntar(ctx, "pregão eletrônico"); return err }

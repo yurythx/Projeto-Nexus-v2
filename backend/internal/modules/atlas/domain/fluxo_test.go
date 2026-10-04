@@ -47,7 +47,8 @@ func TestSinteseFluxo(t *testing.T) {
 	w.Etapas[0].PrazoSLAEmDias, w.Etapas[1].PrazoSLAEmDias = 1, 10
 	w.Etapas[0].ManterAbertoAposRemessa = true
 	w.Etapas[0].Documentos = append(w.Etapas[0].Documentos, EtapaDocumento{NomeDocumento: "Cópia do RG", Formato: FormatoExternoDigitalizado,
-		TipoAssinatura: AssinaturaEmBloco, ExigeConferenciaCopia: true, ModeloMinutaPadraoURL: "https://x/modelo.docx"})
+		TipoAssinatura: AssinaturaEmBloco, ExigeConferenciaCopia: true, ModeloMinutaPadraoURL: "https://x/modelo.docx",
+		Modelo: &ModeloResumo{Nome: "Requerimento padrão", Versao: 2}})
 	um := 1
 	w.Classificacao = &ClassificacaoTTDD{Codigo: "2.0.02.00.07", Descritor: "Pregão", FaseCorrenteAnos: &um, FaseIntermAnos: &um,
 		DestinacaoFinal: ptr(DestinacaoGuardaPermanente)}
@@ -57,7 +58,7 @@ func TestSinteseFluxo(t *testing.T) {
 		"Fluxo em 2 etapas, prazo previsto de 11 dias:",
 		"1. Demandante (SEC/DEM) — prazo: 1 dia", "O que fazer: Elaborar o DFD",
 		"• DFD — obrigatória, nato-digital, assinatura individual",
-		"• Cópia do RG — opcional, externo digitalizado, assinatura em bloco, exige conferência da cópia; modelo: https://x/modelo.docx",
+		"• Cópia do RG — opcional, externo digitalizado, assinatura em bloco, exige conferência da cópia; modelo na biblioteca do Atlas: Requerimento padrão (versão 2); modelo: https://x/modelo.docx",
 		"Para seguir: DFD aprovado → etapa 2 (Licitações)",
 		"mantém o processo aberto",
 		"2. Licitações (SEMAD/LIC) — prazo: 10 dias",

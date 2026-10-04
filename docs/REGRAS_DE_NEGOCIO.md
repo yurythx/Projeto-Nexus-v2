@@ -563,8 +563,9 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     atribuições e prazo de 0 a 3650 dias; regra SEI
     `manter_aberto_apos_remessa`;
   - peças: `NATO_DIGITAL` ou `EXTERNO_DIGITALIZADO`; assinatura
-    `INDIVIDUAL`, `CONJUNTA_MULTINIVEL` ou `EM_BLOCO`; modelo de minuta só
-    como endereço `http(s)` completo;
+    `INDIVIDUAL`, `CONJUNTA_MULTINIVEL` ou `EM_BLOCO`; o modelo da peça é
+    um modelo **ativo** da biblioteca (ver Modelos de documento) — o link
+    externo de minuta, se usado, só como endereço `http(s)` completo;
   - transições apontam para outra etapa existente; devolução em diligência
     exige a descrição da diligência.
 - **TTDD (norma da CCPAD, ADR 017):** a tabela oficial (`docs/ttdd.pdf`)
@@ -611,6 +612,24 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   mesmo código fica ativa e as demais são desativadas na mesma transação
   (eventos e auditoria com a versão que substituiu); a gestão vê todas as
   versões na página.
+- **Modelos de documento (biblioteca, ADR 024):**
+  - catálogo reutilizável: nome único (sem diferenciar maiúsculas, até
+    150 caracteres), descrição e situação; as peças **apontam** para o
+    modelo — publicar uma nova versão vale para todos os fluxos que o usam;
+  - arquivo .docx, .odt, .pdf, .doc, .rtf, .xlsx ou .ods, até 10 MB,
+    conferido pelo conteúdo (a assinatura dos bytes tem de corresponder à
+    extensão); cada versão guarda nome, tamanho, SHA-256, nota (até 500
+    caracteres), quem publicou e quando; as versões anteriores continuam
+    baixáveis;
+  - nada é apagado: **desativado**, o modelo sai da escolha de novas peças
+    e da lista pública, mas as peças já ligadas continuam baixando e a nova
+    versão de um procedimento que já o usava é aceita; ligar uma peça nova
+    a modelo desativado ou inexistente → 422;
+  - consulta e download públicos, sem a autoria; cadastro, versão e
+    alteração com `atlas:manage`, auditados; o arquivo passa pela API
+    (mesma origem), nunca por URL do MinIO;
+  - no cadastro do procedimento, a peça com o mesmo nome de um modelo
+    ativo (sem diferenciar acento e caixa) já vem ligada a ele.
 - **Páginas (URL própria, compartilhável e imprimível):**
   - `/atlas` — busca unificada (procedimentos e séries em paralelo, ou a
     pergunta ao assistente), procedimentos e atalhos por secretaria;
@@ -621,6 +640,8 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   - `/atlas/ttdd/{codigo}` — a série, a fonte oficial, os procedimentos
     que a produzem e o histórico de prazos (série revogada abre com aviso);
   - `/atlas/ttdd/atualizar` — atualização da TTDD (gestão);
+  - `/atlas/modelos` — biblioteca de modelos de documento (consulta,
+    download e histórico; a gestão cadastra, publica versões e desativa);
   - os links antigos `/atlas?procedimento=` e `/atlas?ttdd=` redirecionam.
 - **Calculadora de temporalidade** (nas páginas de série e de
   procedimento): é uma **estimativa** a partir da data informada — fim da

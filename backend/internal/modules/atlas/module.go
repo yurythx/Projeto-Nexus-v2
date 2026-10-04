@@ -41,7 +41,8 @@ func New(deps modkit.Deps) *Module {
 	roteador := iaconfig.NovoRoteador(iaconfig.NewPostgresStore(deps.Pool, deps.Cipher), iaconfig.NovoCliente(),
 		iaconfig.ConexaoDoAmbiente(c.AIEndpoint, c.AIAPIKey, c.AIModel, int(c.AITimeout.Seconds())), deps.Logger)
 	var assistente domain.Assistente = infrastructure.NewAssistenteIA(roteador)
-	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox, assistente, deps.Logger)
+	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox, assistente, deps.Logger).
+		WithStorage(deps.Storage, deps.Config.MinIO.Bucket)
 	return &Module{deps: deps, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger, deps.Config.MaxPageSize)}
 }
 

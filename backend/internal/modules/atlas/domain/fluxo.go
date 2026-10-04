@@ -134,6 +134,9 @@ func SinteseFluxo(w Workflow) string {
 				if d.ExigeConferenciaCopia {
 					b.WriteString(", exige conferência da cópia")
 				}
+				if d.Modelo != nil {
+					fmt.Fprintf(&b, "; modelo na biblioteca do Atlas: %s (versão %d)", d.Modelo.Nome, d.Modelo.Versao)
+				}
 				if d.ModeloMinutaPadraoURL != "" {
 					b.WriteString("; modelo: " + d.ModeloMinutaPadraoURL)
 				}

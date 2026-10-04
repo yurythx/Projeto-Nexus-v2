@@ -275,6 +275,10 @@ type EtapaDocumento struct {
 	TipoAssinatura        TipoAssinatura   `json:"tipo_assinatura"`
 	ExigeConferenciaCopia bool             `json:"exige_conferencia_copia"`
 	ModeloMinutaPadraoURL string           `json:"modelo_minuta_padrao_url"`
+	// ModeloID liga a peça a um modelo da biblioteca (ADR 024); Modelo traz
+	// a versão atual dele na leitura.
+	ModeloID *uuid.UUID    `json:"modelo_id"`
+	Modelo   *ModeloResumo `json:"modelo,omitempty"`
 }
 
 // EtapaTransicao leva o processo da etapa a outra (envio regular ou
@@ -465,6 +469,19 @@ type Repository interface {
 	// revogadas, restabelecidas e procedimentos afetados) e, com aplicar, grava
 	// — na transação db (a simulação é desfeita por quem chama).
 	CargaTTDD(ctx context.Context, db database.DBTX, c CargaTTDD, aplicar bool) (ImpactoCarga, error)
+	// Biblioteca de modelos (ADR 024).
+	ListModelos(ctx context.Context, db database.DBTX, incluirInativos bool) ([]Modelo, error)
+	// GetModelo devolve o modelo com o histórico de versões.
+	GetModelo(ctx context.Context, db database.DBTX, id uuid.UUID) (Modelo, error)
+	InsertModelo(ctx context.Context, db database.DBTX, m Modelo, v ModeloVersao, por string) error
+	// InsertModeloVersao grava a versão seguinte (trava o modelo) e devolve o número dela.
+	InsertModeloVersao(ctx context.Context, db database.DBTX, id uuid.UUID, v ModeloVersao) (int, error)
+	UpdateModelo(ctx context.Context, db database.DBTX, m Modelo, por string) error
+	// VersaoModelo devolve uma versão (0 = a atual) com a chave do arquivo —
+	// também de modelo desativado (as peças já ligadas continuam baixando).
+	VersaoModelo(ctx context.Context, db database.DBTX, id uuid.UUID, versao int) (ModeloVersao, error)
+	// ModelosAtivos devolve quantos dos ids são modelos ativos.
+	ModelosAtivos(ctx context.Context, db database.DBTX, ids []uuid.UUID) (int, error)
 	// HistoricoTTDD devolve as mudanças da série, da mais recente à mais antiga.
 	HistoricoTTDD(ctx context.Context, db database.DBTX, codigo string) ([]HistoricoTTDD, error)
 

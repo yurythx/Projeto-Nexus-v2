@@ -3,12 +3,14 @@ import {
   ArrowRight,
   Clock,
   CornerDownLeft,
+  Download,
   ExternalLink,
   FileDigit,
   FileText,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
+import { urlArquivoModelo } from "@/lib/atlas/modelos";
 import type { Etapa } from "@/lib/nexus/types";
 
 import { ASSINATURA, FORMATO } from "./labels";
@@ -78,7 +80,8 @@ export function LinhaDoTempo({ etapas }: { etapas: Etapa[] }) {
   );
 }
 
-/** Checklist das peças de todas as etapas, com o modelo quando houver. */
+/** Checklist das peças de todas as etapas, com o modelo quando houver: o da
+ * biblioteca do Atlas (baixado pela API, versão atual) ou um link externo. */
 export function ChecklistDocumentos({ etapas }: { etapas: Etapa[] }) {
   const pecas = etapas.flatMap((e) => e.documentos.map((d) => ({ ...d, etapa: e })));
   if (pecas.length === 0)
@@ -109,6 +112,17 @@ export function ChecklistDocumentos({ etapas }: { etapas: Etapa[] }) {
               {d.obrigatorio ? "Obrigatória" : "Opcional"}
             </Badge>
             {d.exige_conferencia_copia && <Badge tone="warning">Conferência da cópia</Badge>}
+            {d.modelo && (
+              <a
+                href={urlArquivoModelo(d.modelo.id)}
+                download={d.modelo.arquivo_nome}
+                aria-label={`Baixar modelo ${d.modelo.nome}, versão ${d.modelo.versao}`}
+                title={`${d.modelo.nome} — versão ${d.modelo.versao}`}
+                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+              >
+                <Download size={11} aria-hidden="true" /> Baixar modelo
+              </a>
+            )}
             {d.modelo_minuta_padrao_url && (
               <a
                 href={d.modelo_minuta_padrao_url}

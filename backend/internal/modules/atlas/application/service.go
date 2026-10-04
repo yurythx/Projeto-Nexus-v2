@@ -21,6 +21,7 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/auth"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
+	"github.com/yurythx/projeto-nexus/internal/platform/storage"
 )
 
 // Eventos emitidos.
@@ -47,6 +48,8 @@ type Service struct {
 	repo       domain.Repository
 	outbox     *outbox.Writer
 	assistente domain.Assistente // nil = síntese canônica, sem IA
+	store      storage.Provider  // arquivos da biblioteca de modelos (WithStorage)
+	bucket     string
 	logger     *slog.Logger
 	now        func() time.Time
 }
@@ -153,7 +156,7 @@ func (s *Service) Create(ctx context.Context, identity auth.Identity, w domain.W
 	}
 	var out domain.Workflow
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) (err error) {
-		out, err = s.inserir(ctx, tx, identity, w)
+		out, err = s.inserir(ctx, tx, identity, w, nil)
 		return err
 	})
 	return out, MapError(err)
@@ -179,7 +182,7 @@ func (s *Service) NovaVersao(ctx context.Context, identity auth.Identity, origem
 		if err := w.Validate(); err != nil {
 			return err
 		}
-		if out, err = s.inserir(ctx, tx, identity, w); err != nil {
+		if out, err = s.inserir(ctx, tx, identity, w, modelosDe(base)); err != nil {
 			return err
 		}
 		ids, err := s.repo.DesativarVersoes(ctx, tx, out.CodigoProcessual, out.ID)
@@ -210,8 +213,9 @@ func (s *Service) substituida(ctx context.Context, tx pgx.Tx, antiga, nova domai
 }
 
 // inserir grava o procedimento (já validado) ativo, com evento e auditoria,
-// na transação: a série da TTDD tem de existir e estar vigente.
-func (s *Service) inserir(ctx context.Context, tx pgx.Tx, identity auth.Identity, w domain.Workflow) (domain.Workflow, error) {
+// na transação: a série da TTDD tem de existir e estar vigente, e as peças
+// só apontam para modelos ativos (ou já ligados à versão anterior).
+func (s *Service) inserir(ctx context.Context, tx pgx.Tx, identity auth.Identity, w domain.Workflow, modelosAnteriores map[uuid.UUID]bool) (domain.Workflow, error) {
 	w.ID, w.Ativo = uuid.New(), true
 	if identity.UserID != uuid.Nil {
 		uid := identity.UserID
@@ -235,6 +239,9 @@ func (s *Service) inserir(ctx context.Context, tx pgx.Tx, identity auth.Identity
 		return w, domain.InvalidError{Msg: "código TTDD inexistente na Tabela de Temporalidade: " + w.CodigoTTDD}
 	case domain.TTDDRevogada:
 		return w, domain.InvalidError{Msg: "a série " + w.CodigoTTDD + " foi revogada na TTDD em vigor: enquadre o procedimento numa série vigente"}
+	}
+	if err := s.conferirModelos(ctx, tx, w, modelosAnteriores); err != nil {
+		return w, err
 	}
 	if err := s.repo.Insert(ctx, tx, w); err != nil {
 		return w, err

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	apperrors "github.com/yurythx/projeto-nexus/internal/domain/errors"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/application"
@@ -40,6 +41,9 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	r.Get("/atlas/ttdd/{codigo}/historico", h.HistoricoTTDD)
 	r.Get("/atlas/workflows", h.ListPublic)
 	r.Get("/atlas/workflows/{id}", h.GetPublic)
+	r.Get("/atlas/modelos", h.ListModelosPublic)
+	r.Get("/atlas/modelos/{id}", h.GetModelo)
+	r.Get("/atlas/modelos/{id}/arquivo", h.ArquivoModelo)
 }
 
 // RegisterRoutes: assistente (atlas:read + limite próprio por identidade,
@@ -56,6 +60,10 @@ func (h *Handlers) RegisterRoutes(r chi.Router, chatLimiter httpserver.Limiter) 
 		r.Post("/atlas/admin/workflows/{id}/ativar", h.Ativar)
 		r.Post("/atlas/admin/workflows/{id}/desativar", h.Desativar)
 		r.Post("/atlas/admin/workflows/{id}/versoes", h.NovaVersao)
+		r.Get("/atlas/admin/modelos", h.ListModelosAdmin)
+		r.Post("/atlas/admin/modelos", h.CriarModelo)
+		r.Put("/atlas/admin/modelos/{id}", h.AlterarModelo)
+		r.Post("/atlas/admin/modelos/{id}/versoes", h.NovaVersaoModelo)
 		r.Post("/atlas/admin/ttdd/carga/simular", h.SimularCarga)
 		r.Post("/atlas/admin/ttdd/carga/aplicar", h.AplicarCarga)
 	})
@@ -219,6 +227,8 @@ type documentoRequest struct {
 	TipoAssinatura        string `json:"tipo_assinatura" validate:"required,oneof=INDIVIDUAL CONJUNTA_MULTINIVEL EM_BLOCO"`
 	ExigeConferenciaCopia bool   `json:"exige_conferencia_copia"`
 	ModeloMinutaPadraoURL string `json:"modelo_minuta_padrao_url" validate:"omitempty,max=2000"`
+	// ModeloID liga a peça a um modelo da biblioteca (ADR 024).
+	ModeloID *uuid.UUID `json:"modelo_id"`
 }
 
 type transicaoRequest struct {
@@ -263,7 +273,7 @@ func (req createRequest) toDomain() domain.Workflow {
 		for _, d := range e.Documentos {
 			etapa.Documentos = append(etapa.Documentos, domain.EtapaDocumento{NomeDocumento: d.NomeDocumento, Obrigatorio: d.Obrigatorio,
 				Formato: domain.FormatoDocumento(d.Formato), TipoAssinatura: domain.TipoAssinatura(d.TipoAssinatura),
-				ExigeConferenciaCopia: d.ExigeConferenciaCopia, ModeloMinutaPadraoURL: d.ModeloMinutaPadraoURL})
+				ExigeConferenciaCopia: d.ExigeConferenciaCopia, ModeloMinutaPadraoURL: d.ModeloMinutaPadraoURL, ModeloID: d.ModeloID})
 		}
 		for _, t := range e.Transicoes {
 			etapa.Transicoes = append(etapa.Transicoes, domain.EtapaTransicao{DestinoOrdem: t.DestinoOrdem,

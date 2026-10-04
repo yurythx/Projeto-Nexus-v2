@@ -88,6 +88,70 @@ export interface paths {
         patch: operations["patchAdminModulesKey"];
         trace?: never;
     };
+    "/api/v1/atlas/admin/modelos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/modelos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getAtlasAdminModelos"];
+        put?: never;
+        /**
+         * Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/modelos
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtlasAdminModelos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/admin/modelos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Atlas — Procedimentos e Temporalidade — Salvar /atlas/admin/modelos/{id}
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        put: operations["putAtlasAdminModelosId"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/admin/modelos/{id}/versoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/modelos/{id}/versoes
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtlasAdminModelosIdVersoes"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atlas/admin/ttdd/carga/aplicar": {
         parameters: {
             query?: never;
@@ -246,6 +310,57 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         post: operations["postAtlasChat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/modelos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/modelos */
+        get: operations["getAtlasModelos"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/modelos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Atlas — Procedimentos e Temporalidade — Obter /atlas/modelos/{id} */
+        get: operations["getAtlasModelosId"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/modelos/{id}/arquivo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/modelos/{id}/arquivo */
+        get: operations["getAtlasModelosIdArquivo"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2902,6 +3017,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AtlasAlterarModeloRequest: {
+            ativo?: boolean;
+            descricao?: string;
+            nome: string;
+        };
         AtlasChatRequest: {
             query: string;
         };
@@ -2938,6 +3058,8 @@ export interface components {
             exige_conferencia_copia?: boolean;
             /** @enum {string} */
             formato: "NATO_DIGITAL" | "EXTERNO_DIGITALIZADO";
+            /** Format: uuid */
+            modelo_id?: string | null;
             modelo_minuta_padrao_url?: string;
             nome_documento: string;
             obrigatorio?: boolean;
@@ -2983,6 +3105,9 @@ export interface components {
             formato: "EXTERNO_DIGITALIZADO" | "NATO_DIGITAL";
             /** Format: uuid */
             id: string;
+            modelo?: components["schemas"]["AtlasModeloResumo"];
+            /** Format: uuid */
+            modelo_id: string | null;
             modelo_minuta_padrao_url: string;
             nome_documento: string;
             obrigatorio: boolean;
@@ -3036,6 +3161,37 @@ export interface components {
             totais: {
                 [key: string]: number;
             };
+        };
+        AtlasModelo: {
+            ativo: boolean;
+            atual: components["schemas"]["AtlasModeloVersao"];
+            descricao: string;
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            pecas_ligadas: number;
+            /** Format: date-time */
+            updated_at: string;
+            updated_by: string;
+            versoes?: components["schemas"]["AtlasModeloVersao"][];
+        };
+        AtlasModeloResumo: {
+            arquivo_nome: string;
+            /** Format: uuid */
+            id: string;
+            nome: string;
+            versao: number;
+        };
+        AtlasModeloVersao: {
+            arquivo_nome: string;
+            content_type: string;
+            /** Format: date-time */
+            created_at: string;
+            created_by: string;
+            nota: string;
+            sha256: string;
+            tamanho: number;
+            versao: number;
         };
         AtlasOrgaoTTDD: {
             /** Format: date-time */
@@ -4867,6 +5023,140 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtlasAdminModelos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasModelo"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtlasAdminModelos: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasModelo"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putAtlasAdminModelosId: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AtlasAlterarModeloRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasModelo"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtlasAdminModelosIdVersoes: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasModelo"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postAtlasAdminTtddCargaAplicar: {
         parameters: {
             query?: never;
@@ -5174,6 +5464,77 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtlasModelos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasModelo"][];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtlasModelosId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasModelo"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtlasModelosIdArquivo: {
+        parameters: {
+            query?: {
+                versao?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Success"];
             404: components["responses"]["ModuleDisabledOrNotFound"];
             422: components["responses"]["ValidationError"];
             429: components["responses"]["TooManyRequests"];

@@ -9,12 +9,14 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { apiClient } from "@/lib/api/client";
-import { useApiPage, withQuery } from "@/lib/api/swr";
+import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
+import { sugerirModelo } from "@/lib/atlas/modelos";
 import { useAtrasado } from "@/lib/atlas/useAtrasado";
 import type {
   ClassificacaoTTDD,
   EtapaDocumento,
   EtapaTransicao,
+  ModeloDocumento,
   NivelAcesso,
   Workflow,
 } from "@/lib/nexus/types";
@@ -50,6 +52,21 @@ const novaEtapa = (key: number): EtapaForm => ({
   docs: [],
   transicoes: [],
 });
+
+/** Peças de uma etapa (uma por linha, sem vazias). */
+const linhas = (pecas: string) =>
+  pecas
+    .split("\n")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+/** Modelo já ligado a cada peça da versão atual ("" = sem modelo). */
+function modelosDe(base?: Workflow): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const e of base?.etapas ?? [])
+    for (const d of e.documentos) out[d.nome_documento] ??= d.modelo_id ?? "";
+  return out;
+}
 
 /** Etapas da versão atual no formato do formulário (key = ordem original). */
 function etapasDe(base: Workflow): EtapaForm[] {
@@ -130,6 +147,14 @@ export function NovoProcedimentoForm({
   const [nivel, setNivel] = useState<NivelAcesso>(base?.nivel_acesso ?? "PUBLICO");
   const [etapas, setEtapas] = useState<EtapaForm[]>(base ? etapasDe(base) : [novaEtapa(1)]);
   const serieRevogada = base?.classificacao?.revogada_em ? base.codigo_ttdd : undefined;
+  // Modelos da biblioteca (ADR 024): a peça sem escolha explícita recebe o
+  // modelo ativo de mesmo nome, se houver.
+  const biblioteca = useApiQuery<ModeloDocumento[]>("v1/atlas/admin/modelos");
+  const modelos = biblioteca.data ?? [];
+  const ativos = modelos.filter((m) => m.ativo);
+  const [escolhas, setEscolhas] = useState<Record<string, string>>(() => modelosDe(base));
+  const modeloDa = (peca: string) => escolhas[peca] ?? sugerirModelo(peca, ativos)?.id ?? "";
+  const pecas = [...new Set(etapas.flatMap((e) => linhas(e.pecas)))];
 
   function update(key: number, patch: Partial<EtapaForm>) {
     setEtapas((list) => list.map((e) => (e.key === key ? { ...e, ...patch } : e)));
@@ -156,21 +181,18 @@ export function NovoProcedimentoForm({
         atribuicoes_setor: etapa.atribuicoes_setor.trim(),
         prazo_sla_em_dias: etapa.prazo_sla_em_dias,
         manter_aberto_apos_remessa: etapa.manter_aberto_apos_remessa,
-        documentos: etapa.pecas
-          .split("\n")
-          .map((p) => p.trim())
-          .filter(Boolean)
-          .map((nome) => {
-            const d = etapa.docs.find((x) => x.nome_documento === nome);
-            return {
-              nome_documento: nome,
-              obrigatorio: d?.obrigatorio ?? true,
-              formato: d?.formato ?? "NATO_DIGITAL",
-              tipo_assinatura: d?.tipo_assinatura ?? "INDIVIDUAL",
-              exige_conferencia_copia: d?.exige_conferencia_copia ?? false,
-              modelo_minuta_padrao_url: d?.modelo_minuta_padrao_url ?? "",
-            };
-          }),
+        documentos: linhas(etapa.pecas).map((nome) => {
+          const d = etapa.docs.find((x) => x.nome_documento === nome);
+          return {
+            nome_documento: nome,
+            obrigatorio: d?.obrigatorio ?? true,
+            formato: d?.formato ?? "NATO_DIGITAL",
+            tipo_assinatura: d?.tipo_assinatura ?? "INDIVIDUAL",
+            exige_conferencia_copia: d?.exige_conferencia_copia ?? false,
+            modelo_minuta_padrao_url: d?.modelo_minuta_padrao_url ?? "",
+            modelo_id: modeloDa(nome) || null,
+          };
+        }),
         transicoes: etapa.transicoes
           .filter((t) => ordemDe(t.destinoKey) > 0)
           .map(({ destinoKey, ...t }) => ({ ...t, destino_ordem: ordemDe(destinoKey) })),
@@ -372,6 +394,40 @@ export function NovoProcedimentoForm({
           </Button>
         </div>
       </fieldset>
+
+      {pecas.length > 0 && (
+        <fieldset className="flex flex-col gap-3 border-t border-surface-border pt-3">
+          <legend className="text-xs font-semibold uppercase tracking-wide text-foreground">
+            Modelos das peças
+          </legend>
+          <p className="text-xs text-muted">
+            Ligue cada peça a um modelo da biblioteca: quem consulta o procedimento baixa a versão
+            atual dele. Peças com o mesmo nome de um modelo já vêm ligadas.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {pecas.map((peca, i) => {
+              const atual = modeloDa(peca);
+              const opcoes = modelos.filter((m) => m.ativo || m.id === atual);
+              return (
+                <Select
+                  key={peca}
+                  id={`atlas-modelo-${i}`}
+                  label={peca}
+                  value={atual}
+                  onChange={(e) => setEscolhas((x) => ({ ...x, [peca]: e.target.value }))}
+                  options={[
+                    { value: "", label: "Sem modelo" },
+                    ...opcoes.map((m) => ({
+                      value: m.id,
+                      label: m.ativo ? m.nome : `${m.nome} (desativado)`,
+                    })),
+                  ]}
+                />
+              );
+            })}
+          </div>
+        </fieldset>
+      )}
 
       <div className="flex justify-end border-t border-surface-border pt-3">
         <Button type="submit" loading={pending}>

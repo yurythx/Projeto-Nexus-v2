@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, FileClock, Plus } from "lucide-react";
+import { ArrowRight, Building2, FileClock, FileText, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -116,6 +116,9 @@ function Inicio() {
           <div className="flex flex-wrap gap-2">
             <Link href="/atlas/ttdd" className={buttonClass("secondary")}>
               <FileClock size={16} aria-hidden="true" /> Tabela de Temporalidade
+            </Link>
+            <Link href="/atlas/modelos" className={buttonClass("secondary")}>
+              <FileText size={16} aria-hidden="true" /> Modelos de documento
             </Link>
             {canManage && (
               <Button onClick={() => setCreating(true)}>

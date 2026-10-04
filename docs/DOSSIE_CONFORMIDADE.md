@@ -35,6 +35,7 @@ homologação junto à Secretaria de Governo Digital.
 | `docs/adr/013` | Permissão com escopo e herança (RBAC multi-escopo) |
 | `docs/adr/017`, `019`, `022` | TTDD oficial (CCPAD): vigência, histórico e atualização auditada |
 | `docs/adr/020`, `021` | IA governada: conexões com chave cifrada, autorização e mascaramento para fornecedor externo (LGPD art. 33); assistente restrito ao acervo do Atlas — fluxos e TTDD (ADR 023) |
+| `docs/adr/024` | Biblioteca de modelos de documento: versões imutáveis com SHA-256, arquivo conferido pelo conteúdo, download pela API sem autoria nas respostas públicas, alterações auditadas |
 
 ## 3. Rastreamento do roadmap
 

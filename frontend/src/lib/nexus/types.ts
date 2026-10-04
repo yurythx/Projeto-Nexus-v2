@@ -715,6 +715,42 @@ export interface EtapaDocumento {
   tipo_assinatura: TipoAssinatura;
   exige_conferencia_copia: boolean;
   modelo_minuta_padrao_url: string;
+  /** Modelo da biblioteca ligado à peça (ADR 024), com a versão atual. */
+  modelo_id: UUID | null;
+  modelo?: ModeloResumo;
+}
+
+// ------------------------------------------- biblioteca de modelos (ADR 024)
+
+export interface ModeloResumo {
+  id: UUID;
+  nome: string;
+  versao: number;
+  arquivo_nome: string;
+}
+
+export interface ModeloVersao {
+  versao: number;
+  arquivo_nome: string;
+  content_type: string;
+  tamanho: number;
+  sha256: string;
+  nota: string;
+  created_at: string;
+  created_by: string;
+}
+
+/** Modelo de documento: a versão atual e, no detalhe, o histórico. */
+export interface ModeloDocumento {
+  id: UUID;
+  nome: string;
+  descricao: string;
+  ativo: boolean;
+  atual: ModeloVersao;
+  versoes?: ModeloVersao[];
+  updated_at: string;
+  updated_by: string;
+  pecas_ligadas: number;
 }
 
 export interface EtapaTransicao {

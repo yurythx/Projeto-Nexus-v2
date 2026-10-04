@@ -187,6 +187,26 @@
       }
     },
     "schemas": {
+      "AtlasAlterarModeloRequest": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "descricao": {
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "nome": {
+            "maxLength": 150,
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "AtlasChatRequest": {
         "properties": {
           "query": {
@@ -335,6 +355,11 @@
               "NATO_DIGITAL",
               "EXTERNO_DIGITALIZADO"
             ],
+            "type": "string"
+          },
+          "modelo_id": {
+            "format": "uuid",
+            "nullable": true,
             "type": "string"
           },
           "modelo_minuta_padrao_url": {
@@ -520,6 +545,14 @@
             "format": "uuid",
             "type": "string"
           },
+          "modelo": {
+            "$ref": "#/components/schemas/AtlasModeloResumo"
+          },
+          "modelo_id": {
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
           "modelo_minuta_padrao_url": {
             "type": "string"
           },
@@ -542,6 +575,7 @@
           "exige_conferencia_copia",
           "formato",
           "id",
+          "modelo_id",
           "modelo_minuta_padrao_url",
           "nome_documento",
           "obrigatorio",
@@ -742,6 +776,120 @@
           "procedimentos",
           "series",
           "totais"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasModelo": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "atual": {
+            "$ref": "#/components/schemas/AtlasModeloVersao"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "pecas_ligadas": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updated_by": {
+            "type": "string"
+          },
+          "versoes": {
+            "items": {
+              "$ref": "#/components/schemas/AtlasModeloVersao"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "ativo",
+          "atual",
+          "descricao",
+          "id",
+          "nome",
+          "pecas_ligadas",
+          "updated_at",
+          "updated_by"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasModeloResumo": {
+        "properties": {
+          "arquivo_nome": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "versao": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "arquivo_nome",
+          "id",
+          "nome",
+          "versao"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasModeloVersao": {
+        "properties": {
+          "arquivo_nome": {
+            "type": "string"
+          },
+          "content_type": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "nota": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "tamanho": {
+            "type": "integer"
+          },
+          "versao": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "arquivo_nome",
+          "content_type",
+          "created_at",
+          "created_by",
+          "nota",
+          "sha256",
+          "tamanho",
+          "versao"
         ],
         "type": "object",
         "x-nexus-generated": true
@@ -6413,6 +6561,269 @@
         ]
       }
     },
+    "/api/v1/atlas/admin/modelos": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getAtlasAdminModelos",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtlasModelo"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/modelos",
+        "tags": [
+          "atlas"
+        ]
+      },
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtlasAdminModelos",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasModelo"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/modelos",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/admin/modelos/{id}": {
+      "put": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "putAtlasAdminModelosId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AtlasAlterarModeloRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-nexus-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasModelo"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Salvar /atlas/admin/modelos/{id}",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/admin/modelos/{id}/versoes": {
+      "post": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "postAtlasAdminModelosIdVersoes",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasModelo"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/modelos/{id}/versoes",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
     "/api/v1/atlas/admin/ttdd/carga/aplicar": {
       "post": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -7047,6 +7458,150 @@
           }
         ],
         "summary": "Atlas — Procedimentos e Temporalidade — Criar /atlas/chat",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/modelos": {
+      "get": {
+        "operationId": "getAtlasModelos",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtlasModelo"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/modelos",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/modelos/{id}": {
+      "get": {
+        "operationId": "getAtlasModelosId",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasModelo"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Atlas — Procedimentos e Temporalidade — Obter /atlas/modelos/{id}",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/modelos/{id}/arquivo": {
+      "get": {
+        "operationId": "getAtlasModelosIdArquivo",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "versao",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-nexus-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/modelos/{id}/arquivo",
         "tags": [
           "atlas"
         ]
