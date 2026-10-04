@@ -133,6 +133,17 @@ func errItem(err error) (string, bool) {
 // ImportarProcedimentos simula (aplicar=false) ou aplica a importação. Só
 // aplica o arquivo simulado (hash) e sem nenhum item com erro.
 func (s *Service) ImportarProcedimentos(ctx context.Context, identity auth.Identity, conteudo, hashConferido string, aplicar bool) (domain.ImportacaoProcedimentos, error) {
+	return s.importar(ctx, identity, conteudo, hashConferido, aplicar, false)
+}
+
+// ImportarRascunhos importa como RASCUNHO (ADR 028): os procedimentos ficam
+// inativos para a validação nos departamentos; a versão em vigor de um
+// código existente continua publicada e ninguém é avisado.
+func (s *Service) ImportarRascunhos(ctx context.Context, identity auth.Identity, conteudo, hashConferido string, aplicar bool) (domain.ImportacaoProcedimentos, error) {
+	return s.importar(ctx, identity, conteudo, hashConferido, aplicar, true)
+}
+
+func (s *Service) importar(ctx context.Context, identity auth.Identity, conteudo, hashConferido string, aplicar, rascunho bool) (domain.ImportacaoProcedimentos, error) {
 	hash := HashCarga(conteudo)
 	if aplicar && hashConferido != hash {
 		return domain.ImportacaoProcedimentos{}, MapError(domain.InvalidError{Msg: "o arquivo enviado não é o que foi simulado: simule de novo antes de aplicar"})
@@ -154,7 +165,7 @@ func (s *Service) ImportarProcedimentos(ctx context.Context, identity auth.Ident
 		}
 		vistos := map[string]bool{}
 		for i, p := range arq.Procedimentos {
-			item, avisos, err := s.importarItem(ctx, tx, identity, p, modelos, vistos)
+			item, avisos, err := s.importarItem(ctx, tx, identity, p, modelos, vistos, rascunho)
 			if err != nil {
 				return err
 			}
@@ -185,10 +196,13 @@ func (s *Service) ImportarProcedimentos(ctx context.Context, identity auth.Ident
 // importarItem trata um procedimento num savepoint: falha de regra desfaz
 // só o item (ERRO no relatório); falha de banco aborta a importação.
 func (s *Service) importarItem(ctx context.Context, tx pgx.Tx, identity auth.Identity, p ProcedimentoArquivo,
-	modelos map[string]uuid.UUID, vistos map[string]bool) (domain.ItemImportacao, []notificacoes.Enviada, error) {
+	modelos map[string]uuid.UUID, vistos map[string]bool, rascunho bool) (domain.ItemImportacao, []notificacoes.Enviada, error) {
 	item := domain.ItemImportacao{CodigoProcessual: p.CodigoProcessual, Titulo: p.Titulo}
 	w, err := p.paraWorkflow(modelos)
 	item.CodigoProcessual = w.CodigoProcessual
+	if rascunho {
+		w.Situacao = domain.SituacaoRascunho
+	}
 	if err == nil && vistos[w.CodigoProcessual] {
 		err = domain.InvalidError{Msg: "código processual repetido no arquivo"}
 	}

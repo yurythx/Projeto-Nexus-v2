@@ -67,8 +67,10 @@ describe("Atlas — importar procedimentos", () => {
     await userEvent.upload(screen.getByLabelText(/Arquivo de procedimentos/), json());
     await userEvent.click(simular);
     expect(await screen.findByText(/simulação — nada foi gravado/)).toBeInTheDocument();
+    // Por padrão, como rascunho (para validação, sem publicar).
     expect(backend.to("POST v1/atlas/admin/workflows/importacao/simular")[0]!.body).toEqual({
       conteudo: '{"procedimentos":[]}',
+      rascunho: true,
     });
     const itens = screen.getByRole("list", { name: "Procedimentos do arquivo" });
     expect(within(itens).getByText("ADM.LIC.001")).toBeInTheDocument();
@@ -78,6 +80,25 @@ describe("Atlas — importar procedimentos", () => {
     expect(backend.to("POST v1/atlas/admin/workflows/importacao/aplicar")[0]!.body).toEqual({
       conteudo: '{"procedimentos":[]}',
       hash: "b".repeat(64),
+      rascunho: true,
+    });
+  });
+
+  it("desmarcar o rascunho publica direto e refaz a simulação", async () => {
+    const backend = mockBackend({
+      ...perms(["atlas:manage"]),
+      "POST v1/atlas/admin/workflows/importacao/simular": { data: RESULTADO },
+    });
+    renderApp(<ImportarPage />);
+    await userEvent.upload(await screen.findByLabelText(/Arquivo de procedimentos/), json());
+    await userEvent.click(screen.getByRole("button", { name: /Simular/ }));
+    expect(await screen.findByText(/simulação — nada foi gravado/)).toBeInTheDocument();
+    await userEvent.click(screen.getByLabelText(/Importar como rascunho/));
+    expect(screen.queryByText(/simulação — nada foi gravado/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Simular/ }));
+    await screen.findByText(/simulação — nada foi gravado/);
+    expect(backend.to("POST v1/atlas/admin/workflows/importacao/simular")[1]!.body).toMatchObject({
+      rascunho: false,
     });
   });
 
@@ -140,6 +161,8 @@ describe("Atlas — cobertura", () => {
             pecas_com_modelo: 2,
             modelos: 4,
             modelos_sem_uso: 1,
+            rascunhos: 2,
+            em_validacao: 1,
           },
           orgaos: [
             {
@@ -168,6 +191,7 @@ describe("Atlas — cobertura", () => {
     expect(within(totais).getByText("2%")).toBeInTheDocument();
     expect(within(totais).getByText("3 de 200 séries vigentes")).toBeInTheDocument();
     expect(within(totais).getByText("12%")).toBeInTheDocument();
+    expect(within(totais).getByText("2 rascunhos · 1 em entrevistas")).toBeInTheDocument();
     expect(
       screen.getByRole("progressbar", { name: "Administração: séries com fluxo" }),
     ).toHaveAttribute("aria-valuenow", "2");

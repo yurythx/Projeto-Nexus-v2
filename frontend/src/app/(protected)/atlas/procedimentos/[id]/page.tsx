@@ -7,6 +7,7 @@ import {
   Files,
   History,
   Workflow as WorkflowIcon,
+  ClipboardCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -14,6 +15,7 @@ import { useState } from "react";
 
 import { AcoesPagina } from "@/components/atlas/AcoesPagina";
 import { SeguirProcedimento } from "@/components/atlas/SeguirProcedimento";
+import { ValidacaoProcedimento } from "@/components/atlas/ValidacaoProcedimento";
 import { CalculadoraTemporalidade } from "@/components/atlas/CalculadoraTemporalidade";
 import { ChecklistDocumentos, LinhaDoTempo, prazoTotalDias } from "@/components/atlas/LinhaDoTempo";
 import { NovoProcedimentoForm } from "@/components/atlas/NovoProcedimentoForm";
@@ -240,6 +242,8 @@ export default function ProcedimentoPage() {
                   </Button>
                 )}
                 {canManage &&
+                  wf.situacao !== "RASCUNHO" &&
+                  wf.situacao !== "EM_VALIDACAO" &&
                   (wf.ativo ? (
                     <Button
                       variant="secondary"
@@ -295,6 +299,15 @@ export default function ProcedimentoPage() {
                 >
                   <Temporalidade codigo={wf.codigo_ttdd} c={wf.classificacao} />
                 </Secao>
+                {canManage && (
+                  <Secao
+                    id="atlas-validacao"
+                    titulo="Validação"
+                    icone={<ClipboardCheck size={16} aria-hidden="true" />}
+                  >
+                    <ValidacaoProcedimento wf={wf} onAtualizado={() => void detail.mutate()} />
+                  </Secao>
+                )}
                 {canManage && <Versoes codigo={wf.codigo_processual} atual={wf.id} />}
               </div>
             </div>

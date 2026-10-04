@@ -34,6 +34,8 @@ export default function ImportarProcedimentosPage() {
   const { run, pending } = useAction();
   const [arquivo, setArquivo] = useState<{ nome: string; conteudo: string } | null>(null);
   const [resultado, setResultado] = useState<ImportacaoProcedimentos | null>(null);
+  // Rascunho (padrão): os procedimentos entram para validação, sem publicar.
+  const [rascunho, setRascunho] = useState(true);
 
   if (!can("atlas:manage")) {
     return (
@@ -55,8 +57,8 @@ export default function ImportarProcedimentosPage() {
         apiClient.post<ImportacaoProcedimentos>(
           `v1/atlas/admin/workflows/importacao/${aplicar ? "aplicar" : "simular"}`,
           aplicar
-            ? { conteudo: arquivo.conteudo, hash: resultado?.hash }
-            : { conteudo: arquivo.conteudo },
+            ? { conteudo: arquivo.conteudo, hash: resultado?.hash, rascunho }
+            : { conteudo: arquivo.conteudo, rascunho },
         ),
       aplicar ? "Procedimentos importados" : undefined,
     );
@@ -112,6 +114,18 @@ export default function ImportarProcedimentosPage() {
                 className="text-sm"
               />
             </div>
+            <label className="flex items-center gap-2 pb-2 text-sm">
+              <input
+                type="checkbox"
+                checked={rascunho}
+                onChange={(e) => {
+                  setRascunho(e.target.checked);
+                  setResultado(null);
+                }}
+                className="h-4 w-4 accent-primary"
+              />
+              Importar como rascunho, para validação (não publica)
+            </label>
             <Button
               onClick={() => void enviar(false)}
               disabled={!arquivo}

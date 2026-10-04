@@ -40,6 +40,9 @@ type TotaisCobertura struct {
 	PecasComModelo        int `json:"pecas_com_modelo"`
 	Modelos               int `json:"modelos"`
 	ModelosSemUso         int `json:"modelos_sem_uso"`
+	// Validação (ADR 028): procedimentos ainda não publicados.
+	Rascunhos   int `json:"rascunhos"`
+	EmValidacao int `json:"em_validacao"`
 }
 
 // Cobertura é o painel.

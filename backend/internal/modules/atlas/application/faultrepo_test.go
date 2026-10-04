@@ -329,3 +329,27 @@ func (fr *faultRepo) InteressadosModelo(ctx context.Context, db database.DBTX, m
 	defer fr.post(ctx, db)
 	return fr.inner.InteressadosModelo(ctx, db, modeloID)
 }
+
+func (fr *faultRepo) SetSituacao(ctx context.Context, db database.DBTX, id uuid.UUID, situacao string, ativo bool) error {
+	if err := fr.hook("SetSituacao"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.SetSituacao(ctx, db, id, situacao, ativo)
+}
+
+func (fr *faultRepo) Validacoes(ctx context.Context, db database.DBTX, codigo string) ([]domain.Validacao, error) {
+	if err := fr.hook("Validacoes"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.Validacoes(ctx, db, codigo)
+}
+
+func (fr *faultRepo) InsertValidacao(ctx context.Context, db database.DBTX, v domain.Validacao) error {
+	if err := fr.hook("InsertValidacao"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.InsertValidacao(ctx, db, v)
+}

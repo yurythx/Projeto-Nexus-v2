@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -193,6 +194,41 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 		},
 		"ExportarProcedimentos": func() func(*application.Service) error {
 			return func(s *application.Service) error { _, err := s.ExportarProcedimentos(ctx); return err }
+		},
+		"ImportarRascunhos": func() func(*application.Service) error {
+			outro := e.workflow(true)
+			c := arquivo(itemArquivo(codigoNovo(), "Novo", ""), itemArquivo(outro.CodigoProcessual, "Revisto", ""))
+			return func(s *application.Service) error {
+				_, err := s.ImportarRascunhos(ctx, gestor, c, application.HashCarga(c), true)
+				return err
+			}
+		},
+		"MudarSituacao": func() func(*application.Service) error {
+			w := e.rascunho(e.real(), itemArquivo(codigoNovo(), "Rascunho", ""))
+			return func(s *application.Service) error {
+				_, err := s.MudarSituacao(ctx, w.ID, domain.SituacaoEmValidacao)
+				return err
+			}
+		},
+		"Homologar": func() func(*application.Service) error {
+			vigente := e.workflow(true)
+			w := e.rascunho(e.real(), itemArquivo(vigente.CodigoProcessual, "Revisão", ""))
+			return func(s *application.Service) error { _, err := s.Homologar(ctx, gestor, w.ID); return err }
+		},
+		"HomologarNovo": func() func(*application.Service) error {
+			w := e.rascunho(e.real(), itemArquivo(codigoNovo(), "Sem versão anterior", ""))
+			return func(s *application.Service) error { _, err := s.Homologar(ctx, gestor, w.ID); return err }
+		},
+		"Validacoes": func() func(*application.Service) error {
+			w := e.workflow(true)
+			return func(s *application.Service) error { _, err := s.Validacoes(ctx, w.ID); return err }
+		},
+		"RegistrarValidacao": func() func(*application.Service) error {
+			w := e.rascunho(e.real(), itemArquivo(codigoNovo(), "Rascunho", ""))
+			return func(s *application.Service) error {
+				_, err := s.RegistrarValidacao(ctx, gestor, w.ID, domain.Validacao{RealizadaEm: time.Now().AddDate(0, 0, -1), Unidade: "u", Registro: "r"})
+				return err
+			}
 		},
 		"Cobertura": func() func(*application.Service) error {
 			return func(s *application.Service) error { _, err := s.Cobertura(ctx); return err }

@@ -228,6 +228,7 @@ describe("Atlas — modelos nas peças", () => {
       publico_alvo: "P",
       versao: 1,
       ativo: true,
+      situacao: "HOMOLOGADO" as const,
       nivel_acesso: "PUBLICO" as const,
       hipotese_legal_restricao: "",
       codigo_ttdd: "2.0.02.00.07",

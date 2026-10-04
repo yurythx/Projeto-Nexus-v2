@@ -136,8 +136,8 @@ func etapaRows(wfID uuid.UUID) pgx.Rows {
 
 func workflowRow(id uuid.UUID) valRow {
 	now := time.Now()
-	// Procedimento (13 colunas) + nº de etapas + série da TTDD (11) e hierarquia (10, nulas).
-	return valRow{id, "ADM.X.1", "Título", "Objetivo", "Público", 1, true, "PUBLICO", "", "1.0", nil, now, now, int64(1),
+	// Procedimento (14 colunas, com a situação) + nº de etapas + série da TTDD (11) e hierarquia (10, nulas).
+	return valRow{id, "ADM.X.1", "Título", "Objetivo", "Público", 1, true, "HOMOLOGADO", "PUBLICO", "", "1.0", nil, now, now, int64(1),
 		"1.0", "Descritor", nil, "", nil, "", nil, "", nil, "", now, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 }
 

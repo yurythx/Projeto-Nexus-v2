@@ -235,22 +235,25 @@ func CodigoTTDDValido(c string) bool { return codigoTTDD.MatchString(c) }
 
 // Workflow é o procedimento canônico de um tipo de processo.
 type Workflow struct {
-	ID               uuid.UUID          `json:"id"`
-	CodigoProcessual string             `json:"codigo_processual"`
-	Titulo           string             `json:"titulo"`
-	Objetivo         string             `json:"objetivo"`
-	PublicoAlvo      string             `json:"publico_alvo"`
-	Versao           int                `json:"versao"`
-	Ativo            bool               `json:"ativo"`
-	NivelAcesso      NivelAcesso        `json:"nivel_acesso"`
-	HipoteseLegal    string             `json:"hipotese_legal_restricao"`
-	CodigoTTDD       string             `json:"codigo_ttdd"`
-	Classificacao    *ClassificacaoTTDD `json:"classificacao,omitempty"`
-	TotalEtapas      int                `json:"total_etapas"`
-	Etapas           []Etapa            `json:"etapas"`
-	CreatedBy        *uuid.UUID         `json:"created_by"`
-	CreatedAt        time.Time          `json:"created_at"`
-	UpdatedAt        time.Time          `json:"updated_at"`
+	ID               uuid.UUID `json:"id"`
+	CodigoProcessual string    `json:"codigo_processual"`
+	Titulo           string    `json:"titulo"`
+	Objetivo         string    `json:"objetivo"`
+	PublicoAlvo      string    `json:"publico_alvo"`
+	Versao           int       `json:"versao"`
+	Ativo            bool      `json:"ativo"`
+	// Situacao da validação (ADR 028): RASCUNHO, EM_VALIDACAO ou HOMOLOGADO;
+	// só o homologado fica ativo.
+	Situacao      string             `json:"situacao"`
+	NivelAcesso   NivelAcesso        `json:"nivel_acesso"`
+	HipoteseLegal string             `json:"hipotese_legal_restricao"`
+	CodigoTTDD    string             `json:"codigo_ttdd"`
+	Classificacao *ClassificacaoTTDD `json:"classificacao,omitempty"`
+	TotalEtapas   int                `json:"total_etapas"`
+	Etapas        []Etapa            `json:"etapas"`
+	CreatedBy     *uuid.UUID         `json:"created_by"`
+	CreatedAt     time.Time          `json:"created_at"`
+	UpdatedAt     time.Time          `json:"updated_at"`
 }
 
 // Etapa é um nó de tramitação (setor) do percurso.
@@ -499,6 +502,10 @@ type Repository interface {
 	Seguindo(ctx context.Context, db database.DBTX, usuario uuid.UUID, codigo string) (bool, error)
 	Interessados(ctx context.Context, db database.DBTX, codigo string, siglas []string) ([]uuid.UUID, error)
 	InteressadosModelo(ctx context.Context, db database.DBTX, modeloID uuid.UUID) ([]uuid.UUID, error)
+	// Validação dos procedimentos (ADR 028).
+	SetSituacao(ctx context.Context, db database.DBTX, id uuid.UUID, situacao string, ativo bool) error
+	Validacoes(ctx context.Context, db database.DBTX, codigo string) ([]Validacao, error)
+	InsertValidacao(ctx context.Context, db database.DBTX, v Validacao) error
 	// Cobertura monta o painel de cobertura (ADR 025).
 	Cobertura(ctx context.Context, db database.DBTX) (Cobertura, error)
 	// HistoricoTTDD devolve as mudanças da série, da mais recente à mais antiga.

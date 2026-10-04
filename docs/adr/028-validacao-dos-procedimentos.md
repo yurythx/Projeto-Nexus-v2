@@ -1,0 +1,72 @@
+# 028 — Validação dos procedimentos (rascunho → em validação → homologado)
+
+- **Status:** Aceito e implementado
+- **Data:** 2026-10-04
+- **Relacionado:** [ADR 025](025-atlas-em-escala.md) (importação em lote), [ADR 027](027-notificacoes.md) (avisos)
+
+## Contexto
+
+Os fluxos do Atlas serão levantados por **entrevistas** em cada
+departamento, que também vão padronizar os documentos. O ponto de partida
+são rascunhos gerados a partir da TTDD.
+
+Até aqui, todo procedimento cadastrado ou importado era publicado na hora:
+entrava na consulta, no site público, na busca e no assistente. Um rascunho
+ainda não validado apareceria como fluxo oficial.
+
+## Decisão
+
+1. **Situação do procedimento** (migração 000141): `RASCUNHO`,
+   `EM_VALIDACAO` ou `HOMOLOGADO`.
+   - O banco garante a regra central: um procedimento só fica **ativo**
+     (publicado) se estiver **homologado** (`CHECK (NOT ativo OR situacao =
+     'HOMOLOGADO')`).
+   - Os procedimentos que já existiam ficam como homologados.
+   - O cadastro e a nova versão pela tela continuam publicando direto, como
+     ato da gestão.
+2. **Importação como rascunho** (padrão na tela de importação):
+   - Os procedimentos entram inativos, como `RASCUNHO`.
+   - O rascunho de nova versão de um código já publicado **não substitui** a
+     versão em vigor e **não avisa** ninguém.
+   - Rascunhos não aparecem na consulta, no site público, na busca nem no
+     assistente.
+3. **Registro das entrevistas** (`atlas_validacoes`):
+   - **Conteúdo:** data (não futura), departamento, participantes (pela
+     função), o que foi validado ou corrigido, e pendências.
+   - **Escopo:** é pelo **código** do procedimento, então vale para as
+     versões seguintes.
+   - **Imutável:** uma correção vira um novo registro.
+   - O primeiro registro passa o rascunho para **em validação**.
+   - A auditoria guarda o departamento e a data, sem os participantes
+     (minimização).
+4. **Homologar** (`POST /atlas/admin/workflows/{id}/homologar`): publica a
+   versão, ativando-a e desativando as demais do mesmo código.
+   - Emite os eventos de substituição; o Trâmite avisa os processos
+     abertos.
+   - Avisa quem segue o fluxo e as unidades das etapas (ADR 027).
+   - Exige que a série da TTDD esteja **vigente** no momento da publicação.
+   - Um procedimento homologado **não volta** a rascunho: a revisão é uma
+     nova versão.
+   - **Alternar a situação** (`POST …/situacao`) só vale entre rascunho e em
+     validação.
+5. **Acompanhamento:** o painel de cobertura mostra quantos procedimentos
+   estão em rascunho e em validação. Os cartões mostram a situação, e a
+   página do procedimento tem o cartão **Validação**, com a situação, as
+   entrevistas e a homologação com confirmação.
+6. **Conteúdo inicial e método:**
+   - `deploy/atlas/gerar-rascunhos.mjs` gera 28 rascunhos dos processos
+     prioritários das secretarias, já conferidos contra a TTDD de produção
+     por simulação.
+   - `docs/atlas/PLANO_DE_VALIDACAO.md` traz o roteiro de entrevista, o
+     checklist de padronização dos documentos e o checklist antes de
+     homologar.
+
+## Consequências
+
+- Os fluxos podem ser levantados, corrigidos e padronizados sem nunca
+  aparecer como oficiais antes da homologação.
+- **Siglas das unidades:** o cadastro de unidades está quase todo com a
+  sigla "SEDE". As entrevistas devem corrigir as siglas das etapas e o
+  cadastro, porque os avisos às unidades dependem da sigla.
+- **Educação:** não tem órgão na TTDD, e o enquadramento dos documentos
+  escolares depende da CCPAD.

@@ -212,7 +212,7 @@ func (r *Repository) HistoricoTTDD(ctx context.Context, db database.DBTX, codigo
 
 // ----------------------------------------------------------- Workflows
 
-const wfCols = `w.id, w.codigo_processual, w.titulo, w.objetivo, w.publico_alvo, w.versao, w.ativo, w.nivel_acesso,
+const wfCols = `w.id, w.codigo_processual, w.titulo, w.objetivo, w.publico_alvo, w.versao, w.ativo, w.situacao, w.nivel_acesso,
 	COALESCE(w.hipotese_legal_restricao, ''), w.codigo_ttdd, w.created_by, w.created_at, w.updated_at,
 	(SELECT COUNT(*) FROM atlas_etapas e WHERE e.workflow_id = w.id), ` + ttddCols
 
@@ -222,7 +222,7 @@ func scanWorkflow(row pgx.Row, extra ...any) (domain.Workflow, error) {
 	var w domain.Workflow
 	c := &domain.ClassificacaoTTDD{}
 	cdest, montar := ttddDest(c)
-	dest := append([]any{&w.ID, &w.CodigoProcessual, &w.Titulo, &w.Objetivo, &w.PublicoAlvo, &w.Versao, &w.Ativo, &w.NivelAcesso,
+	dest := append([]any{&w.ID, &w.CodigoProcessual, &w.Titulo, &w.Objetivo, &w.PublicoAlvo, &w.Versao, &w.Ativo, &w.Situacao, &w.NivelAcesso,
 		&w.HipoteseLegal, &w.CodigoTTDD, &w.CreatedBy, &w.CreatedAt, &w.UpdatedAt, &w.TotalEtapas}, cdest...)
 	if err := row.Scan(append(dest, extra...)...); err != nil {
 		return w, err
@@ -389,9 +389,10 @@ func (r *Repository) loadEtapas(ctx context.Context, db database.DBTX, wfs []dom
 
 func (r *Repository) Insert(ctx context.Context, db database.DBTX, w domain.Workflow) error {
 	if _, err := db.Exec(ctx, `INSERT INTO atlas_workflows (id, codigo_processual, titulo, objetivo, publico_alvo, versao, ativo,
-		nivel_acesso, hipotese_legal_restricao, codigo_ttdd, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NULLIF($9,''),$10,$11)`,
+		nivel_acesso, hipotese_legal_restricao, codigo_ttdd, created_by, situacao)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NULLIF($9,''),$10,$11,$12)`,
 		w.ID, w.CodigoProcessual, w.Titulo, w.Objetivo, w.PublicoAlvo, w.Versao, w.Ativo, string(w.NivelAcesso), w.HipoteseLegal,
-		w.CodigoTTDD, w.CreatedBy); err != nil {
+		w.CodigoTTDD, w.CreatedBy, w.Situacao); err != nil {
 		return wrap(err)
 	}
 	etapaID := map[int]uuid.UUID{}

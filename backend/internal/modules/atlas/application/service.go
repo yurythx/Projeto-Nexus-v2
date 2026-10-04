@@ -201,7 +201,8 @@ func (s *Service) novaVersaoTx(ctx context.Context, tx pgx.Tx, identity auth.Ide
 		return w, nil, err
 	}
 	out, err := s.inserir(ctx, tx, identity, w, modelosDe(base))
-	if err != nil {
+	if err != nil || !out.Ativo {
+		// Rascunho: não substitui a versão em vigor nem avisa (ADR 028).
 		return out, nil, err
 	}
 	ids, err := s.repo.DesativarVersoes(ctx, tx, out.CodigoProcessual, out.ID)
@@ -238,7 +239,12 @@ func (s *Service) substituida(ctx context.Context, tx pgx.Tx, antiga, nova domai
 // na transação: a série da TTDD tem de existir e estar vigente, e as peças
 // só apontam para modelos ativos (ou já ligados à versão anterior).
 func (s *Service) inserir(ctx context.Context, tx pgx.Tx, identity auth.Identity, w domain.Workflow, modelosAnteriores map[uuid.UUID]bool) (domain.Workflow, error) {
-	w.ID, w.Ativo = uuid.New(), true
+	// Sem situação, o cadastro pela tela publica direto (homologado); a
+	// importação como rascunho chega com RASCUNHO e fica inativa (ADR 028).
+	if w.Situacao == "" {
+		w.Situacao = domain.SituacaoHomologado
+	}
+	w.ID, w.Ativo = uuid.New(), w.Situacao == domain.SituacaoHomologado
 	if identity.UserID != uuid.Nil {
 		uid := identity.UserID
 		w.CreatedBy = &uid
@@ -290,6 +296,9 @@ func (s *Service) SetAtivo(ctx context.Context, id uuid.UUID, ativo bool) (domai
 		if before.Ativo == ativo {
 			out = before
 			return nil
+		}
+		if ativo && before.Situacao != domain.SituacaoHomologado {
+			return domain.InvalidError{Msg: "procedimento em validação: homologue-o para publicar"}
 		}
 		if err := s.repo.SetAtivo(ctx, tx, id, ativo); err != nil {
 			return err

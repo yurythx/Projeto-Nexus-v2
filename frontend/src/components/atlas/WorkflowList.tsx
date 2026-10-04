@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import type { Workflow } from "@/lib/nexus/types";
 
 import { NIVEL_ACESSO } from "./labels";
+import { SITUACAO } from "./ValidacaoProcedimento";
 
 /** Cartões de procedimento: cada um é um link para a página própria
  * (/atlas/procedimentos/{id}) — URL compartilhável e navegação nativa. */
@@ -23,7 +24,11 @@ export function WorkflowList({ items }: { items: Workflow[] }) {
                   {wf.codigo_processual}
                 </span>
                 <span className="flex gap-1">
-                  {!wf.ativo && <Badge tone="danger">Inativo</Badge>}
+                  {wf.situacao && wf.situacao !== "HOMOLOGADO" ? (
+                    <Badge tone={SITUACAO[wf.situacao].tone}>{SITUACAO[wf.situacao].label}</Badge>
+                  ) : (
+                    !wf.ativo && <Badge tone="danger">Inativo</Badge>
+                  )}
                   {wf.classificacao?.revogada_em && <Badge tone="warning">Série revogada</Badge>}
                   <Badge tone={nivel.tone}>{nivel.label}</Badge>
                 </span>

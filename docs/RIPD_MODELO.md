@@ -34,6 +34,7 @@
 | Consentimento anônimo | device_hash opaco, versão, IP, user-agent | art. 7º II | permanente (prova) |
 | Pergunta ao assistente do Atlas (fluxos e TTDD) | texto livre digitado pelo servidor — pode conter dados pessoais de terceiros | art. 7º III (execução de política pública — gestão documental) | **não é armazenada**: a auditoria guarda só modo, relevância, séries usadas e tamanho (ADR 015/021) |
 | Notificações e seguimento de fluxos | destinatário, título/mensagem do aviso, link interno, lido em; procedimentos seguidos; preferência por módulo (ADR 027) | art. 7º III (execução de política pública) e art. 7º IX (interesse legítimo na comunicação de mudanças) | aviso lido: até 180 dias; apagados com a conta; o titular desliga os avisos por módulo |
+| Entrevistas de validação de fluxos | departamento, participantes (registrados pela função, não pelo nome), registro e pendências (ADR 028) | art. 7º III (execução de política pública — gestão documental) | enquanto o procedimento existir (histórico da validação); a auditoria não guarda os participantes |
 
 **Dados sensíveis (art. 11):** nenhum tratado pela base. Sistemas
 derivados que tratem dados sensíveis fazem seu próprio RIPD.

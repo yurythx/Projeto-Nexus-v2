@@ -58,14 +58,17 @@ func (r *Repository) Cobertura(ctx context.Context, db database.DBTX) (domain.Co
 	if err != nil {
 		return out, err
 	}
-	var procedimentos, pecas, modelos int
+	var procedimentos, pecas, modelos, rascunhos, emValidacao int
 	if err := db.QueryRow(ctx, `SELECT (SELECT count(*) FROM atlas_workflows WHERE ativo),
 		(SELECT count(*) FROM atlas_etapa_documentos d JOIN atlas_etapas e ON e.id = d.etapa_id
 			JOIN atlas_workflows w ON w.id = e.workflow_id WHERE w.ativo),
-		(SELECT count(*) FROM atlas_modelos WHERE ativo)`).Scan(&procedimentos, &pecas, &modelos); err != nil {
+		(SELECT count(*) FROM atlas_modelos WHERE ativo),
+		(SELECT count(*) FROM atlas_workflows WHERE situacao = 'RASCUNHO'),
+		(SELECT count(*) FROM atlas_workflows WHERE situacao = 'EM_VALIDACAO')`).Scan(&procedimentos, &pecas, &modelos, &rascunhos, &emValidacao); err != nil {
 		return out, wrap(err)
 	}
 	out.Somar(procedimentos, pecas, modelos)
+	out.Totais.Rascunhos, out.Totais.EmValidacao = rascunhos, emValidacao
 	return out, nil
 }
 

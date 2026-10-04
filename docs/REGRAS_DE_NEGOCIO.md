@@ -670,6 +670,14 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   site institucional, com os modelos para baixar e a planilha da TTDD; o
   proxy anônimo libera só a leitura do Atlas.
 - **Visualizar modelo:** só PDF abre no navegador (`?inline=1`).
+- **Validação (ADR 028):** o procedimento é RASCUNHO, EM_VALIDACAO ou
+  HOMOLOGADO; só o homologado fica ativo (regra no banco). A importação
+  como rascunho (padrão) não publica, não substitui a versão em vigor e não
+  avisa; cada entrevista (data não futura, departamento, participantes pela
+  função, registro, pendências) fica registrada pelo código e é imutável; a
+  primeira leva o rascunho a em validação; homologar exige a série vigente,
+  publica, substitui as demais versões e avisa; homologado não volta a
+  rascunho (revisão = nova versão). Roteiro: `docs/atlas/PLANO_DE_VALIDACAO.md`.
 - **Avisos de nova versão (ADR 027):** quem segue o fluxo (opt-in, pelo
   código) e quem está lotado (manual ou grupo do AD) nas unidades das etapas
   recebe o aviso da nova versão do procedimento; quem segue um procedimento

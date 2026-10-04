@@ -918,6 +918,17 @@ components:
                 - situacao
             type: object
             x-nexus-generated: true
+        AtlasSituacaoRequest:
+            properties:
+                situacao:
+                    enum:
+                        - RASCUNHO
+                        - EM_VALIDACAO
+                    type: string
+            required:
+                - situacao
+            type: object
+            x-nexus-generated: true
         AtlasSubfuncaoTTDD:
             properties:
                 codigo:
@@ -937,6 +948,8 @@ components:
             x-nexus-generated: true
         AtlasTotaisCobertura:
             properties:
+                em_validacao:
+                    type: integer
                 modelos:
                     type: integer
                 modelos_sem_uso:
@@ -947,6 +960,8 @@ components:
                     type: integer
                 procedimentos:
                     type: integer
+                rascunhos:
+                    type: integer
                 series:
                     type: integer
                 series_com_modelo:
@@ -954,11 +969,13 @@ components:
                 series_com_procedimento:
                     type: integer
             required:
+                - em_validacao
                 - modelos
                 - modelos_sem_uso
                 - pecas
                 - pecas_com_modelo
                 - procedimentos
+                - rascunhos
                 - series
                 - series_com_modelo
                 - series_com_procedimento
@@ -980,6 +997,63 @@ components:
             required:
                 - condicao_transicao
                 - destino_ordem
+            type: object
+            x-nexus-generated: true
+        AtlasValidacao:
+            properties:
+                codigo_processual:
+                    type: string
+                created_at:
+                    format: date-time
+                    type: string
+                created_by:
+                    type: string
+                id:
+                    format: uuid
+                    type: string
+                participantes:
+                    type: string
+                pendencias:
+                    type: string
+                realizada_em:
+                    format: date-time
+                    type: string
+                registro:
+                    type: string
+                unidade:
+                    type: string
+            required:
+                - codigo_processual
+                - created_at
+                - created_by
+                - id
+                - participantes
+                - pendencias
+                - realizada_em
+                - registro
+                - unidade
+            type: object
+            x-nexus-generated: true
+        AtlasValidacaoRequest:
+            properties:
+                participantes:
+                    maxLength: 1000
+                    type: string
+                pendencias:
+                    maxLength: 5000
+                    type: string
+                realizada_em:
+                    type: string
+                registro:
+                    maxLength: 10000
+                    type: string
+                unidade:
+                    maxLength: 200
+                    type: string
+            required:
+                - realizada_em
+                - registro
+                - unidade
             type: object
             x-nexus-generated: true
         AtlasWorkflow:
@@ -1018,6 +1092,8 @@ components:
                     type: string
                 publico_alvo:
                     type: string
+                situacao:
+                    type: string
                 titulo:
                     type: string
                 total_etapas:
@@ -1039,6 +1115,7 @@ components:
                 - nivel_acesso
                 - objetivo
                 - publico_alvo
+                - situacao
                 - titulo
                 - total_etapas
                 - updated_at
@@ -5646,6 +5723,45 @@ paths:
             summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/desativar
             tags:
                 - atlas
+    /api/v1/atlas/admin/workflows/{id}/homologar:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflowsIdHomologar
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasWorkflow'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/homologar
+            tags:
+                - atlas
     /api/v1/atlas/admin/workflows/{id}/pecas/{peca}/modelo:
         put:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -5695,6 +5811,137 @@ paths:
             security:
                 - bearerAuth: []
             summary: Atlas — Procedimentos e Temporalidade — Salvar /atlas/admin/workflows/{id}/pecas/{peca}/modelo
+            tags:
+                - atlas
+    /api/v1/atlas/admin/workflows/{id}/situacao:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflowsIdSituacao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtlasSituacaoRequest'
+                required: true
+                x-nexus-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasWorkflow'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/situacao
+            tags:
+                - atlas
+    /api/v1/atlas/admin/workflows/{id}/validacoes:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtlasAdminWorkflowsIdValidacoes
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtlasValidacao'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/workflows/{id}/validacoes
+            tags:
+                - atlas
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflowsIdValidacoes
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtlasValidacaoRequest'
+                required: true
+                x-nexus-generated: true
+            responses:
+                "201":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasValidacao'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/validacoes
             tags:
                 - atlas
     /api/v1/atlas/admin/workflows/{id}/versoes:

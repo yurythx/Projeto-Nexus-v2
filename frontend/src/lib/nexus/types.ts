@@ -744,6 +744,22 @@ export interface ModeloVersao {
 }
 
 /** Modelo de documento: a versão atual e, no detalhe, o histórico. */
+// ------------------------------------------ validação (ADR 028)
+
+export type SituacaoValidacao = "RASCUNHO" | "EM_VALIDACAO" | "HOMOLOGADO";
+
+export interface ValidacaoAtlas {
+  id: UUID;
+  codigo_processual: string;
+  realizada_em: string;
+  unidade: string;
+  participantes: string;
+  registro: string;
+  pendencias: string;
+  created_at: string;
+  created_by: string;
+}
+
 // ------------------------------------- importação e cobertura (ADR 025)
 
 export type SituacaoImportacao = "NOVO" | "NOVA_VERSAO" | "INALTERADO" | "ERRO";
@@ -774,6 +790,8 @@ export interface CoberturaAtlas {
     pecas_com_modelo: number;
     modelos: number;
     modelos_sem_uso: number;
+    rascunhos: number;
+    em_validacao: number;
   };
   orgaos: {
     prefixo: string;
@@ -834,6 +852,8 @@ export interface Workflow {
   publico_alvo: string;
   versao: number;
   ativo: boolean;
+  /** Validação (ADR 028): só o homologado é publicado. */
+  situacao: SituacaoValidacao;
   nivel_acesso: NivelAcesso;
   hipotese_legal_restricao: string;
   codigo_ttdd: string;

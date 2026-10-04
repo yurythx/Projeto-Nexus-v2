@@ -111,3 +111,23 @@ func TestAvisosFalhas(t *testing.T) {
 		}
 	}
 }
+
+func TestValidacaoFalhas(t *testing.T) {
+	r := NewRepository()
+	ctx := context.Background()
+	id := uuid.New()
+	if err := r.SetSituacao(ctx, dbtest.Fail{}, id, "RASCUNHO", false); !errors.Is(err, dbtest.ErrInjected) {
+		t.Errorf("situação com o banco fora: %v", err)
+	}
+	if err := r.SetSituacao(ctx, &dbtest.Seq{Execs: []dbtest.ExecResult{{Tag: pgconn.NewCommandTag("UPDATE 0")}}}, id, "RASCUNHO", false); !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("situação de inexistente: %v", err)
+	}
+	if err := r.InsertValidacao(ctx, dbtest.Fail{}, domain.Validacao{}); !errors.Is(err, dbtest.ErrInjected) {
+		t.Errorf("gravar entrevista: %v", err)
+	}
+	for name, db := range map[string]database.DBTX{"consulta": dbtest.Fail{}, "linha": dbtest.ScanFail{}, "leitura": dbtest.RowsErr{}} {
+		if _, err := r.Validacoes(ctx, db, "X"); err == nil {
+			t.Errorf("entrevistas (%s): falha engolida", name)
+		}
+	}
+}

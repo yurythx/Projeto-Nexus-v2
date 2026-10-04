@@ -103,6 +103,11 @@ export default function CoberturaPage() {
                 rotulo="Modelos ativos"
                 detalhe={`${c.totais.modelos_sem_uso} sem uso`}
               />
+              <Numero
+                valor={c.totais.rascunhos + c.totais.em_validacao}
+                rotulo="Em validação"
+                detalhe={`${c.totais.rascunhos} rascunhos · ${c.totais.em_validacao} em entrevistas`}
+              />
             </ul>
 
             <Card>
