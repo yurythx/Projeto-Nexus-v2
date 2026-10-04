@@ -257,3 +257,27 @@ func (fr *faultRepo) SetModeloPeca(ctx context.Context, db database.DBTX, docID 
 	defer fr.post(ctx, db)
 	return fr.inner.SetModeloPeca(ctx, db, docID, modeloID)
 }
+
+func (fr *faultRepo) ModelosDaSerie(ctx context.Context, db database.DBTX, codigo string) ([]domain.Modelo, error) {
+	if err := fr.hook("ModelosDaSerie"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.ModelosDaSerie(ctx, db, codigo)
+}
+
+func (fr *faultRepo) LigarModeloSerie(ctx context.Context, db database.DBTX, codigo string, modeloID uuid.UUID, por string) error {
+	if err := fr.hook("LigarModeloSerie"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.LigarModeloSerie(ctx, db, codigo, modeloID, por)
+}
+
+func (fr *faultRepo) DesligarModeloSerie(ctx context.Context, db database.DBTX, codigo string, modeloID uuid.UUID) error {
+	if err := fr.hook("DesligarModeloSerie"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.DesligarModeloSerie(ctx, db, codigo, modeloID)
+}

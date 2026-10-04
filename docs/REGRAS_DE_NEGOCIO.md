@@ -634,7 +634,11 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     troca ou retira o modelo e envia o arquivo ali mesmo (nova versão do
     modelo ligado, que vale para todos os fluxos que o usam, ou um modelo
     novo com o nome da peça), **sem nova versão do procedimento** — o
-    modelo não muda o fluxo; a troca é auditada com o modelo anterior.
+    modelo não muda o fluxo; a troca é auditada com o modelo anterior;
+  - na **página de cada série da TTDD**, a seção Modelos de documento lista
+    os modelos daquele tipo de documento; a gestão liga um modelo ativo ou
+    envia um arquivo (vira modelo novo já ligado); retirar só desfaz a
+    ligação; série revogada não recebe modelos novos (422).
 - **Páginas (URL própria, compartilhável e imprimível):**
   - `/atlas` — busca unificada (procedimentos e séries em paralelo, ou a
     pergunta ao assistente), procedimentos e atalhos por secretaria;

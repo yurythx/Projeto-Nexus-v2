@@ -174,6 +174,26 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 				return err
 			}
 		},
+		"ModelosDaSerie": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.ModelosDaSerie(ctx, serieVigente); return err }
+		},
+		"LigarModeloSerie": func() func(*application.Service) error {
+			m := e.modelo()
+			return func(s *application.Service) error {
+				_, err := s.LigarModeloSerie(ctx, gestor, serieVigente, m.ID)
+				return err
+			}
+		},
+		"DesligarModeloSerie": func() func(*application.Service) error {
+			m := e.modelo()
+			if _, err := e.real().LigarModeloSerie(ctx, gestor, serieVigente, m.ID); err != nil {
+				t.Fatal(err)
+			}
+			return func(s *application.Service) error {
+				_, err := s.DesligarModeloSerie(ctx, serieVigente, m.ID)
+				return err
+			}
+		},
 		"LigarModelo": func() func(*application.Service) error {
 			w, m := e.workflow(true), e.modelo()
 			return func(s *application.Service) error {

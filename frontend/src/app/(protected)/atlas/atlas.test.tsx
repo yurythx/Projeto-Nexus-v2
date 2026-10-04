@@ -146,6 +146,7 @@ const base = (perms: string[]) => ({
   ]),
   "GET v1/atlas/ttdd/estrutura": { data: ESTRUTURA },
   "GET v1/atlas/ttdd/2.0.02.00.07/historico": { data: [] },
+  "GET v1/atlas/ttdd/*": { data: [] },
 });
 
 /** As páginas do Atlas rodam dentro do layout (assistente em gaveta). */

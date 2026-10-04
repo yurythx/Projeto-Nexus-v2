@@ -211,3 +211,67 @@ func (h *Handlers) LigarModelo(w http.ResponseWriter, r *http.Request) {
 	}
 	httputil.WriteOK(w, wf)
 }
+
+// ModelosDaSerie lista os modelos ligados à série da TTDD (público, sem
+// autoria).
+func (h *Handlers) ModelosDaSerie(w http.ResponseWriter, r *http.Request) {
+	codigo, err := codigoSerie(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	items, err := h.svc.ModelosDaSerie(r.Context(), codigo)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	for i := range items {
+		items[i] = semAutoria(items[i])
+	}
+	httputil.WriteOK(w, items)
+}
+
+type ligarModeloSerieRequest struct {
+	ModeloID uuid.UUID `json:"modelo_id" validate:"required"`
+}
+
+// LigarModeloSerie liga um modelo da biblioteca à série.
+func (h *Handlers) LigarModeloSerie(w http.ResponseWriter, r *http.Request) {
+	codigo, err := codigoSerie(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req ligarModeloSerieRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	identity, _ := auth.IdentityFromContext(r.Context())
+	items, err := h.svc.LigarModeloSerie(r.Context(), identity, codigo, req.ModeloID)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, items)
+}
+
+// DesligarModeloSerie retira o modelo da série (ele continua na biblioteca).
+func (h *Handlers) DesligarModeloSerie(w http.ResponseWriter, r *http.Request) {
+	codigo, err := codigoSerie(r)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	modelo, err := httputil.UUIDParam(r, "modelo")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	items, err := h.svc.DesligarModeloSerie(r.Context(), codigo, modelo)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, items)
+}

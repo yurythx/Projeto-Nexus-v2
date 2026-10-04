@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 
 import { AcoesPagina } from "@/components/atlas/AcoesPagina";
 import { CalculadoraTemporalidade } from "@/components/atlas/CalculadoraTemporalidade";
+import { ModelosDaSerie } from "@/components/atlas/ModelosDaSerie";
 import { SeloVigencia } from "@/components/atlas/SeloVigencia";
 import { Trilha } from "@/components/atlas/Trilha";
 import { WorkflowList } from "@/components/atlas/WorkflowList";
@@ -235,6 +236,8 @@ export default function SeriePage() {
             <div className="max-w-xl">
               <CalculadoraTemporalidade serie={c} />
             </div>
+
+            <ModelosDaSerie codigo={c.codigo} descritor={c.descritor} vigente={!c.revogada_em} />
 
             <Procedimentos codigo={c.codigo} />
 

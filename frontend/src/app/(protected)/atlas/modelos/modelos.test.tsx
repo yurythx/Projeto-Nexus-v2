@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChecklistDocumentos } from "@/components/atlas/LinhaDoTempo";
+import { ModelosDaSerie } from "@/components/atlas/ModelosDaSerie";
 import { NovoProcedimentoForm } from "@/components/atlas/NovoProcedimentoForm";
 import { extensao, sugerirModelo, urlArquivoModelo } from "@/lib/atlas/modelos";
 import type { Etapa, ModeloDocumento } from "@/lib/nexus/types";
@@ -406,6 +407,95 @@ describe("Atlas — detalhe da peça", () => {
     await abrir("Termo de referência");
     await userEvent.upload(
       screen.getByLabelText("Enviar arquivo de modelo para esta peça"),
+      docx(10 * 1024 * 1024 + 1),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("passa de 10 MB");
+    expect(screen.getByRole("button", { name: /Enviar/ })).toBeDisabled();
+  });
+});
+
+describe("Atlas — modelos da série da TTDD", () => {
+  const serie = "v1/atlas/ttdd/6.0.01.00.03/modelos";
+  const admin = "v1/atlas/admin/ttdd/6.0.01.00.03/modelos";
+  beforeEach(() => resetNavigation({ codigo: "6.0.01.00.03" }, "/atlas/ttdd/6.0.01.00.03"));
+
+  it("consulta: modelos para baixar, desativado marcado, sem gestão", async () => {
+    mockBackend({ ...rotas(["atlas:read"]), [`GET ${serie}`]: { data: [REQUERIMENTO, OFICIO] } });
+    renderApp(
+      <ModelosDaSerie
+        codigo="6.0.01.00.03"
+        descritor="Relatório técnico social e parecer"
+        vigente
+      />,
+    );
+    const lista = await screen.findByRole("list", { name: "Modelos da série" });
+    expect(
+      within(lista).getByRole("link", { name: "Baixar o modelo Requerimento" }),
+    ).toHaveAttribute("href", "/api/backend/v1/atlas/modelos/mod-1/arquivo");
+    expect(within(lista).getByText("Desativado")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Retirar/ })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Ligar um modelo da biblioteca")).not.toBeInTheDocument();
+  });
+
+  it("sem modelos: aviso e link para a biblioteca; série revogada não tem gestão", async () => {
+    mockBackend({ ...rotas(["atlas:manage"]), [`GET ${serie}`]: { data: [] } });
+    renderApp(<ModelosDaSerie codigo="6.0.01.00.03" descritor="Relatório" vigente={false} />);
+    expect(await screen.findByText(/Nenhum modelo cadastrado para esta série/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver a biblioteca de modelos" })).toHaveAttribute(
+      "href",
+      "/atlas/modelos",
+    );
+    expect(screen.queryByLabelText("Ligar um modelo da biblioteca")).not.toBeInTheDocument();
+  });
+
+  it("gestão: ligar da biblioteca, enviar modelo novo com o nome da série e retirar", async () => {
+    const backend = mockBackend({
+      ...rotas(["atlas:manage"]),
+      [`GET ${serie}`]: { data: [] },
+      [`POST ${admin}`]: { data: [REQUERIMENTO] },
+      "POST v1/atlas/admin/modelos": { status: 201, data: { ...REQUERIMENTO, id: "mod-9" } },
+      [`DELETE ${admin}/mod-1`]: { data: [] },
+    });
+    renderApp(
+      <ModelosDaSerie
+        codigo="6.0.01.00.03"
+        descritor="Relatório técnico social e parecer"
+        vigente
+      />,
+    );
+    const select = await screen.findByLabelText("Ligar um modelo da biblioteca");
+    // Só os ativos ainda não ligados.
+    await vi.waitFor(() => expect(within(select).getAllByRole("option")).toHaveLength(2));
+    await userEvent.selectOptions(select, "mod-1");
+    await userEvent.click(screen.getByRole("button", { name: /Ligar/ }));
+    expect(backend.to(`POST ${admin}`)[0]!.body).toEqual({ modelo_id: "mod-1" });
+    expect(
+      await screen.findByRole("link", { name: "Baixar o modelo Requerimento" }),
+    ).toBeInTheDocument();
+
+    expect(screen.getByLabelText("Ou enviar um modelo novo — nome")).toHaveValue(
+      "Relatório técnico social e parecer",
+    );
+    await userEvent.upload(screen.getByLabelText("Arquivo do modelo"), docx());
+    await userEvent.click(screen.getByRole("button", { name: /Enviar/ }));
+    await vi.waitFor(() => expect(backend.to(`POST ${admin}`)).toHaveLength(2));
+    expect((backend.to("POST v1/atlas/admin/modelos")[0]!.body as FormData).get("nome")).toBe(
+      "Relatório técnico social e parecer",
+    );
+    expect(backend.to(`POST ${admin}`)[1]!.body).toEqual({ modelo_id: "mod-9" });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Retirar o modelo Requerimento da série" }),
+    );
+    expect(await screen.findByText(/Nenhum modelo cadastrado para esta série/)).toBeInTheDocument();
+    expect(backend.to(`DELETE ${admin}/mod-1`)).toHaveLength(1);
+  });
+
+  it("gestão: arquivo acima de 10 MB é recusado no navegador", async () => {
+    mockBackend({ ...rotas(["atlas:manage"]), [`GET ${serie}`]: { data: [] } });
+    renderApp(<ModelosDaSerie codigo="6.0.01.00.03" descritor="R" vigente />);
+    await userEvent.upload(
+      await screen.findByLabelText("Arquivo do modelo"),
       docx(10 * 1024 * 1024 + 1),
     );
     expect(screen.getByRole("alert")).toHaveTextContent("passa de 10 MB");

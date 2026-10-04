@@ -26,19 +26,30 @@ func TestModeloRepositoryFailures(t *testing.T) {
 	m := domain.Modelo{ID: id, Nome: "x"}
 	v := domain.ModeloVersao{}
 	calls := map[string]func(db database.DBTX) error{
-		"ListModelos":        func(db database.DBTX) error { _, err := r.ListModelos(ctx, db, true); return err },
-		"GetModelo":          func(db database.DBTX) error { _, err := r.GetModelo(ctx, db, id); return err },
-		"InsertModelo":       func(db database.DBTX) error { return r.InsertModelo(ctx, db, m, v, "p") },
-		"InsertModeloVersao": func(db database.DBTX) error { _, err := r.InsertModeloVersao(ctx, db, id, v); return err },
-		"UpdateModelo":       func(db database.DBTX) error { return r.UpdateModelo(ctx, db, m, "p") },
-		"VersaoModelo":       func(db database.DBTX) error { _, err := r.VersaoModelo(ctx, db, id, 0); return err },
-		"ModelosAtivos":      func(db database.DBTX) error { _, err := r.ModelosAtivos(ctx, db, []uuid.UUID{id}); return err },
-		"ModeloDaPeca":       func(db database.DBTX) error { _, err := r.ModeloDaPeca(ctx, db, id, id); return err },
-		"SetModeloPeca":      func(db database.DBTX) error { return r.SetModeloPeca(ctx, db, id, nil) },
+		"ListModelos":         func(db database.DBTX) error { _, err := r.ListModelos(ctx, db, true); return err },
+		"GetModelo":           func(db database.DBTX) error { _, err := r.GetModelo(ctx, db, id); return err },
+		"InsertModelo":        func(db database.DBTX) error { return r.InsertModelo(ctx, db, m, v, "p") },
+		"InsertModeloVersao":  func(db database.DBTX) error { _, err := r.InsertModeloVersao(ctx, db, id, v); return err },
+		"UpdateModelo":        func(db database.DBTX) error { return r.UpdateModelo(ctx, db, m, "p") },
+		"VersaoModelo":        func(db database.DBTX) error { _, err := r.VersaoModelo(ctx, db, id, 0); return err },
+		"ModelosAtivos":       func(db database.DBTX) error { _, err := r.ModelosAtivos(ctx, db, []uuid.UUID{id}); return err },
+		"ModeloDaPeca":        func(db database.DBTX) error { _, err := r.ModeloDaPeca(ctx, db, id, id); return err },
+		"SetModeloPeca":       func(db database.DBTX) error { return r.SetModeloPeca(ctx, db, id, nil) },
+		"ModelosDaSerie":      func(db database.DBTX) error { _, err := r.ModelosDaSerie(ctx, db, "1.0"); return err },
+		"LigarModeloSerie":    func(db database.DBTX) error { return r.LigarModeloSerie(ctx, db, "1.0", id, "p") },
+		"DesligarModeloSerie": func(db database.DBTX) error { return r.DesligarModeloSerie(ctx, db, "1.0", id) },
 	}
 	for name, call := range calls {
 		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {
 			t.Errorf("%s com o banco fora: %v", name, err)
+		}
+	}
+	for _, name := range []string{"ListModelos", "ModelosDaSerie"} {
+		if err := calls[name](dbtest.ScanFail{}); err == nil {
+			t.Errorf("%s com linha ilegível", name)
+		}
+		if err := calls[name](dbtest.RowsErr{}); !errors.Is(err, dbtest.ErrInjected) {
+			t.Errorf("%s com erro na leitura: %v", name, err)
 		}
 	}
 	if err := calls["ListModelos"](dbtest.ScanFail{}); err == nil {

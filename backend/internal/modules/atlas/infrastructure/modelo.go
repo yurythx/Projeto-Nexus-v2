@@ -150,3 +150,38 @@ func (r *Repository) SetModeloPeca(ctx context.Context, db database.DBTX, docID 
 	_, err := db.Exec(ctx, `UPDATE atlas_etapa_documentos SET modelo_id = $2 WHERE id = $1`, docID, modeloID)
 	return wrap(err)
 }
+
+func (r *Repository) ModelosDaSerie(ctx context.Context, db database.DBTX, codigo string) ([]domain.Modelo, error) {
+	rows, err := db.Query(ctx, modeloSelect+` JOIN atlas_ttdd_modelos s ON s.modelo_id = m.id WHERE s.codigo = $1
+		ORDER BY lower(m.nome)`, codigo)
+	if err != nil {
+		return nil, wrapModelo(err)
+	}
+	defer rows.Close()
+	out := []domain.Modelo{}
+	for rows.Next() {
+		m, err := scanModelo(rows)
+		if err != nil {
+			return nil, wrapModelo(err)
+		}
+		out = append(out, m)
+	}
+	return out, wrapModelo(rows.Err())
+}
+
+func (r *Repository) LigarModeloSerie(ctx context.Context, db database.DBTX, codigo string, modeloID uuid.UUID, por string) error {
+	_, err := db.Exec(ctx, `INSERT INTO atlas_ttdd_modelos (codigo, modelo_id, created_by) VALUES ($1, $2, $3)
+		ON CONFLICT DO NOTHING`, codigo, modeloID, por)
+	return wrapModelo(err)
+}
+
+func (r *Repository) DesligarModeloSerie(ctx context.Context, db database.DBTX, codigo string, modeloID uuid.UUID) error {
+	tag, err := db.Exec(ctx, `DELETE FROM atlas_ttdd_modelos WHERE codigo = $1 AND modelo_id = $2`, codigo, modeloID)
+	if err != nil {
+		return wrapModelo(err)
+	}
+	if tag.RowsAffected() == 0 {
+		return domain.ErrModeloNaoEncontrado
+	}
+	return nil
+}

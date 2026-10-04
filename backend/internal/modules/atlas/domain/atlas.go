@@ -487,6 +487,12 @@ type Repository interface {
 	ModeloDaPeca(ctx context.Context, db database.DBTX, workflowID, docID uuid.UUID) (*uuid.UUID, error)
 	// SetModeloPeca liga a peça a um modelo (nil desliga).
 	SetModeloPeca(ctx context.Context, db database.DBTX, docID uuid.UUID, modeloID *uuid.UUID) error
+	// ModelosDaSerie lista os modelos ligados à série da TTDD (por nome).
+	ModelosDaSerie(ctx context.Context, db database.DBTX, codigo string) ([]Modelo, error)
+	// LigarModeloSerie liga o modelo à série (repetir não duplica).
+	LigarModeloSerie(ctx context.Context, db database.DBTX, codigo string, modeloID uuid.UUID, por string) error
+	// DesligarModeloSerie retira o modelo da série (ErrModeloNaoEncontrado se não estava ligado).
+	DesligarModeloSerie(ctx context.Context, db database.DBTX, codigo string, modeloID uuid.UUID) error
 	// HistoricoTTDD devolve as mudanças da série, da mais recente à mais antiga.
 	HistoricoTTDD(ctx context.Context, db database.DBTX, codigo string) ([]HistoricoTTDD, error)
 

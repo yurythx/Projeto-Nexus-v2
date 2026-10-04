@@ -58,7 +58,17 @@ significava procurar e editar procedimento por procedimento.
    `atlas.workflow.modelo_peca`); no cadastro e na nova versão do procedimento, a seção
    **Modelos das peças** liga cada peça a um modelo — a peça com o mesmo
    nome de um modelo ativo já vem ligada.
-8. **Assistente:** a síntese do fluxo (ADR 023) cita o modelo da peça na
+8. **Modelos da série da TTDD** (`atlas_ttdd_modelos`): a página de cada
+   série documental tem a seção **Modelos de documento**, com os modelos
+   daquele tipo de documento para baixar (um modelo serve a várias séries
+   e uma série a vários modelos). A gestão liga um modelo ativo da
+   biblioteca ou envia um arquivo, que vira um modelo novo (nome sugerido:
+   o descritor da série) já ligado; retirar desfaz só a ligação. Série
+   revogada não recebe modelos novos. `GET /atlas/ttdd/{codigo}/modelos`
+   (público, sem autoria); `POST /atlas/admin/ttdd/{codigo}/modelos` e
+   `DELETE …/modelos/{modelo}`, auditados (`atlas.ttdd.modelo_ligado`,
+   `atlas.ttdd.modelo_desligado`).
+9. **Assistente:** a síntese do fluxo (ADR 023) cita o modelo da peça na
    biblioteca ("modelo na biblioteca do Atlas: Requerimento (versão 2)").
 
 ## Consequências

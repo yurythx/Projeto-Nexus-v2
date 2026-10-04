@@ -568,6 +568,15 @@ components:
                     type: string
             type: object
             x-nexus-generated: true
+        AtlasLigarModeloSerieRequest:
+            properties:
+                modelo_id:
+                    format: uuid
+                    type: string
+            required:
+                - modelo_id
+            type: object
+            x-nexus-generated: true
         AtlasModelo:
             properties:
                 ativo:
@@ -4972,6 +4981,99 @@ paths:
             summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/modelos/{id}/versoes
             tags:
                 - atlas
+    /api/v1/atlas/admin/ttdd/{codigo}/modelos:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminTtddCodigoModelos
+            parameters:
+                - in: path
+                  name: codigo
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AtlasLigarModeloSerieRequest'
+                required: true
+                x-nexus-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtlasModelo'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/ttdd/{codigo}/modelos
+            tags:
+                - atlas
+    /api/v1/atlas/admin/ttdd/{codigo}/modelos/{modelo}:
+        delete:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: deleteAtlasAdminTtddCodigoModelosModelo
+            parameters:
+                - in: path
+                  name: codigo
+                  required: true
+                  schema:
+                    type: string
+                - in: path
+                  name: modelo
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtlasModelo'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Excluir /atlas/admin/ttdd/{codigo}/modelos/{modelo}
+            tags:
+                - atlas
     /api/v1/atlas/admin/ttdd/carga/aplicar:
         post:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -5593,6 +5695,40 @@ paths:
                     $ref: '#/components/responses/TooManyRequests'
             security: []
             summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd/{codigo}/historico
+            tags:
+                - atlas
+    /api/v1/atlas/ttdd/{codigo}/modelos:
+        get:
+            operationId: getAtlasTtddCodigoModelos
+            parameters:
+                - in: path
+                  name: codigo
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            items:
+                                                $ref: '#/components/schemas/AtlasModelo'
+                                            type: array
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/ttdd/{codigo}/modelos
             tags:
                 - atlas
     /api/v1/atlas/ttdd/estrutura:
