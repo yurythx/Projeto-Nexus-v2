@@ -40,6 +40,7 @@ func registerPlugins(d *Dependencies) {
 		Outbox:                d.Outbox,
 		Storage:               d.Storage,
 		Hub:                   d.Hub,
+		Notificacoes:          d.Notificacoes,
 		Cipher:                d.Cipher,
 		PublicLimiter:         d.RateLimiters.Public,
 		ContactLimiter:        d.RateLimiters.Contact,

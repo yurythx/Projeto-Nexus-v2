@@ -29,6 +29,14 @@ var QueueSignum = messaging.QueueSpec{
 	},
 }
 
+// QueueAtlas recebe a desativação de versões de procedimento do Atlas, para
+// avisar os processos em andamento que seguem a versão antiga (ADR 027).
+var QueueAtlas = messaging.QueueSpec{
+	Name:        "nexus.tramite.atlas",
+	DLQName:     "nexus.tramite.atlas.dlq",
+	RoutingKeys: []string{"atlas.workflow.deactivated"},
+}
+
 // Module é o plugin.
 type Module struct {
 	svc      *application.Service
@@ -38,7 +46,8 @@ type Module struct {
 // New constrói o módulo; sign é a porta para o Signum (ligada em app).
 func New(deps modkit.Deps, sign domain.SignaturePort) *Module {
 	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), sign, deps.Outbox, deps.Storage,
-		deps.Config.MinIO.Bucket, deps.Config.Upload.MaxFileBytes, deps.Config.Upload.URLExpiry, deps.Logger)
+		deps.Config.MinIO.Bucket, deps.Config.Upload.MaxFileBytes, deps.Config.Upload.URLExpiry, deps.Logger).
+		WithNotificacoes(deps.Notificacoes)
 	return &Module{svc: svc, handlers: transport.NewHandlers(svc, deps.Logger, deps.Config.MaxPageSize)}
 }
 
@@ -65,7 +74,10 @@ func (m *Module) RegisterRoutes(r kernel.Routes) { m.handlers.RegisterRoutes(r.A
 
 // Consumers implementa kernel.ConsumerProvider.
 func (m *Module) Consumers() []kernel.Consumer {
-	return []kernel.Consumer{{Queue: QueueSignum, Handler: m.svc.HandleSignatureEvent}}
+	return []kernel.Consumer{
+		{Queue: QueueSignum, Handler: m.svc.HandleSignatureEvent},
+		{Queue: QueueAtlas, Handler: m.svc.HandleAtlasEvent},
+	}
 }
 
 // SearchProviders implementa kernel.SearchProvider.

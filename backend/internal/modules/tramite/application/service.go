@@ -24,6 +24,7 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/auth"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
 	"github.com/yurythx/projeto-nexus/internal/platform/modkit"
+	"github.com/yurythx/projeto-nexus/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
 	"github.com/yurythx/projeto-nexus/internal/platform/storage"
 )
@@ -48,6 +49,7 @@ type Service struct {
 	maxBytes int64
 	expiry   time.Duration
 	logger   *slog.Logger
+	avisos   *notificacoes.Service // avisos do Atlas (WithNotificacoes)
 }
 
 // NewService cria o serviço.

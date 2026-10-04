@@ -211,6 +211,14 @@ func (f *faultRepo) Movimentos(ctx context.Context, db database.DBTX, p uuid.UUI
 	return f.Repository.Movimentos(ctx, db, p)
 }
 
+func (f *faultRepo) ProcessosDoProcedimento(ctx context.Context, db database.DBTX, id uuid.UUID) ([]domain.Processo, error) {
+	if err := f.hook(ctx, db, "ProcessosDoProcedimento"); err != nil {
+		return nil, err
+	}
+	defer f.post(ctx, db)
+	return f.Repository.ProcessosDoProcedimento(ctx, db, id)
+}
+
 // fakeSign simula o Signum.
 type fakeSign struct {
 	available bool
@@ -565,7 +573,7 @@ func TestSearchProviderPropagatesFailure(t *testing.T) {
 	if err != nil || len(res) != 1 || strings.Contains(res[0].Title, p.Assunto) {
 		t.Fatalf("sigiloso aparece na busca de quem pode ler, sem o assunto: %+v %v", res, err)
 	}
-	if m.SearchProviders()[0].Module() != tramite.Key || len(m.Consumers()) != 1 || m.Manifest().Key != tramite.Key {
+	if m.SearchProviders()[0].Module() != tramite.Key || len(m.Consumers()) != 2 || m.Manifest().Key != tramite.Key {
 		t.Fatal("manifesto, consumidor e provedor de busca registrados")
 	}
 }

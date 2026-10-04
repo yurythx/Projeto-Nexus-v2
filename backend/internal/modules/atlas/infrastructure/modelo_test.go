@@ -85,3 +85,29 @@ func TestModeloRepositoryFailures(t *testing.T) {
 		t.Errorf("nome repetido: %v", err)
 	}
 }
+
+func TestAvisosFalhas(t *testing.T) {
+	r := NewRepository()
+	ctx := context.Background()
+	id := uuid.New()
+	calls := map[string]func(db database.DBTX) error{
+		"Seguir":             func(db database.DBTX) error { return r.Seguir(ctx, db, id, "X") },
+		"DeixarDeSeguir":     func(db database.DBTX) error { return r.DeixarDeSeguir(ctx, db, id, "X") },
+		"Seguindo":           func(db database.DBTX) error { _, err := r.Seguindo(ctx, db, id, "X"); return err },
+		"Interessados":       func(db database.DBTX) error { _, err := r.Interessados(ctx, db, "X", []string{"A"}); return err },
+		"InteressadosModelo": func(db database.DBTX) error { _, err := r.InteressadosModelo(ctx, db, id); return err },
+	}
+	for name, call := range calls {
+		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {
+			t.Errorf("%s com o banco fora: %v", name, err)
+		}
+	}
+	for _, name := range []string{"Interessados", "InteressadosModelo"} {
+		if err := calls[name](dbtest.ScanFail{}); err == nil {
+			t.Errorf("%s com linha ilegível", name)
+		}
+		if err := calls[name](dbtest.RowsErr{}); !errors.Is(err, dbtest.ErrInjected) {
+			t.Errorf("%s com erro na leitura", name)
+		}
+	}
+}

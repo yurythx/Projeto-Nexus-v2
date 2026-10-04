@@ -309,3 +309,21 @@ func (r *Repository) Movimentos(ctx context.Context, db database.DBTX, processoI
 	}
 	return out, rows.Err()
 }
+
+func (r *Repository) ProcessosDoProcedimento(ctx context.Context, db database.DBTX, atlasProcedimentoID uuid.UUID) ([]domain.Processo, error) {
+	rows, err := db.Query(ctx, `SELECT `+procCols+procFrom+` WHERE p.atlas_procedimento_id = $1 AND p.status IN ('aberto', 'em_tramitacao')
+		ORDER BY p.created_at`, atlasProcedimentoID)
+	if err != nil {
+		return nil, wrap(err)
+	}
+	defer rows.Close()
+	out := []domain.Processo{}
+	for rows.Next() {
+		p, err := scanProc(rows)
+		if err != nil {
+			return nil, wrap(err)
+		}
+		out = append(out, p)
+	}
+	return out, wrap(rows.Err())
+}

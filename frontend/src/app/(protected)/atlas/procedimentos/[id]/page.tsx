@@ -13,6 +13,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { AcoesPagina } from "@/components/atlas/AcoesPagina";
+import { SeguirProcedimento } from "@/components/atlas/SeguirProcedimento";
 import { CalculadoraTemporalidade } from "@/components/atlas/CalculadoraTemporalidade";
 import { ChecklistDocumentos, LinhaDoTempo, prazoTotalDias } from "@/components/atlas/LinhaDoTempo";
 import { NovoProcedimentoForm } from "@/components/atlas/NovoProcedimentoForm";
@@ -232,6 +233,7 @@ export default function ProcedimentoPage() {
                 rotulo="Perguntar sobre este fluxo"
                 pergunta={`Como funciona o fluxo de "${wf.titulo}" (${wf.codigo_processual}), do início ao fim?`}
               >
+                <SeguirProcedimento id={wf.id} />
                 {canManage && (
                   <Button size="sm" onClick={() => setVersionando(true)}>
                     Nova versão

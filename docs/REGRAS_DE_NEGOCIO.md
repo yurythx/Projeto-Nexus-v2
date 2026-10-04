@@ -670,6 +670,14 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   site institucional, com os modelos para baixar e a planilha da TTDD; o
   proxy anônimo libera só a leitura do Atlas.
 - **Visualizar modelo:** só PDF abre no navegador (`?inline=1`).
+- **Avisos de nova versão (ADR 027):** quem segue o fluxo (opt-in, pelo
+  código) e quem está lotado (manual ou grupo do AD) nas unidades das etapas
+  recebe o aviso da nova versão do procedimento; quem segue um procedimento
+  que usa um modelo recebe o da nova versão do modelo; quem abriu um processo
+  em andamento que segue a versão substituída/desativada é avisado pelo
+  Trâmite. O autor da mudança não recebe; cada aviso chega uma vez; cada
+  pessoa pode desligar os avisos de um módulo em `/notificacoes`; avisos
+  lidos há mais de 180 dias são apagados.
 - **Páginas (URL própria, compartilhável e imprimível):**
   - `/atlas` — busca unificada (procedimentos e séries em paralelo, ou a
     pergunta ao assistente), procedimentos e atalhos por secretaria;

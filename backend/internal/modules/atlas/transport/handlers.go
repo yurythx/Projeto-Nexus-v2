@@ -53,6 +53,11 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 func (h *Handlers) RegisterRoutes(r chi.Router, chatLimiter httpserver.Limiter) {
 	r.With(auth.RequirePermission(h.logger, auth.PermAtlasRead), httpserver.RateLimit(h.logger, chatLimiter, identityKey)).
 		Post("/atlas/chat", h.Chat)
+	// Seguir um procedimento (avisos de nova versão — ADR 027): qualquer
+	// pessoa autenticada.
+	r.Get("/atlas/workflows/{id}/seguir", h.Seguindo)
+	r.Put("/atlas/workflows/{id}/seguir", h.Seguir)
+	r.Delete("/atlas/workflows/{id}/seguir", h.DeixarDeSeguir)
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtlasManage))
 		r.Get("/atlas/admin/workflows", h.ListAdmin)

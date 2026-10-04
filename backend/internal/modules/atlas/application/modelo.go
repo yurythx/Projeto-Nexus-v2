@@ -18,6 +18,7 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/audit"
 	"github.com/yurythx/projeto-nexus/internal/platform/auth"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
+	"github.com/yurythx/projeto-nexus/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nexus/internal/platform/storage"
 )
 
@@ -163,7 +164,10 @@ func (s *Service) NovaVersaoModelo(ctx context.Context, identity auth.Identity, 
 	if err != nil {
 		return domain.Modelo{}, mapModeloError(err)
 	}
-	var out domain.Modelo
+	var (
+		out      domain.Modelo
+		enviadas []notificacoes.Enviada
+	)
 	err = s.registrar(ctx, v, func(ctx context.Context, tx pgx.Tx) error {
 		if _, err := s.repo.InsertModeloVersao(ctx, tx, id, v); err != nil {
 			return err
@@ -171,9 +175,15 @@ func (s *Service) NovaVersaoModelo(ctx context.Context, identity auth.Identity, 
 		if out, err = s.repo.GetModelo(ctx, tx, id); err != nil {
 			return err
 		}
+		if enviadas, err = s.avisarNovaVersaoModelo(ctx, tx, identity, out); err != nil {
+			return err
+		}
 		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventModeloVersao, "atlas_modelo", id.String(),
 			resumoModelo(antes), resumoModelo(out)))
 	})
+	if err == nil {
+		s.entregar(ctx, enviadas)
+	}
 	return out, mapModeloError(err)
 }
 

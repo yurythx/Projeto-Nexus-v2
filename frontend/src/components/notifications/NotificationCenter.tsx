@@ -2,7 +2,10 @@
 
 import { useCallback } from "react";
 
-import { useNotificationHistory } from "@/components/notifications/NotificationHistoryProvider";
+import {
+  useNotificationHistory,
+  type NotificacaoServidor,
+} from "@/components/notifications/NotificationHistoryProvider";
 import { useToast } from "@/components/notifications/ToastProvider";
 import { useFrames } from "@/components/realtime/RealtimeProvider";
 import { useNexus } from "@/lib/nexus/NexusProvider";
@@ -13,12 +16,19 @@ type Tone = "success" | "danger" | "info";
 
 /** Texto do toast para cada evento de difusão geral (a fila
  * nexus.notification.websocket só recebe eventos seguros para todos). */
-export function describeEvent(type: string, payload: unknown): { title: string; description?: string; tone: Tone } | null {
+export function describeEvent(
+  type: string,
+  payload: unknown,
+): { title: string; description?: string; tone: Tone } | null {
   const p = (payload ?? {}) as Record<string, unknown>;
   const s = (k: string) => (typeof p[k] === "string" ? (p[k] as string) : undefined);
   switch (type) {
     case "blog.post.published":
-      return { title: s("kind") === "comunicado" ? "Novo comunicado" : "Nova publicação", description: s("title"), tone: "info" };
+      return {
+        title: s("kind") === "comunicado" ? "Novo comunicado" : "Nova publicação",
+        description: s("title"),
+        tone: "info",
+      };
     case "catalog.service.published":
       return { title: "Serviço publicado no catálogo", description: s("title"), tone: "success" };
     case "calendar.event.created":
@@ -34,7 +44,7 @@ export function describeEvent(type: string, payload: unknown): { title: string; 
  * toasts e histórico; reage à desativação de módulos em tempo real. */
 export function NotificationCenter() {
   const { showToast } = useToast();
-  const { push } = useNotificationHistory();
+  const { push, pushServer } = useNotificationHistory();
   const { refreshModules } = useNexus();
 
   const handle = useCallback(
@@ -52,6 +62,14 @@ export function NotificationCenter() {
         push(n);
         return;
       }
+      // Aviso persistido (ADR 027): vai para o sino sem duplicar e vira toast.
+      if (frame.type === "notificacao.nova") {
+        const n = frame.data as NotificacaoServidor | undefined;
+        if (!n?.id || !n.titulo) return;
+        pushServer(n);
+        showToast({ title: n.titulo, description: n.mensagem || undefined, tone: "info" });
+        return;
+      }
       if (frame.type !== "event") return;
       const parsed = eventEnvelopeSchema.safeParse(frame.data);
       if (!parsed.success) return;
@@ -60,7 +78,7 @@ export function NotificationCenter() {
       showToast(n);
       push(n);
     },
-    [showToast, push, refreshModules],
+    [showToast, push, pushServer, refreshModules],
   );
 
   useFrames(handle);

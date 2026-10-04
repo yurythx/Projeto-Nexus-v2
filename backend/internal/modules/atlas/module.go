@@ -42,7 +42,7 @@ func New(deps modkit.Deps) *Module {
 		iaconfig.ConexaoDoAmbiente(c.AIEndpoint, c.AIAPIKey, c.AIModel, int(c.AITimeout.Seconds())), deps.Logger)
 	var assistente domain.Assistente = infrastructure.NewAssistenteIA(roteador)
 	svc := application.NewService(deps.Pool, infrastructure.NewRepository(), deps.Outbox, assistente, deps.Logger).
-		WithStorage(deps.Storage, deps.Config.MinIO.Bucket)
+		WithStorage(deps.Storage, deps.Config.MinIO.Bucket).WithNotificacoes(deps.Notificacoes)
 	return &Module{deps: deps, svc: svc, handlers: transport.NewHandlers(svc, deps.Logger, deps.Config.MaxPageSize)}
 }
 

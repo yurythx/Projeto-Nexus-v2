@@ -493,6 +493,12 @@ type Repository interface {
 	LigarModeloSerie(ctx context.Context, db database.DBTX, codigo string, modeloID uuid.UUID, por string) error
 	// DesligarModeloSerie retira o modelo da série (ErrModeloNaoEncontrado se não estava ligado).
 	DesligarModeloSerie(ctx context.Context, db database.DBTX, codigo string, modeloID uuid.UUID) error
+	// Seguidores e destinatários dos avisos de nova versão (ADR 027).
+	Seguir(ctx context.Context, db database.DBTX, usuario uuid.UUID, codigo string) error
+	DeixarDeSeguir(ctx context.Context, db database.DBTX, usuario uuid.UUID, codigo string) error
+	Seguindo(ctx context.Context, db database.DBTX, usuario uuid.UUID, codigo string) (bool, error)
+	Interessados(ctx context.Context, db database.DBTX, codigo string, siglas []string) ([]uuid.UUID, error)
+	InteressadosModelo(ctx context.Context, db database.DBTX, modeloID uuid.UUID) ([]uuid.UUID, error)
 	// Cobertura monta o painel de cobertura (ADR 025).
 	Cobertura(ctx context.Context, db database.DBTX) (Cobertura, error)
 	// HistoricoTTDD devolve as mudanças da série, da mais recente à mais antiga.

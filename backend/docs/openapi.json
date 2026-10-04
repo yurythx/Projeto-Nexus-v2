@@ -1228,6 +1228,22 @@
         "type": "object",
         "x-nexus-generated": true
       },
+      "AtlasSeguimento": {
+        "properties": {
+          "codigo_processual": {
+            "type": "string"
+          },
+          "seguindo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "codigo_processual",
+          "seguindo"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "AtlasSerieImpacto": {
         "properties": {
           "antes": {
@@ -5191,6 +5207,95 @@
         "type": "object",
         "x-nexus-generated": true
       },
+      "NotificacoesCaixa": {
+        "properties": {
+          "itens": {
+            "items": {
+              "$ref": "#/components/schemas/NotificacoesNotificacao"
+            },
+            "type": "array"
+          },
+          "nao_lidas": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "itens",
+          "nao_lidas"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "NotificacoesNotificacao": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lida": {
+            "type": "boolean"
+          },
+          "link": {
+            "type": "string"
+          },
+          "mensagem": {
+            "type": "string"
+          },
+          "modulo": {
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "created_at",
+          "id",
+          "lida",
+          "link",
+          "mensagem",
+          "modulo",
+          "titulo"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "NotificacoesPreferencia": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "modulo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ativo",
+          "modulo"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "NotificacoesPreferenciaRequest": {
+        "properties": {
+          "ativo": {
+            "type": "boolean"
+          },
+          "modulo": {
+            "maxLength": 40,
+            "type": "string"
+          }
+        },
+        "required": [
+          "modulo"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "OutboxCounts": {
         "properties": {
           "failed": {
@@ -8823,6 +8928,188 @@
         },
         "security": [],
         "summary": "Atlas — Procedimentos e Temporalidade — Obter /atlas/workflows/{id}",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/workflows/{id}/seguir": {
+      "delete": {
+        "operationId": "deleteAtlasWorkflowsIdSeguir",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasSeguimento"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Excluir /atlas/workflows/{id}/seguir",
+        "tags": [
+          "atlas"
+        ]
+      },
+      "get": {
+        "operationId": "getAtlasWorkflowsIdSeguir",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasSeguimento"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/workflows/{id}/seguir",
+        "tags": [
+          "atlas"
+        ]
+      },
+      "put": {
+        "operationId": "putAtlasWorkflowsIdSeguir",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/AtlasSeguimento"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Salvar /atlas/workflows/{id}/seguir",
         "tags": [
           "atlas"
         ]
@@ -16669,6 +16956,252 @@
         ]
       }
     },
+    "/api/v1/notificacoes": {
+      "get": {
+        "operationId": "getNotificacoes",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-nexus-generated": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/NotificacoesCaixa"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Listar/consultar /notificacoes",
+        "tags": [
+          "notificacoes"
+        ]
+      }
+    },
+    "/api/v1/notificacoes/lidas": {
+      "post": {
+        "operationId": "postNotificacoesLidas",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Criar /notificacoes/lidas",
+        "tags": [
+          "notificacoes"
+        ]
+      }
+    },
+    "/api/v1/notificacoes/preferencias": {
+      "get": {
+        "operationId": "getNotificacoesPreferencias",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/NotificacoesPreferencia"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Listar/consultar /notificacoes/preferencias",
+        "tags": [
+          "notificacoes"
+        ]
+      },
+      "put": {
+        "operationId": "putNotificacoesPreferencias",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificacoesPreferenciaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-nexus-generated": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "$ref": "#/components/schemas/NotificacoesPreferencia"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Salvar /notificacoes/preferencias",
+        "tags": [
+          "notificacoes"
+        ]
+      }
+    },
+    "/api/v1/notificacoes/{id}/lida": {
+      "post": {
+        "operationId": "postNotificacoesIdLida",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Executar ação /notificacoes/{id}/lida",
+        "tags": [
+          "notificacoes"
+        ]
+      }
+    },
     "/api/v1/search": {
       "get": {
         "operationId": "getSearch",
@@ -20254,6 +20787,9 @@
     {
       "description": "Métricas operacionais consumidas pelo painel de Monitoramento do frontend (contagem do Transactional Outbox). Restrito a `audit:read` — mesmo dado operacional interno, sem justificar uma permissão dedicada só pra si.\n",
       "name": "monitoring"
+    },
+    {
+      "name": "notificacoes"
     },
     {
       "name": "plataforma"

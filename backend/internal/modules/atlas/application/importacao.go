@@ -15,6 +15,7 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/audit"
 	"github.com/yurythx/projeto-nexus/internal/platform/auth"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
+	"github.com/yurythx/projeto-nexus/internal/platform/notificacoes"
 )
 
 // Importação e exportação de procedimentos em lote (ADR 025). O arquivo é
@@ -141,6 +142,7 @@ func (s *Service) ImportarProcedimentos(ctx context.Context, identity auth.Ident
 		return domain.ImportacaoProcedimentos{}, MapError(err)
 	}
 	out := domain.ImportacaoProcedimentos{Hash: hash, Totais: map[string]int{}}
+	var enviadas []notificacoes.Enviada
 	err = database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		biblioteca, err := s.repo.ListModelos(ctx, tx, false)
 		if err != nil {
@@ -152,10 +154,11 @@ func (s *Service) ImportarProcedimentos(ctx context.Context, identity auth.Ident
 		}
 		vistos := map[string]bool{}
 		for i, p := range arq.Procedimentos {
-			item, err := s.importarItem(ctx, tx, identity, p, modelos, vistos)
+			item, avisos, err := s.importarItem(ctx, tx, identity, p, modelos, vistos)
 			if err != nil {
 				return err
 			}
+			enviadas = append(enviadas, avisos...)
 			item.Linha = i + 1
 			out.Itens = append(out.Itens, item)
 			out.Totais[item.Situacao]++
@@ -173,13 +176,16 @@ func (s *Service) ImportarProcedimentos(ctx context.Context, identity auth.Ident
 		err = nil
 	}
 	out.Aplicada = aplicar && err == nil
+	if out.Aplicada {
+		s.entregar(ctx, enviadas)
+	}
 	return out, MapError(err)
 }
 
 // importarItem trata um procedimento num savepoint: falha de regra desfaz
 // só o item (ERRO no relatório); falha de banco aborta a importação.
 func (s *Service) importarItem(ctx context.Context, tx pgx.Tx, identity auth.Identity, p ProcedimentoArquivo,
-	modelos map[string]uuid.UUID, vistos map[string]bool) (domain.ItemImportacao, error) {
+	modelos map[string]uuid.UUID, vistos map[string]bool) (domain.ItemImportacao, []notificacoes.Enviada, error) {
 	item := domain.ItemImportacao{CodigoProcessual: p.CodigoProcessual, Titulo: p.Titulo}
 	w, err := p.paraWorkflow(modelos)
 	item.CodigoProcessual = w.CodigoProcessual
@@ -189,11 +195,11 @@ func (s *Service) importarItem(ctx context.Context, tx pgx.Tx, identity auth.Ide
 	vistos[w.CodigoProcessual] = true
 	if err != nil {
 		item.Situacao, item.Erro = domain.ImportErro, err.Error()
-		return item, nil
+		return item, nil, nil
 	}
 	versoes, _, err := s.repo.List(ctx, tx, domain.Filter{CodigoProcessual: w.CodigoProcessual, IncluirInativos: true}, pagination.New(1, 100, 100))
 	if err != nil {
-		return item, err
+		return item, nil, err
 	}
 	var base *domain.Workflow
 	for i := range versoes {
@@ -203,9 +209,12 @@ func (s *Service) importarItem(ctx context.Context, tx pgx.Tx, identity auth.Ide
 	}
 	sp, err := tx.Begin(ctx)
 	if err != nil {
-		return item, err
+		return item, nil, err
 	}
-	var salvo domain.Workflow
+	var (
+		salvo  domain.Workflow
+		avisos []notificacoes.Enviada
+	)
 	if base == nil {
 		item.Situacao = domain.ImportNovo
 		salvo, err = s.inserir(ctx, sp, identity, w, nil)
@@ -213,26 +222,26 @@ func (s *Service) importarItem(ctx context.Context, tx pgx.Tx, identity auth.Ide
 		atual, gerr := s.repo.Get(ctx, sp, base.ID, true)
 		if gerr != nil {
 			_ = sp.Rollback(ctx)
-			return item, gerr
+			return item, nil, gerr
 		}
 		if atual.Ativo && domain.Assinatura(atual) == domain.Assinatura(w) {
 			item.Situacao, item.Versao = domain.ImportInalterado, atual.Versao
-			return item, sp.Commit(ctx)
+			return item, nil, sp.Commit(ctx)
 		}
 		item.Situacao = domain.ImportNovaVersao
-		salvo, err = s.novaVersaoTx(ctx, sp, identity, atual, w)
+		salvo, avisos, err = s.novaVersaoTx(ctx, sp, identity, atual, w)
 	}
 	if err != nil {
 		_ = sp.Rollback(ctx)
 		msg, regra := errItem(err)
 		if !regra {
-			return item, err
+			return item, nil, err
 		}
 		item.Situacao, item.Erro = domain.ImportErro, msg
-		return item, nil
+		return item, nil, nil
 	}
 	item.Versao = salvo.Versao
-	return item, sp.Commit(ctx)
+	return item, avisos, sp.Commit(ctx)
 }
 
 // ExportarProcedimentos devolve os procedimentos em vigor no formato da

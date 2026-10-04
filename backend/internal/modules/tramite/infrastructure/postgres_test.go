@@ -120,3 +120,12 @@ func (zeroRow) Scan(dest ...any) error {
 	}
 	return nil
 }
+
+func TestProcessosDoProcedimentoFalhas(t *testing.T) {
+	r := NewRepository()
+	for name, db := range map[string]database.DBTX{"consulta": dbtest.Fail{}, "linha": dbtest.ScanFail{}, "leitura": dbtest.RowsErr{}} {
+		if _, err := r.ProcessosDoProcedimento(context.Background(), db, uuid.New()); err == nil {
+			t.Errorf("%s: falha engolida", name)
+		}
+	}
+}

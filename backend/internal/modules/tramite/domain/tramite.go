@@ -253,6 +253,10 @@ type Repository interface {
 
 	AddMovimento(ctx context.Context, db database.DBTX, m Movimento) error
 	Movimentos(ctx context.Context, db database.DBTX, processoID uuid.UUID) ([]Movimento, error)
+
+	// ProcessosDoProcedimento: os processos em andamento (aberto ou em
+	// tramitação) que seguem o procedimento do Atlas (ADR 027).
+	ProcessosDoProcedimento(ctx context.Context, db database.DBTX, atlasProcedimentoID uuid.UUID) ([]Processo, error)
 }
 
 // Grant é uma credencial de acesso.

@@ -15,6 +15,7 @@ import (
 
 	"github.com/yurythx/projeto-nexus/internal/platform/config"
 	"github.com/yurythx/projeto-nexus/internal/platform/httpserver"
+	"github.com/yurythx/projeto-nexus/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
 	"github.com/yurythx/projeto-nexus/internal/platform/secretcrypto"
 	"github.com/yurythx/projeto-nexus/internal/platform/storage"
@@ -29,7 +30,9 @@ type Deps struct {
 	Outbox  *outbox.Writer
 	Storage storage.Provider
 	Hub     *ws.Hub
-	Cipher  *secretcrypto.Cipher
+	// Notificacoes é a caixa de notificações da plataforma (ADR 027).
+	Notificacoes *notificacoes.Service
+	Cipher       *secretcrypto.Cipher
 	// PublicLimiter limita rotas públicas por IP.
 	PublicLimiter httpserver.Limiter
 	// ContactLimiter é o limite dedicado do formulário de contato.

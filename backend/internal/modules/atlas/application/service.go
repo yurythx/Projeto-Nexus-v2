@@ -20,6 +20,7 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/audit"
 	"github.com/yurythx/projeto-nexus/internal/platform/auth"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
+	"github.com/yurythx/projeto-nexus/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
 	"github.com/yurythx/projeto-nexus/internal/platform/storage"
 )
@@ -47,8 +48,9 @@ type Service struct {
 	pool       *pgxpool.Pool
 	repo       domain.Repository
 	outbox     *outbox.Writer
-	assistente domain.Assistente // nil = síntese canônica, sem IA
-	store      storage.Provider  // arquivos da biblioteca de modelos (WithStorage)
+	assistente domain.Assistente     // nil = síntese canônica, sem IA
+	avisos     *notificacoes.Service // entrega em tempo real dos avisos (WithNotificacoes)
+	store      storage.Provider      // arquivos da biblioteca de modelos (WithStorage)
 	bucket     string
 	logger     *slog.Logger
 	now        func() time.Time
@@ -167,53 +169,65 @@ func (s *Service) Create(ctx context.Context, identity auth.Identity, w domain.W
 // tudo na mesma transação: a consulta pública nunca vê duas versões
 // vigentes nem nenhuma.
 func (s *Service) NovaVersao(ctx context.Context, identity auth.Identity, origem uuid.UUID, w domain.Workflow) (domain.Workflow, error) {
-	var out domain.Workflow
+	var (
+		out      domain.Workflow
+		enviadas []notificacoes.Enviada
+	)
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
 		base, err := s.repo.Get(ctx, tx, origem, true)
 		if err != nil {
 			return err
 		}
-		out, err = s.novaVersaoTx(ctx, tx, identity, base, w)
+		out, enviadas, err = s.novaVersaoTx(ctx, tx, identity, base, w)
 		return err
 	})
+	if err == nil {
+		s.entregar(ctx, enviadas)
+	}
 	return out, MapError(err)
 }
 
 // novaVersaoTx publica, na transação, a versão seguinte de base com o
-// conteúdo de w e desativa as demais versões (eventos e auditoria).
-func (s *Service) novaVersaoTx(ctx context.Context, tx pgx.Tx, identity auth.Identity, base, w domain.Workflow) (domain.Workflow, error) {
+// conteúdo de w e desativa as demais versões (eventos e auditoria), e
+// grava os avisos da versão nova (entregues pelo chamador depois do commit).
+func (s *Service) novaVersaoTx(ctx context.Context, tx pgx.Tx, identity auth.Identity, base, w domain.Workflow) (domain.Workflow, []notificacoes.Enviada, error) {
 	maior, err := s.repo.MaxVersao(ctx, tx, base.CodigoProcessual)
 	if err != nil {
-		return w, err
+		return w, nil, err
 	}
 	w.Normalize()
 	w.CodigoProcessual, w.Versao = base.CodigoProcessual, maior+1
 	if err := w.Validate(); err != nil {
-		return w, err
+		return w, nil, err
 	}
 	out, err := s.inserir(ctx, tx, identity, w, modelosDe(base))
 	if err != nil {
-		return out, err
+		return out, nil, err
 	}
 	ids, err := s.repo.DesativarVersoes(ctx, tx, out.CodigoProcessual, out.ID)
 	if err != nil {
-		return out, err
+		return out, nil, err
 	}
 	for _, id := range ids {
 		antiga, err := s.repo.Get(ctx, tx, id, false)
 		if err != nil {
-			return out, err
+			return out, nil, err
 		}
 		if err := s.substituida(ctx, tx, antiga, out); err != nil {
-			return out, err
+			return out, nil, err
 		}
 	}
-	return out, nil
+	enviadas, err := s.avisarNovaVersao(ctx, tx, identity, base, out)
+	return out, enviadas, err
 }
 
 // substituida registra (evento e auditoria) a versão desativada por `nova`.
 func (s *Service) substituida(ctx context.Context, tx pgx.Tx, antiga, nova domain.Workflow) error {
-	if err := s.event(ctx, tx, EventWorkflowDeactivated, antiga); err != nil {
+	// O evento leva a versão que substituiu: o Trâmite avisa os processos
+	// abertos que seguem a antiga (ADR 027).
+	payload := summary(antiga)
+	payload["substituido_por"], payload["versao_nova"] = nova.ID.String(), nova.Versao
+	if err := s.outbox.Write(ctx, tx, EventWorkflowDeactivated, "atlas_workflow", antiga.ID.String(), uuid.Nil, payload); err != nil {
 		return err
 	}
 	return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventWorkflowDeactivated, "atlas_workflow", antiga.ID.String(),

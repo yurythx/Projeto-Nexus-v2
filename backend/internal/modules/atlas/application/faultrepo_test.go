@@ -289,3 +289,43 @@ func (fr *faultRepo) Cobertura(ctx context.Context, db database.DBTX) (domain.Co
 	defer fr.post(ctx, db)
 	return fr.inner.Cobertura(ctx, db)
 }
+
+func (fr *faultRepo) Seguir(ctx context.Context, db database.DBTX, usuario uuid.UUID, codigo string) error {
+	if err := fr.hook("Seguir"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.Seguir(ctx, db, usuario, codigo)
+}
+
+func (fr *faultRepo) DeixarDeSeguir(ctx context.Context, db database.DBTX, usuario uuid.UUID, codigo string) error {
+	if err := fr.hook("DeixarDeSeguir"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.DeixarDeSeguir(ctx, db, usuario, codigo)
+}
+
+func (fr *faultRepo) Seguindo(ctx context.Context, db database.DBTX, usuario uuid.UUID, codigo string) (bool, error) {
+	if err := fr.hook("Seguindo"); err != nil {
+		return false, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.Seguindo(ctx, db, usuario, codigo)
+}
+
+func (fr *faultRepo) Interessados(ctx context.Context, db database.DBTX, codigo string, siglas []string) ([]uuid.UUID, error) {
+	if err := fr.hook("Interessados"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.Interessados(ctx, db, codigo, siglas)
+}
+
+func (fr *faultRepo) InteressadosModelo(ctx context.Context, db database.DBTX, modeloID uuid.UUID) ([]uuid.UUID, error) {
+	if err := fr.hook("InteressadosModelo"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.InteressadosModelo(ctx, db, modeloID)
+}

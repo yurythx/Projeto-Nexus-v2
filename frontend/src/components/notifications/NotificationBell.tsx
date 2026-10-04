@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { useNotificationHistory } from "@/components/notifications/NotificationHistoryProvider";
@@ -95,14 +96,27 @@ export function NotificationBell() {
           ) : (
             <ul>
               {items.slice(0, 5).map((item) => (
-                <li key={item.id} className="border-b border-surface-border px-3 py-2 last:border-0">
+                <li
+                  key={item.id}
+                  className="border-b border-surface-border px-3 py-2 last:border-0"
+                >
                   <div className="flex items-start gap-2">
                     <span
                       className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${toneDot[item.tone] ?? toneDot.info}`}
                       aria-hidden="true"
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-sm text-foreground">{item.title}</p>
+                      {item.link ? (
+                        <Link
+                          href={item.link}
+                          onClick={() => setOpen(false)}
+                          className="block truncate text-sm text-foreground hover:text-primary hover:underline"
+                        >
+                          {item.title}
+                        </Link>
+                      ) : (
+                        <p className="truncate text-sm text-foreground">{item.title}</p>
+                      )}
                       {item.description && (
                         <p className="truncate text-xs text-muted">{item.description}</p>
                       )}
@@ -113,6 +127,13 @@ export function NotificationBell() {
               ))}
             </ul>
           )}
+          <Link
+            href="/notificacoes"
+            onClick={() => setOpen(false)}
+            className="block border-t border-surface-border px-3 py-2 text-center text-xs font-medium text-primary hover:underline"
+          >
+            Ver todas e preferências
+          </Link>
         </div>
       )}
     </div>

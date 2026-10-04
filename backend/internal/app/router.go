@@ -12,12 +12,13 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/branding"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
 	"github.com/yurythx/projeto-nexus/internal/platform/httpserver"
+	"github.com/yurythx/projeto-nexus/internal/platform/iaconfig"
 	"github.com/yurythx/projeto-nexus/internal/platform/idempotency"
 	"github.com/yurythx/projeto-nexus/internal/platform/kernel"
-	"github.com/yurythx/projeto-nexus/internal/platform/iaconfig"
 	"github.com/yurythx/projeto-nexus/internal/platform/keycloakconfig"
 	"github.com/yurythx/projeto-nexus/internal/platform/lgpd"
 	"github.com/yurythx/projeto-nexus/internal/platform/localauth"
+	"github.com/yurythx/projeto-nexus/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
 	"github.com/yurythx/projeto-nexus/internal/platform/redisx"
 	"github.com/yurythx/projeto-nexus/internal/platform/transparency"
@@ -97,6 +98,7 @@ func NewRouter(d *Dependencies) chi.Router {
 			brandingHandlers.RegisterAdminRoutes(authed)
 			keycloakconfig.RegisterRoutes(authed, keycloakHandlers, d.Logger)
 			iaconfig.RegisterRoutes(authed, iaHandlers, d.Logger)
+			notificacoes.RegisterRoutes(authed, notificacoes.NewHandlers(d.Notificacoes, d.Logger))
 			outbox.RegisterStatsRoutes(authed, outboxStats, d.Logger)
 			d.LGPD.RegisterRoutes(authed)
 			d.LGPD.RegisterDSRRoutes(authed)

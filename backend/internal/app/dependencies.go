@@ -28,6 +28,7 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/logging"
 	"github.com/yurythx/projeto-nexus/internal/platform/messaging"
 	"github.com/yurythx/projeto-nexus/internal/platform/metrics"
+	"github.com/yurythx/projeto-nexus/internal/platform/notificacoes"
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
 	"github.com/yurythx/projeto-nexus/internal/platform/ratelimit"
 	"github.com/yurythx/projeto-nexus/internal/platform/redisx"
@@ -67,6 +68,7 @@ type Dependencies struct {
 	OutboxStats    *outbox.Stats
 	Storage        storage.Provider
 	Hub            *ws.Hub
+	Notificacoes   *notificacoes.Service
 	Tickets        *ws.TicketStore
 	Cipher         *secretcrypto.Cipher
 	RateLimiters   *RateLimiters
@@ -163,6 +165,7 @@ func build(ctx context.Context, cfg *config.Config, component string) (*Dependen
 	d.Outbox = outbox.NewWriter(OutboxSource)
 	d.OutboxStats = outbox.NewStats(d.DB)
 	d.Hub = ws.NewHub(logger, d.Redis)
+	d.Notificacoes = notificacoes.NewService(d.DB, d.Hub, logger)
 	d.Tickets = ws.NewTicketStore(d.Redis, ws.TicketTTL)
 	d.IAM = iam.NewResolver(d.DB, d.Redis, logger)
 	d.Idempotency = idempotency.NewPostgresStore(d.DB)
