@@ -392,3 +392,76 @@ func TestModeloHandlersReportServiceFailures(t *testing.T) {
 		}
 	}
 }
+
+// Ligar o modelo direto na peça do procedimento em vigor (sem nova versão).
+func TestLigarModeloNaPeca(t *testing.T) {
+	e := &env{t: t, pool: dbtest.Pool(t)}
+	ctx := context.Background()
+	s := e.real()
+	w, m := e.workflow(true), e.modelo()
+	peca := w.Etapas[0].Documentos[0].ID
+
+	got, err := s.LigarModelo(ctx, w.ID, peca, &m.ID)
+	if err != nil || got.ID != w.ID || got.Versao != w.Versao || got.Etapas[0].Documentos[0].Modelo == nil ||
+		got.Etapas[0].Documentos[0].Modelo.Nome != m.Nome {
+		t.Fatalf("ligar: %+v %v", got.Etapas[0].Documentos[0], err)
+	}
+	if got, err = s.LigarModelo(ctx, w.ID, peca, nil); err != nil || got.Etapas[0].Documentos[0].ModeloID != nil {
+		t.Fatalf("desligar: %+v %v", got.Etapas[0].Documentos[0], err)
+	}
+	if _, err := s.LigarModelo(ctx, uuid.New(), peca, &m.ID); codigo(err) != "NOT_FOUND" {
+		t.Fatalf("peça de outro procedimento: %v", err)
+	}
+	if _, err := s.AlterarModelo(ctx, gestor, domain.Modelo{ID: m.ID, Nome: m.Nome, Ativo: false}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.LigarModelo(ctx, w.ID, peca, &m.ID); codigo(err) != "VALIDATION_ERROR" {
+		t.Fatalf("modelo desativado: %v", err)
+	}
+}
+
+func TestLigarModeloHTTP(t *testing.T) {
+	e := &env{t: t, pool: dbtest.Pool(t)}
+	w, m := e.workflow(true), e.modelo()
+	peca := w.Etapas[0].Documentos[0].ID.String()
+	ok := func(svc *application.Service) *chi.Mux {
+		r := chi.NewRouter()
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+				next.ServeHTTP(rw, req.WithContext(auth.WithIdentity(req.Context(), gestor)))
+			})
+		})
+		h := transport.NewHandlers(svc, logger, 100)
+		h.RegisterRoutes(r, unlimited{})
+		return r
+	}
+	r := ok(e.real())
+	base := "/atlas/admin/workflows/" + w.ID.String() + "/pecas/"
+	for _, c := range []struct {
+		path, body string
+		want       int
+	}{
+		{base + peca + "/modelo", `{"modelo_id":"` + m.ID.String() + `"}`, http.StatusOK},
+		{base + peca + "/modelo", `{"modelo_id":null}`, http.StatusOK},
+		{base + peca + "/modelo", `{`, http.StatusBadRequest},
+		{base + "x/modelo", `{}`, http.StatusBadRequest},
+		{"/atlas/admin/workflows/x/pecas/" + peca + "/modelo", `{}`, http.StatusBadRequest},
+		{base + uuid.NewString() + "/modelo", `{}`, http.StatusNotFound},
+	} {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPut, c.path, strings.NewReader(c.body))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(rec, req)
+		if rec.Code != c.want {
+			t.Errorf("PUT %s %s: %d, quero %d — %s", c.path, c.body, rec.Code, c.want, rec.Body.String())
+		}
+	}
+	down := ok(e.svc(&faultRepo{inner: infrastructure.NewRepository(), failAt: 1}))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPut, base+peca+"/modelo", strings.NewReader(`{}`))
+	req.Header.Set("Content-Type", "application/json")
+	down.ServeHTTP(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("banco fora: %d", rec.Code)
+	}
+}

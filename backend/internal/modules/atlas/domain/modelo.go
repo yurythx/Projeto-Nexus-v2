@@ -21,6 +21,9 @@ var ErrModeloNaoEncontrado = errors.New("atlas: modelo de documento não encontr
 // ErrModeloRepetido: já existe modelo com o mesmo nome.
 var ErrModeloRepetido = errors.New("atlas: já existe modelo com este nome")
 
+// ErrPecaNaoEncontrada: a peça não existe ou não é do procedimento.
+var ErrPecaNaoEncontrada = errors.New("atlas: peça não encontrada no procedimento")
+
 // MaxModeloBytes limita o arquivo de um modelo.
 const MaxModeloBytes = 10 << 20
 

@@ -629,7 +629,12 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     alteração com `atlas:manage`, auditados; o arquivo passa pela API
     (mesma origem), nunca por URL do MinIO;
   - no cadastro do procedimento, a peça com o mesmo nome de um modelo
-    ativo (sem diferenciar acento e caixa) já vem ligada a ele.
+    ativo (sem diferenciar acento e caixa) já vem ligada a ele;
+  - no **detalhe de cada peça** (página do procedimento), a gestão liga,
+    troca ou retira o modelo e envia o arquivo ali mesmo (nova versão do
+    modelo ligado, que vale para todos os fluxos que o usam, ou um modelo
+    novo com o nome da peça), **sem nova versão do procedimento** — o
+    modelo não muda o fluxo; a troca é auditada com o modelo anterior.
 - **Páginas (URL própria, compartilhável e imprimível):**
   - `/atlas` — busca unificada (procedimentos e séries em paralelo, ou a
     pergunta ao assistente), procedimentos e atalhos por secretaria;

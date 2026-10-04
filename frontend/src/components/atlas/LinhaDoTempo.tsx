@@ -1,18 +1,24 @@
+"use client";
+
 import {
   AlertTriangle,
   ArrowRight,
+  ChevronDown,
   Clock,
   CornerDownLeft,
-  Download,
   ExternalLink,
+  Download,
   FileDigit,
   FileText,
 } from "lucide-react";
 
+import { useId, useState } from "react";
+
 import { Badge } from "@/components/ui/Badge";
 import { urlArquivoModelo } from "@/lib/atlas/modelos";
-import type { Etapa } from "@/lib/nexus/types";
+import type { Etapa, EtapaDocumento } from "@/lib/nexus/types";
 
+import { DetalhePeca, type GestaoPecas } from "./DetalhePeca";
 import { ASSINATURA, FORMATO } from "./labels";
 
 /** Prazo previsto: soma dos prazos (SLA) das etapas, em dias. */
@@ -82,61 +88,89 @@ export function LinhaDoTempo({ etapas }: { etapas: Etapa[] }) {
 
 /** Checklist das peças de todas as etapas, com o modelo quando houver: o da
  * biblioteca do Atlas (baixado pela API, versão atual) ou um link externo. */
-export function ChecklistDocumentos({ etapas }: { etapas: Etapa[] }) {
+export function ChecklistDocumentos({ etapas, gestao }: { etapas: Etapa[]; gestao?: GestaoPecas }) {
   const pecas = etapas.flatMap((e) => e.documentos.map((d) => ({ ...d, etapa: e })));
   if (pecas.length === 0)
     return <p className="text-sm text-muted">O procedimento não lista peças obrigatórias.</p>;
   return (
     <ul className="flex flex-col gap-2">
       {pecas.map((d) => (
-        <li
-          key={d.id}
-          className="flex flex-wrap items-start justify-between gap-2 rounded-md border border-surface-border p-2.5 text-sm"
-        >
-          <span className="flex items-start gap-2">
-            {d.formato === "NATO_DIGITAL" ? (
-              <FileDigit size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-primary" />
-            ) : (
-              <FileText size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-muted" />
-            )}
-            <span>
-              <span className="font-medium text-foreground">{d.nome_documento}</span>
-              <span className="block text-xs text-muted">
-                Etapa {d.etapa.ordem} · {FORMATO[d.formato]} · assinatura{" "}
-                {ASSINATURA[d.tipo_assinatura].toLowerCase()}
-              </span>
-            </span>
-          </span>
-          <span className="flex flex-wrap items-center gap-1">
-            <Badge tone={d.obrigatorio ? "info" : "neutral"}>
-              {d.obrigatorio ? "Obrigatória" : "Opcional"}
-            </Badge>
-            {d.exige_conferencia_copia && <Badge tone="warning">Conferência da cópia</Badge>}
-            {d.modelo && (
-              <a
-                href={urlArquivoModelo(d.modelo.id)}
-                download={d.modelo.arquivo_nome}
-                aria-label={`Baixar modelo ${d.modelo.nome}, versão ${d.modelo.versao}`}
-                title={`${d.modelo.nome} — versão ${d.modelo.versao}`}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-              >
-                <Download size={11} aria-hidden="true" /> Baixar modelo
-              </a>
-            )}
-            {d.modelo_minuta_padrao_url && (
-              <a
-                href={d.modelo_minuta_padrao_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-              >
-                Modelo <ExternalLink size={11} aria-hidden="true" />
-                <span className="sr-only">(abre em nova janela)</span>
-              </a>
-            )}
-          </span>
-        </li>
+        <ItemPeca key={d.id} d={d} gestao={gestao} />
       ))}
     </ul>
+  );
+}
+
+/** Uma peça do checklist; "Detalhes" abre o modelo dela (e a gestão do modelo). */
+function ItemPeca({ d, gestao }: { d: EtapaDocumento & { etapa: Etapa }; gestao?: GestaoPecas }) {
+  const [aberto, setAberto] = useState(false);
+  const painel = useId();
+  return (
+    <li className="rounded-md border border-surface-border p-2.5 text-sm">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <span className="flex items-start gap-2">
+          {d.formato === "NATO_DIGITAL" ? (
+            <FileDigit size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-primary" />
+          ) : (
+            <FileText size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-muted" />
+          )}
+          <span>
+            <span className="font-medium text-foreground">{d.nome_documento}</span>
+            <span className="block text-xs text-muted">
+              Etapa {d.etapa.ordem} · {FORMATO[d.formato]} · assinatura{" "}
+              {ASSINATURA[d.tipo_assinatura].toLowerCase()}
+            </span>
+          </span>
+        </span>
+        <span className="flex flex-wrap items-center gap-1">
+          <Badge tone={d.obrigatorio ? "info" : "neutral"}>
+            {d.obrigatorio ? "Obrigatória" : "Opcional"}
+          </Badge>
+          {d.exige_conferencia_copia && <Badge tone="warning">Conferência da cópia</Badge>}
+          {d.modelo && (
+            <a
+              href={urlArquivoModelo(d.modelo.id)}
+              download={d.modelo.arquivo_nome}
+              aria-label={`Baixar modelo ${d.modelo.nome}, versão ${d.modelo.versao}`}
+              title={`${d.modelo.nome} — versão ${d.modelo.versao}`}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              <Download size={11} aria-hidden="true" /> Baixar modelo
+            </a>
+          )}
+          {d.modelo_minuta_padrao_url && (
+            <a
+              href={d.modelo_minuta_padrao_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            >
+              Modelo <ExternalLink size={11} aria-hidden="true" />
+              <span className="sr-only">(abre em nova janela)</span>
+            </a>
+          )}
+          <button
+            type="button"
+            aria-expanded={aberto}
+            aria-controls={painel}
+            aria-label={`Detalhes da peça ${d.nome_documento}`}
+            onClick={() => setAberto((a) => !a)}
+            className="inline-flex items-center gap-0.5 rounded px-1 text-xs text-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            Detalhes
+            <ChevronDown
+              size={12}
+              aria-hidden="true"
+              className={aberto ? "rotate-180 transition-transform" : "transition-transform"}
+            />
+          </button>
+        </span>
+      </div>
+      {aberto && (
+        <div id={painel} className="mt-3 border-t border-surface-border pt-3">
+          <DetalhePeca peca={d} gestao={gestao} />
+        </div>
+      )}
+    </li>
   );
 }

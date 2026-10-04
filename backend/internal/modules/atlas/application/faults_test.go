@@ -174,6 +174,13 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 				return err
 			}
 		},
+		"LigarModelo": func() func(*application.Service) error {
+			w, m := e.workflow(true), e.modelo()
+			return func(s *application.Service) error {
+				_, err := s.LigarModelo(ctx, w.ID, w.Etapas[0].Documentos[0].ID, &m.ID)
+				return err
+			}
+		},
 		"CreateComModelo": func() func(*application.Service) error {
 			w := comModelo(novo(), e.modelo().ID)
 			return func(s *application.Service) error { _, err := s.Create(ctx, gestor, w); return err }

@@ -482,6 +482,11 @@ type Repository interface {
 	VersaoModelo(ctx context.Context, db database.DBTX, id uuid.UUID, versao int) (ModeloVersao, error)
 	// ModelosAtivos devolve quantos dos ids são modelos ativos.
 	ModelosAtivos(ctx context.Context, db database.DBTX, ids []uuid.UUID) (int, error)
+	// ModeloDaPeca trava a peça do procedimento e devolve o modelo ligado
+	// (ErrPecaNaoEncontrada se a peça não é desse procedimento).
+	ModeloDaPeca(ctx context.Context, db database.DBTX, workflowID, docID uuid.UUID) (*uuid.UUID, error)
+	// SetModeloPeca liga a peça a um modelo (nil desliga).
+	SetModeloPeca(ctx context.Context, db database.DBTX, docID uuid.UUID, modeloID *uuid.UUID) error
 	// HistoricoTTDD devolve as mudanças da série, da mais recente à mais antiga.
 	HistoricoTTDD(ctx context.Context, db database.DBTX, codigo string) ([]HistoricoTTDD, error)
 

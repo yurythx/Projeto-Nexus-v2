@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/google/uuid"
+
 	apperrors "github.com/yurythx/projeto-nexus/internal/domain/errors"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/application"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/domain"
@@ -177,4 +179,35 @@ func (h *Handlers) AlterarModelo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteOK(w, m)
+}
+
+type ligarModeloRequest struct {
+	// ModeloID nulo desliga a peça do modelo.
+	ModeloID *uuid.UUID `json:"modelo_id"`
+}
+
+// LigarModelo liga (ou desliga) o modelo de uma peça do procedimento, na
+// versão em vigor (sem publicar nova versão).
+func (h *Handlers) LigarModelo(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	peca, err := httputil.UUIDParam(r, "peca")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req ligarModeloRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	wf, err := h.svc.LigarModelo(r.Context(), id, peca, req.ModeloID)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, wf)
 }

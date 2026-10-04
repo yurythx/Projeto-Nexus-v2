@@ -49,7 +49,13 @@ significava procurar e editar procedimento por procedimento.
 7. **Interface:** página **Atlas → Modelos de documento** (busca, baixar,
    histórico de versões; para a gestão, novo modelo, nova versão, editar e
    desativar); no procedimento, a peça ligada mostra **Baixar modelo**
-   (versão atual); no cadastro e na nova versão do procedimento, a seção
+   (versão atual) e cada peça tem **Detalhes**: o modelo dela para baixar
+   e, para a gestão, **ligar/trocar o modelo** ou **enviar o arquivo** ali
+   mesmo (nova versão do modelo ligado, ou um modelo novo com o nome da
+   peça) — direto na versão em vigor, sem publicar nova versão do
+   procedimento: o modelo é material de apoio, não muda o fluxo
+   (`PUT /atlas/admin/workflows/{id}/pecas/{peca}/modelo`, auditado como
+   `atlas.workflow.modelo_peca`); no cadastro e na nova versão do procedimento, a seção
    **Modelos das peças** liga cada peça a um modelo — a peça com o mesmo
    nome de um modelo ativo já vem ligada.
 8. **Assistente:** a síntese do fluxo (ADR 023) cita o modelo da peça na

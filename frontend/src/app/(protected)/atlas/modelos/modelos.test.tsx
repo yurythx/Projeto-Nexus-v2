@@ -270,3 +270,145 @@ describe("Atlas — modelos nas peças", () => {
     expect(sugerirModelo("OFÍCIO PADRAO", [OFICIO])).toBe(OFICIO);
   });
 });
+
+describe("Atlas — detalhe da peça", () => {
+  const pecaCom = (extra: Record<string, unknown> = {}) => ({
+    id: "d-1",
+    nome_documento: "Requerimento",
+    obrigatorio: true,
+    formato: "NATO_DIGITAL" as const,
+    tipo_assinatura: "INDIVIDUAL" as const,
+    exige_conferencia_copia: false,
+    modelo_minuta_padrao_url: "",
+    modelo_id: "mod-1" as string | null,
+    modelo: {
+      id: "mod-1",
+      nome: "Requerimento",
+      versao: 2,
+      arquivo_nome: "Requerimento v2.docx",
+    } as { id: string; nome: string; versao: number; arquivo_nome: string } | undefined,
+    ...extra,
+  });
+  const etapas = (...docs: ReturnType<typeof pecaCom>[]): Etapa[] => [
+    {
+      id: "et-1",
+      ordem: 1,
+      unidade_administrativa: "GAB",
+      nome_setor: "Gabinete",
+      atribuicoes_setor: "Solicitar",
+      prazo_sla_em_dias: 1,
+      manter_aberto_apos_remessa: false,
+      documentos: docs,
+      transicoes: [],
+    },
+  ];
+  const semModelo = pecaCom({
+    id: "d-2",
+    nome_documento: "Termo de referência",
+    modelo_id: null,
+    modelo: undefined,
+  });
+  const abrir = async (peca: string) => {
+    await userEvent.click(screen.getByRole("button", { name: `Detalhes da peça ${peca}` }));
+  };
+
+  beforeEach(() => resetNavigation({ id: "wf-1" }, "/atlas/procedimentos/wf-1"));
+
+  it("consulta: o detalhe mostra o modelo para baixar, sem gestão", async () => {
+    mockBackend(rotas(["atlas:read"]));
+    renderApp(<ChecklistDocumentos etapas={etapas(pecaCom(), semModelo)} />);
+    const detalhes = screen.getByRole("button", { name: "Detalhes da peça Requerimento" });
+    expect(detalhes).toHaveAttribute("aria-expanded", "false");
+    await abrir("Requerimento");
+    expect(detalhes).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Modelo: Requerimento")).toBeInTheDocument();
+    expect(screen.getByText(/Versão 2 · DOCX · Requerimento v2\.docx/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Baixar o modelo Requerimento" })).toHaveAttribute(
+      "href",
+      "/api/backend/v1/atlas/modelos/mod-1/arquivo",
+    );
+    expect(screen.queryByLabelText("Modelo da biblioteca")).not.toBeInTheDocument();
+    await abrir("Termo de referência");
+    expect(screen.getByText("Nenhum modelo cadastrado para esta peça.")).toBeInTheDocument();
+  });
+
+  it("gestão: trocar o modelo, enviar nova versão e criar modelo pela peça", async () => {
+    const onAtualizado = vi.fn();
+    const backend = mockBackend({
+      ...rotas(["atlas:manage"]),
+      "PUT v1/atlas/admin/workflows/wf-1/pecas/*": { data: { id: "wf-1" } },
+      "POST v1/atlas/admin/modelos/mod-1/versoes": { status: 201, data: REQUERIMENTO },
+      "POST v1/atlas/admin/modelos": { status: 201, data: { ...REQUERIMENTO, id: "mod-9" } },
+    });
+    renderApp(
+      <ChecklistDocumentos
+        etapas={etapas(pecaCom(), semModelo)}
+        gestao={{ workflowId: "wf-1", onAtualizado }}
+      />,
+    );
+
+    // Peça ligada: o desativado aparece só se for o atual; trocar por nenhum.
+    await abrir("Requerimento");
+    const select = await screen.findByLabelText("Modelo da biblioteca");
+    await vi.waitFor(() => expect(within(select).getAllByRole("option")).toHaveLength(2));
+    const salvar = screen.getByRole("button", { name: "Salvar" });
+    expect(salvar).toBeDisabled();
+    await userEvent.selectOptions(select, "");
+    await userEvent.click(salvar);
+    expect(backend.to("PUT v1/atlas/admin/workflows/wf-1/pecas/d-1/modelo")[0]!.body).toEqual({
+      modelo_id: null,
+    });
+    expect(onAtualizado).toHaveBeenCalledWith({ id: "wf-1" });
+
+    // Enviar arquivo na peça ligada: nova versão do modelo dela.
+    expect(
+      screen.getByText(/vale para todos os procedimentos que usam este modelo/),
+    ).toBeInTheDocument();
+    await userEvent.upload(screen.getByLabelText("Enviar nova versão do modelo"), docx());
+    await userEvent.click(screen.getByRole("button", { name: /Enviar/ }));
+    await vi.waitFor(() =>
+      expect(backend.to("POST v1/atlas/admin/modelos/mod-1/versoes")).toHaveLength(1),
+    );
+    expect(
+      (backend.to("POST v1/atlas/admin/modelos/mod-1/versoes")[0]!.body as FormData).get("nota"),
+    ).toBe('Enviado pela peça "Requerimento"');
+
+    // Peça sem modelo: cria o modelo com o nome da peça e liga.
+    await abrir("Requerimento");
+    await abrir("Termo de referência");
+    expect(
+      screen.getByText(/Cria o modelo "Termo de referência" na biblioteca/),
+    ).toBeInTheDocument();
+    await userEvent.upload(
+      screen.getByLabelText("Enviar arquivo de modelo para esta peça"),
+      docx(),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Enviar/ }));
+    await vi.waitFor(() =>
+      expect(backend.to("PUT v1/atlas/admin/workflows/wf-1/pecas/d-2/modelo")).toHaveLength(1),
+    );
+    expect((backend.to("POST v1/atlas/admin/modelos")[0]!.body as FormData).get("nome")).toBe(
+      "Termo de referência",
+    );
+    expect(backend.to("PUT v1/atlas/admin/workflows/wf-1/pecas/d-2/modelo")[0]!.body).toEqual({
+      modelo_id: "mod-9",
+    });
+  });
+
+  it("gestão: arquivo acima de 10 MB é recusado no navegador", async () => {
+    mockBackend(rotas(["atlas:manage"]));
+    renderApp(
+      <ChecklistDocumentos
+        etapas={etapas(semModelo)}
+        gestao={{ workflowId: "wf-1", onAtualizado: vi.fn() }}
+      />,
+    );
+    await abrir("Termo de referência");
+    await userEvent.upload(
+      screen.getByLabelText("Enviar arquivo de modelo para esta peça"),
+      docx(10 * 1024 * 1024 + 1),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("passa de 10 MB");
+    expect(screen.getByRole("button", { name: /Enviar/ })).toBeDisabled();
+  });
+});

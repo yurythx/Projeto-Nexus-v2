@@ -33,6 +33,8 @@ func TestModeloRepositoryFailures(t *testing.T) {
 		"UpdateModelo":       func(db database.DBTX) error { return r.UpdateModelo(ctx, db, m, "p") },
 		"VersaoModelo":       func(db database.DBTX) error { _, err := r.VersaoModelo(ctx, db, id, 0); return err },
 		"ModelosAtivos":      func(db database.DBTX) error { _, err := r.ModelosAtivos(ctx, db, []uuid.UUID{id}); return err },
+		"ModeloDaPeca":       func(db database.DBTX) error { _, err := r.ModeloDaPeca(ctx, db, id, id); return err },
+		"SetModeloPeca":      func(db database.DBTX) error { return r.SetModeloPeca(ctx, db, id, nil) },
 	}
 	for name, call := range calls {
 		if err := call(dbtest.Fail{}); !errors.Is(err, dbtest.ErrInjected) {
@@ -64,6 +66,9 @@ func TestModeloRepositoryFailures(t *testing.T) {
 	}
 	if _, err := r.VersaoModelo(ctx, noRows{}, id, 3); !errors.Is(err, domain.ErrModeloNaoEncontrado) {
 		t.Errorf("versão inexistente: %v", err)
+	}
+	if _, err := r.ModeloDaPeca(ctx, noRows{}, id, id); !errors.Is(err, domain.ErrPecaNaoEncontrada) {
+		t.Errorf("peça de outro procedimento: %v", err)
 	}
 	if err := wrapModelo(&pgconn.PgError{Code: "23505"}); !errors.Is(err, domain.ErrModeloRepetido) {
 		t.Errorf("nome repetido: %v", err)

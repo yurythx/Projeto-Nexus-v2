@@ -273,7 +273,17 @@ export default function ProcedimentoPage() {
                   titulo="Peças exigidas"
                   icone={<Files size={16} aria-hidden="true" />}
                 >
-                  <ChecklistDocumentos etapas={wf.etapas} />
+                  <ChecklistDocumentos
+                    etapas={wf.etapas}
+                    gestao={
+                      canManage
+                        ? {
+                            workflowId: wf.id,
+                            onAtualizado: (w) => void detail.mutate(w, { revalidate: false }),
+                          }
+                        : undefined
+                    }
+                  />
                 </Secao>
                 <Secao
                   id="atlas-temporalidade"

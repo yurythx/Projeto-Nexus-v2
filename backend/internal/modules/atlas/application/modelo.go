@@ -30,6 +30,7 @@ const (
 	EventModeloCriado   = "atlas.modelo.criado"
 	EventModeloVersao   = "atlas.modelo.versao"
 	EventModeloAlterado = "atlas.modelo.alterado"
+	EventModeloPeca     = "atlas.workflow.modelo_peca"
 )
 
 // WithStorage liga o armazenamento dos arquivos de modelo.
@@ -59,6 +60,8 @@ func mapModeloError(err error) error {
 		return apperrors.NotFound("modelo de documento não encontrado")
 	case errors.Is(err, domain.ErrModeloRepetido):
 		return apperrors.Conflict("já existe modelo com este nome")
+	case errors.Is(err, domain.ErrPecaNaoEncontrada):
+		return apperrors.NotFound("peça não encontrada no procedimento")
 	}
 	return MapError(err)
 }
@@ -237,4 +240,43 @@ func modelosDe(w domain.Workflow) map[uuid.UUID]bool {
 		}
 	}
 	return out
+}
+
+// LigarModelo liga a peça de um procedimento a um modelo ativo da
+// biblioteca (nil desliga), direto na versão em vigor: o modelo é material
+// de apoio, não muda o fluxo — não exige nova versão do procedimento.
+// Auditado com o modelo anterior e o novo.
+func (s *Service) LigarModelo(ctx context.Context, workflowID, docID uuid.UUID, modeloID *uuid.UUID) (domain.Workflow, error) {
+	var out domain.Workflow
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		antes, err := s.repo.ModeloDaPeca(ctx, tx, workflowID, docID)
+		if err != nil {
+			return err
+		}
+		if modeloID != nil {
+			n, err := s.repo.ModelosAtivos(ctx, tx, []uuid.UUID{*modeloID})
+			if err != nil {
+				return err
+			}
+			if n == 0 {
+				return domain.InvalidError{Msg: "modelo de documento inexistente ou desativado: escolha um modelo ativo da biblioteca"}
+			}
+		}
+		if err := s.repo.SetModeloPeca(ctx, tx, docID, modeloID); err != nil {
+			return err
+		}
+		if out, err = s.repo.Get(ctx, tx, workflowID, false); err != nil {
+			return err
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, EventModeloPeca, "atlas_workflow", workflowID.String(),
+			map[string]any{"peca": docID.String(), "modelo": idOuNada(antes)}, map[string]any{"peca": docID.String(), "modelo": idOuNada(modeloID)}))
+	})
+	return out, mapModeloError(err)
+}
+
+func idOuNada(id *uuid.UUID) string {
+	if id == nil {
+		return ""
+	}
+	return id.String()
 }

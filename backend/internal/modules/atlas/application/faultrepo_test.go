@@ -241,3 +241,19 @@ func (fr *faultRepo) ModelosAtivos(ctx context.Context, db database.DBTX, ids []
 	defer fr.post(ctx, db)
 	return fr.inner.ModelosAtivos(ctx, db, ids)
 }
+
+func (fr *faultRepo) ModeloDaPeca(ctx context.Context, db database.DBTX, workflowID, docID uuid.UUID) (*uuid.UUID, error) {
+	if err := fr.hook("ModeloDaPeca"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.ModeloDaPeca(ctx, db, workflowID, docID)
+}
+
+func (fr *faultRepo) SetModeloPeca(ctx context.Context, db database.DBTX, docID uuid.UUID, modeloID *uuid.UUID) error {
+	if err := fr.hook("SetModeloPeca"); err != nil {
+		return err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.SetModeloPeca(ctx, db, docID, modeloID)
+}

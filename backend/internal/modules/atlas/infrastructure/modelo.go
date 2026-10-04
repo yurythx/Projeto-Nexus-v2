@@ -135,3 +135,18 @@ func (r *Repository) ModelosAtivos(ctx context.Context, db database.DBTX, ids []
 	err := db.QueryRow(ctx, `SELECT count(*) FROM (SELECT id FROM atlas_modelos WHERE id = ANY($1) AND ativo FOR SHARE) x`, ids).Scan(&n)
 	return n, wrapModelo(err)
 }
+
+func (r *Repository) ModeloDaPeca(ctx context.Context, db database.DBTX, workflowID, docID uuid.UUID) (*uuid.UUID, error) {
+	var modelo *uuid.UUID
+	err := db.QueryRow(ctx, `SELECT d.modelo_id FROM atlas_etapa_documentos d JOIN atlas_etapas e ON e.id = d.etapa_id
+		WHERE d.id = $1 AND e.workflow_id = $2 FOR UPDATE OF d`, docID, workflowID).Scan(&modelo)
+	if database.IsNoRows(err) {
+		return nil, domain.ErrPecaNaoEncontrada
+	}
+	return modelo, wrap(err)
+}
+
+func (r *Repository) SetModeloPeca(ctx context.Context, db database.DBTX, docID uuid.UUID, modeloID *uuid.UUID) error {
+	_, err := db.Exec(ctx, `UPDATE atlas_etapa_documentos SET modelo_id = $2 WHERE id = $1`, docID, modeloID)
+	return wrap(err)
+}
