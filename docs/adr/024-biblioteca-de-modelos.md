@@ -64,7 +64,10 @@ significava procurar e editar procedimento por procedimento.
    e uma série a vários modelos). A gestão liga um modelo ativo da
    biblioteca ou envia um arquivo, que vira um modelo novo (nome sugerido:
    o descritor da série) já ligado; retirar desfaz só a ligação. Série
-   revogada não recebe modelos novos. `GET /atlas/ttdd/{codigo}/modelos`
+   revogada não recebe modelos novos. **A peça sem modelo próprio oferece
+   os modelos ativos da série do procedimento** (no checklist e nos
+   Detalhes): quem acompanha o fluxo encontra o modelo onde quer que a
+   gestão o tenha anexado; o modelo próprio da peça tem precedência. `GET /atlas/ttdd/{codigo}/modelos`
    (público, sem autoria); `POST /atlas/admin/ttdd/{codigo}/modelos` e
    `DELETE …/modelos/{modelo}`, auditados (`atlas.ttdd.modelo_ligado`,
    `atlas.ttdd.modelo_desligado`).

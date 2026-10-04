@@ -12,6 +12,13 @@ import { useApiQuery } from "@/lib/api/swr";
 import { FORMATOS_MODELO, MAX_MODELO_BYTES, extensao, urlArquivoModelo } from "@/lib/atlas/modelos";
 import type { EtapaDocumento, ModeloDocumento, UUID, Workflow } from "@/lib/nexus/types";
 
+/** Modelos ativos da série da TTDD do procedimento: valem para a peça
+ * que não tem modelo próprio. */
+export interface ModelosSerie {
+  codigo: string;
+  modelos: ModeloDocumento[];
+}
+
 /** Gestão do modelo da peça (atlas:manage): o procedimento em vigor e o que
  * fazer depois de alterar. */
 export interface GestaoPecas {
@@ -134,7 +141,15 @@ function GestaoModelo({ peca, gestao }: { peca: EtapaDocumento; gestao: GestaoPe
 
 /** Detalhe da peça: o modelo para baixar (todos) e, para a gestão, ligar,
  * trocar ou enviar o modelo — sem publicar nova versão do procedimento. */
-export function DetalhePeca({ peca, gestao }: { peca: EtapaDocumento; gestao?: GestaoPecas }) {
+export function DetalhePeca({
+  peca,
+  gestao,
+  serie,
+}: {
+  peca: EtapaDocumento;
+  gestao?: GestaoPecas;
+  serie?: ModelosSerie;
+}) {
   return (
     <div className="flex flex-col gap-3 text-sm">
       {peca.modelo ? (
@@ -168,6 +183,40 @@ export function DetalhePeca({ peca, gestao }: { peca: EtapaDocumento; gestao?: G
           Modelo externo <ExternalLink size={12} aria-hidden="true" />
           <span className="sr-only">(abre em nova janela)</span>
         </a>
+      ) : serie && serie.modelos.length > 0 ? (
+        <div className="flex flex-col gap-2 rounded-md bg-primary/5 p-3">
+          <span className="text-xs text-muted">
+            Modelos da série{" "}
+            <Link
+              href={`/atlas/ttdd/${encodeURIComponent(serie.codigo)}`}
+              className="font-mono text-primary hover:underline"
+            >
+              {serie.codigo}
+            </Link>{" "}
+            do procedimento:
+          </span>
+          <ul className="flex flex-col gap-2">
+            {serie.modelos.map((m) => (
+              <li key={m.id} className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  <span className="block font-medium text-foreground">Modelo: {m.nome}</span>
+                  <span className="block text-xs text-muted">
+                    Versão {m.atual.versao} · {extensao(m.atual.arquivo_nome)} ·{" "}
+                    {m.atual.arquivo_nome}
+                  </span>
+                </span>
+                <a
+                  href={urlArquivoModelo(m.id)}
+                  download={m.atual.arquivo_nome}
+                  aria-label={`Baixar o modelo ${m.nome}`}
+                  className={buttonClass("primary", "sm")}
+                >
+                  <Download size={14} aria-hidden="true" /> Baixar o modelo
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : (
         <p className="text-muted">Nenhum modelo cadastrado para esta peça.</p>
       )}

@@ -315,6 +315,48 @@ describe("Atlas — detalhe da peça", () => {
 
   beforeEach(() => resetNavigation({ id: "wf-1" }, "/atlas/procedimentos/wf-1"));
 
+  it("peça sem modelo próprio oferece o modelo da série do procedimento", async () => {
+    const backend = mockBackend({
+      ...rotas(["atlas:read"]),
+      // Só os ativos valem para a peça.
+      "GET v1/atlas/ttdd/2.0.02.00.07/modelos": { data: [REQUERIMENTO, OFICIO] },
+    });
+    renderApp(
+      <ChecklistDocumentos etapas={etapas(pecaCom(), semModelo)} codigoTTDD="2.0.02.00.07" />,
+    );
+    const herdado = await screen.findByRole("link", {
+      name: "Baixar modelo Requerimento (modelo da série 2.0.02.00.07)",
+    });
+    expect(herdado).toHaveAttribute("href", "/api/backend/v1/atlas/modelos/mod-1/arquivo");
+    expect(backend.to("GET v1/atlas/ttdd/2.0.02.00.07/modelos")).toHaveLength(1);
+
+    await abrir("Termo de referência");
+    expect(screen.getByText(/do procedimento:/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "2.0.02.00.07" })).toHaveAttribute(
+      "href",
+      "/atlas/ttdd/2.0.02.00.07",
+    );
+    expect(screen.queryByText("Modelo: Ofício padrão")).not.toBeInTheDocument();
+    // A peça com modelo próprio continua com o dela (fora da lista da série).
+    await abrir("Termo de referência");
+    await abrir("Requerimento");
+    expect(screen.getByText("Modelo: Requerimento")).toBeInTheDocument();
+    expect(screen.queryByText(/do procedimento:/)).not.toBeInTheDocument();
+  });
+
+  it("vários modelos na série: o atalho abre o detalhe com todos", async () => {
+    mockBackend({
+      ...rotas(["atlas:read"]),
+      "GET v1/atlas/ttdd/2.0.02.00.07/modelos": {
+        data: [REQUERIMENTO, { ...OFICIO, ativo: true }],
+      },
+    });
+    renderApp(<ChecklistDocumentos etapas={etapas(semModelo)} codigoTTDD="2.0.02.00.07" />);
+    await userEvent.click(await screen.findByRole("button", { name: /2 modelos/ }));
+    expect(screen.getByRole("link", { name: "Baixar o modelo Requerimento" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Baixar o modelo Ofício padrão" })).toBeInTheDocument();
+  });
+
   it("consulta: o detalhe mostra o modelo para baixar, sem gestão", async () => {
     mockBackend(rotas(["atlas:read"]));
     renderApp(<ChecklistDocumentos etapas={etapas(pecaCom(), semModelo)} />);

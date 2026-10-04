@@ -275,6 +275,7 @@ export default function ProcedimentoPage() {
                 >
                   <ChecklistDocumentos
                     etapas={wf.etapas}
+                    codigoTTDD={wf.codigo_ttdd}
                     gestao={
                       canManage
                         ? {

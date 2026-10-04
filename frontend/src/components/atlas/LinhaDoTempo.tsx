@@ -15,10 +15,11 @@ import {
 import { useId, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
+import { useApiQuery } from "@/lib/api/swr";
 import { urlArquivoModelo } from "@/lib/atlas/modelos";
-import type { Etapa, EtapaDocumento } from "@/lib/nexus/types";
+import type { Etapa, EtapaDocumento, ModeloDocumento } from "@/lib/nexus/types";
 
-import { DetalhePeca, type GestaoPecas } from "./DetalhePeca";
+import { DetalhePeca, type GestaoPecas, type ModelosSerie } from "./DetalhePeca";
 import { ASSINATURA, FORMATO } from "./labels";
 
 /** Prazo previsto: soma dos prazos (SLA) das etapas, em dias. */
@@ -88,21 +89,53 @@ export function LinhaDoTempo({ etapas }: { etapas: Etapa[] }) {
 
 /** Checklist das peças de todas as etapas, com o modelo quando houver: o da
  * biblioteca do Atlas (baixado pela API, versão atual) ou um link externo. */
-export function ChecklistDocumentos({ etapas, gestao }: { etapas: Etapa[]; gestao?: GestaoPecas }) {
+export function ChecklistDocumentos({
+  etapas,
+  gestao,
+  codigoTTDD,
+}: {
+  etapas: Etapa[];
+  gestao?: GestaoPecas;
+  /** Série do procedimento: a peça sem modelo próprio oferece os modelos
+   * ativos ligados a ela (ADR 024). */
+  codigoTTDD?: string;
+}) {
   const pecas = etapas.flatMap((e) => e.documentos.map((d) => ({ ...d, etapa: e })));
+  const daSerie = useApiQuery<ModeloDocumento[]>(
+    codigoTTDD && pecas.length > 0
+      ? `v1/atlas/ttdd/${encodeURIComponent(codigoTTDD)}/modelos`
+      : null,
+  );
+  const modelosSerie = (daSerie.data ?? []).filter((m) => m.ativo);
   if (pecas.length === 0)
     return <p className="text-sm text-muted">O procedimento não lista peças obrigatórias.</p>;
   return (
     <ul className="flex flex-col gap-2">
       {pecas.map((d) => (
-        <ItemPeca key={d.id} d={d} gestao={gestao} />
+        <ItemPeca
+          key={d.id}
+          d={d}
+          gestao={gestao}
+          serie={codigoTTDD ? { codigo: codigoTTDD, modelos: modelosSerie } : undefined}
+        />
       ))}
     </ul>
   );
 }
 
 /** Uma peça do checklist; "Detalhes" abre o modelo dela (e a gestão do modelo). */
-function ItemPeca({ d, gestao }: { d: EtapaDocumento & { etapa: Etapa }; gestao?: GestaoPecas }) {
+function ItemPeca({
+  d,
+  gestao,
+  serie,
+}: {
+  d: EtapaDocumento & { etapa: Etapa };
+  gestao?: GestaoPecas;
+  serie?: ModelosSerie;
+}) {
+  // Sem modelo próprio, vale o modelo da série (um só: link direto).
+  const herdado = !d.modelo && serie?.modelos.length === 1 ? serie.modelos[0] : undefined;
+  const herdados = !d.modelo ? (serie?.modelos.length ?? 0) : 0;
   const [aberto, setAberto] = useState(false);
   const painel = useId();
   return (
@@ -138,6 +171,26 @@ function ItemPeca({ d, gestao }: { d: EtapaDocumento & { etapa: Etapa }; gestao?
               <Download size={11} aria-hidden="true" /> Baixar modelo
             </a>
           )}
+          {herdado && (
+            <a
+              href={urlArquivoModelo(herdado.id)}
+              download={herdado.atual.arquivo_nome}
+              aria-label={`Baixar modelo ${herdado.nome} (modelo da série ${serie!.codigo})`}
+              title={`${herdado.nome} — modelo da série ${serie!.codigo}`}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              <Download size={11} aria-hidden="true" /> Baixar modelo
+            </a>
+          )}
+          {herdados > 1 && (
+            <button
+              type="button"
+              onClick={() => setAberto(true)}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              <Download size={11} aria-hidden="true" /> {herdados} modelos
+            </button>
+          )}
           {d.modelo_minuta_padrao_url && (
             <a
               href={d.modelo_minuta_padrao_url}
@@ -168,7 +221,7 @@ function ItemPeca({ d, gestao }: { d: EtapaDocumento & { etapa: Etapa }; gestao?
       </div>
       {aberto && (
         <div id={painel} className="mt-3 border-t border-surface-border pt-3">
-          <DetalhePeca peca={d} gestao={gestao} />
+          <DetalhePeca peca={d} gestao={gestao} serie={serie} />
         </div>
       )}
     </li>
