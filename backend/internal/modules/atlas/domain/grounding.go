@@ -164,7 +164,8 @@ func SinteseTTDD(c ClassificacaoTTDD) string {
 
 // RelevanciaTTDD mede (0..1) quanto uma série da TTDD sustenta a pergunta:
 // fração dos termos presentes no descritor (e na função/subfunção), bônus
-// para o código exato e para termos do próprio descritor. Determinística e
+// para o código exato e para termos do próprio descritor. Palavras de
+// temporalidade que a série não contém não entram na conta. Determinística e
 // auditável — o limiar não depende do modelo de linguagem.
 func RelevanciaTTDD(c ClassificacaoTTDD, pergunta string) float64 {
 	termos := Termos(pergunta)
@@ -176,9 +177,14 @@ func RelevanciaTTDD(c ClassificacaoTTDD, pergunta string) float64 {
 	if s := c.Subfuncao; s != nil {
 		texto += " " + Fold(s.Nome+" "+s.Funcao.Nome)
 	}
-	matched, bonus := 0, 0.0
+	considerados, matched, bonus := 0, 0, 0.0
 	for _, t := range termos {
-		if contem(texto, t) {
+		casou := contem(texto, t)
+		if !casou && vocabularioTTDD(t) {
+			continue // "prazo", "destinação": falam da TTDD, não de qual série
+		}
+		considerados++
+		if casou {
 			matched++
 		}
 		if t == Fold(c.Codigo) {
@@ -191,7 +197,24 @@ func RelevanciaTTDD(c ClassificacaoTTDD, pergunta string) float64 {
 	if matched == 0 {
 		return 0
 	}
-	return min(1, float64(matched)/float64(len(termos))+bonus)
+	return min(1, float64(matched)/float64(considerados)+bonus)
+}
+
+// radicaisTTDD são palavras de temporalidade em si — da pergunta sobre a
+// TTDD, não do nome da série ("Qual a destinação final dos organogramas?"
+// busca "organogramas"). Só deixam de contar quando não aparecem na série.
+var radicaisTTDD = []string{
+	"prazo", "guard", "destin", "final", "elimin", "descart", "permanent", "corrent", "intermediar", "fase", "ttdd",
+	"temporalid", "tabela", "serie", "documental", "classifica", "quanto", "tempo", "conserv", "manter", "ano",
+}
+
+func vocabularioTTDD(termo string) bool {
+	for _, r := range radicaisTTDD {
+		if strings.HasPrefix(termo, r) {
+			return true
+		}
+	}
+	return false
 }
 
 // Fonte descreve a publicação da TTDD do órgão ("TTDD da Secretaria X,

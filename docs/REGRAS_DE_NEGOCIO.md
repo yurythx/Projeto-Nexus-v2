@@ -546,11 +546,13 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
 ### Atlas (procedimentos SEI, TTDD e assistente)
 - **Fonte de consulta, não de execução:** o Atlas descreve como cada tipo
   de processo deve tramitar; **não bloqueia nem intercepta** o Trâmite.
-- **Consulta pública** (sem login, limite por IP): Tabela de Temporalidade
-  e procedimentos **ativos**. Desativado some da consulta e da Busca
-  Global, mas continua na gestão.
-- **Gestão (`atlas:manage`, concessão global):** cadastra, ativa e
-  desativa procedimentos. Cada procedimento tem código
+- **Consulta pública** (API sem login, limite por IP): Tabela de
+  Temporalidade **vigente** e procedimentos **ativos**. Desativado some da
+  consulta e da Busca Global, mas continua na gestão. As telas do Atlas
+  ficam na área autenticada.
+- **Gestão (`atlas:manage`, concessão global):** cadastra, ativa,
+  desativa e publica **nova versão** de procedimentos, e **atualiza a
+  TTDD** (ver Vigência). Cada procedimento tem código
   (`ADM.LIC.001` — segmentos alfanuméricos com ponto, gravado em caixa
   alta) e versão; código + versão é único (repetir → 409).
 - **Regras de cadastro:**
@@ -565,9 +567,9 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     como endereço `http(s)` completo;
   - transições apontam para outra etapa existente; devolução em diligência
     exige a descrição da diligência.
-- **TTDD (somente leitura — norma da CCPAD, ADR 017):** a tabela oficial
-  (`docs/ttdd.pdf`, carga `make ttdd-aplicar`) com 1.686 séries de 9
-  órgãos, organizada como no documento:
+- **TTDD (norma da CCPAD, ADR 017):** a tabela oficial (`docs/ttdd.pdf`)
+  com 1.686 séries de 9 órgãos, organizada como no documento. Não se edita
+  série a série: muda por **nova publicação** (ver Vigência):
   - **hierarquia:** órgão (`2.0`) > função (`2.0.01`) > subfunção
     (`2.0.01.00`) > série (`2.0.01.00.00`); a consulta filtra por qualquer
     prefixo;
@@ -581,7 +583,12 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     (quando a TTDD marca "X");
   - observações da série, **recomendação da subfunção** (vale para todas
     as séries dela) e **fonte** — versão e edição/data do Diário Oficial;
-  - cada procedimento é enquadrado numa série existente **e vigente**.
+  - cada procedimento é enquadrado numa série existente **e vigente**;
+  - **exportação CSV** (`GET /atlas/ttdd/exportar`, pública, mesmos
+    filtros `codigo` e `q` da consulta, só séries vigentes): separador
+    `;` e BOM UTF-8 (abre direto no Excel), com órgão, função, subfunção,
+    prazos, destinação, observações, recomendação e fonte; até 20.000
+    séries. É também o modelo da planilha de atualização.
 - **Vigência da TTDD (ADR 019):**
   - nova publicação, **pela tela** (Atlas → Tabela de Temporalidade →
     Atualizar TTDD, `atlas:manage` — ADR 022): enviar o CSV da exportação
@@ -604,10 +611,6 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   mesmo código fica ativa e as demais são desativadas na mesma transação
   (eventos e auditoria com a versão que substituiu); a gestão vê todas as
   versões na página.
-  - **exportação CSV** (`GET /atlas/ttdd/exportar`, pública, mesmos
-    filtros `codigo` e `q` da consulta): separador `;` e BOM UTF-8 (abre
-    direto no Excel), com órgão, função, subfunção, prazos, destinação,
-    observações, recomendação e fonte; até 20.000 séries.
 - **Páginas (URL própria, compartilhável e imprimível):**
   - `/atlas` — busca unificada (procedimentos e séries em paralelo, ou a
     pergunta ao assistente), procedimentos e atalhos por secretaria;
@@ -615,8 +618,9 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     previsto = soma dos prazos das etapas), peças exigidas e temporalidade;
   - `/atlas/ttdd` — plano de classificação em árvore e séries, com os
     filtros na URL (`?codigo=`, `?q=`, `?page=`);
-  - `/atlas/ttdd/{codigo}` — a série, a fonte oficial e os procedimentos
-    que a produzem;
+  - `/atlas/ttdd/{codigo}` — a série, a fonte oficial, os procedimentos
+    que a produzem e o histórico de prazos (série revogada abre com aviso);
+  - `/atlas/ttdd/atualizar` — atualização da TTDD (gestão);
   - os links antigos `/atlas?procedimento=` e `/atlas?ttdd=` redirecionam.
 - **Calculadora de temporalidade** (nas páginas de série e de
   procedimento): é uma **estimativa** a partir da data informada — fim da
@@ -635,7 +639,9 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     sem termo de temporalidade é recusado direto; a resposta exige uma
     série com relevância ≥ **0,65** (fração dos termos da pergunta
     presentes no descritor, sem acentos e sem palavras vazias, com bônus
-    para o código exato e o descritor); usa até 3 séries;
+    para o código exato e o descritor; palavras de temporalidade — "prazo",
+    "guarda", "destinação", "por quanto tempo" — que a série não contém não
+    entram na conta); usa até 3 séries;
   - pergunta sobre temporalidade sem série correspondente: *"Não localizei
     na TTDD oficial uma série documental que corresponda à sua consulta…"*;
   - o modelo de IA recebe a mesma regra no prompt (inclusive ignorar
@@ -655,15 +661,18 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     padrão, CPF, CNPJ, e-mail e telefone são mascarados na pergunta. Sem
     nada salvo na tela, valem as variáveis `ATLAS_AI_*`;
   - a resposta informa o modo (`ia`, `sintese`, `recusada`), a relevância
-    e as fontes (com link para a página de cada uma);
+    e as séries usadas (com link para a página de cada uma);
   - fica numa gaveta lateral disponível em todas as páginas do Atlas; o
     "Perguntar sobre…" de cada página só preenche a pergunta (nada é
     enviado sem a pessoa confirmar);
   - cada consulta é auditada **sem o texto da pergunta** (modo,
     relevância, fontes e tamanho), por minimização (LGPD).
 - **Outbox e auditoria:** `atlas.workflow.created`, `.activated` e
-  `.deactivated`, na mesma transação da mudança; repetir o estado atual
-  não gera evento.
+  `.deactivated` (também quando uma nova versão substitui a anterior), na
+  mesma transação da mudança; repetir o estado atual não gera evento.
+  Auditados também: `atlas.ttdd.carga.aplicada` (totais e hash do
+  arquivo), `atlas.assistente.consulta` (sem o texto) e as alterações de
+  IA (`ia.conexao.*`, `ia.uso.alterado` — nunca a chave).
 
 
 ---

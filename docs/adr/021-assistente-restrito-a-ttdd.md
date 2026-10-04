@@ -16,7 +16,10 @@ Tabela de Temporalidade e Destinação de Documentos e nada mais.
 ## Decisão
 
 1. **Uma fonte só:** a resposta se apoia exclusivamente em séries da TTDD
-   (relevância ≥ 0,65, até 3 séries). O grounding por procedimento
+   (relevância ≥ 0,65, até 3 séries). Na relevância, palavras de temporalidade
+   ("prazo", "guarda", "destinação", "final", "por quanto tempo") que a
+   série não contém não contam: descrevem a pergunta, não a série — sem
+   isso, "Qual a destinação final dos organogramas?" ficava abaixo do limiar. O grounding por procedimento
    (`Repository.Candidatos`, `Relevancia`, `SinteseCanonica`) foi removido.
 2. **Duas recusas canônicas** (`domain.MensagemForaDoObjetivo` e
    `domain.MensagemSemSerie`):

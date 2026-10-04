@@ -239,4 +239,19 @@ func TestRelevanciaTTDD(t *testing.T) {
 	if RelevanciaTTDD(c, "de a o") != 0 {
 		t.Fatal("pergunta vazia")
 	}
+	// Palavras de temporalidade não diluem o nome da série.
+	org := ClassificacaoTTDD{Codigo: "2.0.01.00.01", Descritor: "Organogramas"}
+	for _, p := range []string{"Qual a destinação final dos organogramas?", "Por quanto tempo devo guardar os organogramas?",
+		"prazo de guarda e eliminação dos organogramas"} {
+		if r := RelevanciaTTDD(org, p); r < LimiarRelevancia {
+			t.Errorf("%q: %.2f abaixo do limiar", p, r)
+		}
+	}
+	if r := RelevanciaTTDD(org, "Qual o prazo de guarda e a destinação final?"); r != 0 {
+		t.Fatalf("só palavras de temporalidade não escolhem série: %.2f", r)
+	}
+	// Quando a palavra de temporalidade está na série, ela conta a favor.
+	if r := RelevanciaTTDD(ClassificacaoTTDD{Descritor: "Processo de Eliminação de documentos"}, "processo de eliminação"); r < LimiarRelevancia {
+		t.Fatalf("termo de temporalidade no descritor: %.2f", r)
+	}
 }

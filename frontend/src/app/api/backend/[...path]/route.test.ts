@@ -87,6 +87,13 @@ describe("proxy BFF autenticado", () => {
     expect(upstream.mock.calls[0]![1].body).toBeInstanceOf(ArrayBuffer);
   });
 
+  it("CSV passa com o BOM (o Excel em português depende dele)", async () => {
+    const csv = new Uint8Array([0xef, 0xbb, 0xbf, ...new TextEncoder().encode("Código;Série\n")]);
+    upstream.mockResolvedValueOnce(new Response(csv, { status: 200, headers: { "content-type": "text/csv; charset=utf-8" } }));
+    const res = await GET(new NextRequest("http://app/x"), params("v1", "atlas", "ttdd", "exportar"));
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(csv);
+  });
+
   it("204 da API passa como 204 sem corpo (antes: TypeError → 500)", async () => {
     upstream.mockResolvedValueOnce(new Response(null, { status: 204 }));
     const res = await POST(new NextRequest("http://app/x", { method: "POST", body: "{}" }), params("v1", "mercurio", "rooms", "r1", "read"));

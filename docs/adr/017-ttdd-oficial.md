@@ -1,6 +1,6 @@
 # 017 — TTDD do Atlas fiel ao documento oficial
 
-- **Status:** Aceito e implementado
+- **Status:** Aceito e implementado — atualização da tabela complementada pelos ADRs [019](019-vigencia-da-ttdd-e-versoes.md) (vigência e histórico) e [022](022-atualizar-ttdd-pela-tela.md) (pela tela)
 - **Data:** 2026-10-02
 - **Relacionado:** [ADR 015](015-atlas-padronizado.md) (Atlas padronizado)
 

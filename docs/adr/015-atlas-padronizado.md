@@ -1,6 +1,6 @@
 # 015 — Atlas alinhado ao padrão dos plug-ins
 
-- **Status:** Aceito e implementado
+- **Status:** Aceito e implementado — o grounding por procedimento foi substituído pelo [ADR 021](021-assistente-restrito-a-ttdd.md) (assistente só da TTDD) e a configuração da IA pelo [ADR 020](020-conexoes-de-ia.md)
 - **Data:** 2026-10-02
 - **Relacionado:** [ADR 009](009-revisao-dos-plugins-e-meta-de-cobertura.md) (revisão dos plug-ins), [ADR 011](011-borda-unica-ip-confiavel-e-busca-por-prefixo.md) (busca por prefixo), [ADR 013](013-permissao-com-escopo-e-heranca.md) (escopo)
 

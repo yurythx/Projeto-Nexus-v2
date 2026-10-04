@@ -1,6 +1,6 @@
 # 018 — Atlas em páginas próprias, busca unificada e assistente em gaveta
 
-- **Status:** Aceito e implementado
+- **Status:** Aceito e implementado — o assistente passou a tratar só da TTDD ([ADR 021](021-assistente-restrito-a-ttdd.md))
 - **Data:** 2026-10-03
 - **Relacionado:** [ADR 015](015-atlas-padronizado.md), [ADR 017](017-ttdd-oficial.md)
 

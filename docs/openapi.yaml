@@ -11977,7 +11977,7 @@ servers:
       url: /
 tags:
     - name: administracao
-    - description: Atlas — Procedimentos e Temporalidade. Plug-in — Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) e assistente procedural.
+    - description: Atlas — Procedimentos e Temporalidade. Plug-in — Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) oficial e assistente da TTDD.
       name: atlas
     - description: Auditoria. Núcleo — Registro transacional e imutável de operações com encadeamento de hash SHA-256.
       name: audit

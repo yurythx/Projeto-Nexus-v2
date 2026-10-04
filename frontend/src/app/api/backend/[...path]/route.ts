@@ -97,13 +97,12 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   // Respostas binárias (GET .../package.zip e .../package.pdf — o
   // compilador de pacote de uma demanda) NÃO podem passar por .text(): o decode UTF-8
   // troca cada byte inválido por U+FFFD e corrompe o binário. Encaminha
-  // os bytes crus nesse caso; texto (JSON, CSV) sobrevive igual a um
-  // round-trip por ArrayBuffer, então o galho binário serve os dois.
+  // os bytes crus nesse caso e em todo texto que não é JSON: o decode
+  // também REMOVE o BOM do início — o CSV da TTDD (GET
+  // .../atlas/ttdd/exportar) chegava sem ele e o Excel em português abria
+  // os acentos errados.
   const upstreamContentType = backendResponse.headers.get("content-type") ?? "application/json";
-  const isTextual =
-    upstreamContentType.startsWith("application/json") ||
-    upstreamContentType.startsWith("text/");
-  const body = isTextual
+  const body = upstreamContentType.startsWith("application/json")
     ? await backendResponse.text()
     : await backendResponse.arrayBuffer();
   const headers: Record<string, string> = {

@@ -32,6 +32,7 @@
 | Consentimento | versão, data/hora, IP, user-agent | art. 7º II + art. 8º §1º | permanente (prova) |
 | Preferências de UI | contraste, fonte, tema | art. 7º IX (interesse legítimo) | só no navegador do titular |
 | Consentimento anônimo | device_hash opaco, versão, IP, user-agent | art. 7º II | permanente (prova) |
+| Pergunta ao assistente da TTDD (Atlas) | texto livre digitado pelo servidor — pode conter dados pessoais de terceiros | art. 7º III (execução de política pública — gestão documental) | **não é armazenada**: a auditoria guarda só modo, relevância, séries usadas e tamanho (ADR 015/021) |
 
 **Dados sensíveis (art. 11):** nenhum tratado pela base. Sistemas
 derivados que tratem dados sensíveis fazem seu próprio RIPD.
@@ -47,6 +48,11 @@ Cidadão/Servidor
        ├─ user_consents / anonymous_consents (Postgres)
        └─ data_subject_requests (Postgres)  — pedidos art. 18
   Worker: anonimização (erasure) · export WORM diário com cadeia de hash
+
+  Assistente da TTDD (Atlas, ADR 020/021):
+  Servidor ──pergunta──► API Go ──séries públicas da TTDD + pergunta──► IA configurada
+       IA local (ia-local, na rede)  ou  fornecedor externo (autorização
+       registrada; CPF, CNPJ, e-mail e telefone mascarados antes do envio)
 ```
 
 ## 4. Necessidade e proporcionalidade
@@ -58,6 +64,9 @@ Cidadão/Servidor
 | IP da prova de consentimento só de proxy confiável | ✅ `TRUSTED_PROXIES` (G-04) |
 | Segredos cifrados no banco (AES-256-GCM) | ✅ |
 | Acesso à trilha de auditoria restrito a `audit:read` + auto-auditado | ✅ (G-09) |
+| Pergunta ao assistente fora da auditoria (só metadados) | ✅ (ADR 015) |
+| Mascaramento de CPF/CNPJ/e-mail/telefone antes de fornecedor de IA externo | ✅ padrão ligado (ADR 020) |
+| Chave de API de IA cifrada, nunca devolvida nem auditada | ✅ (ADR 020) |
 
 ## 5. Riscos e salvaguardas
 
@@ -69,6 +78,7 @@ Cidadão/Servidor
 | DoS / abuso | média | médio | rate limiting distribuído em todo `/api/v1`, timeouts de servidor |
 | Retenção excessiva | média | médio | **pendente:** política de retenção por categoria a ser definida pelo DPO |
 | XFF forjado poluindo prova de consentimento | baixa | baixo | `httpserver.ClientIP` só confia em `TRUSTED_PROXIES` |
+| Pergunta com dados pessoais enviada a fornecedor de IA externo (transferência, inclusive internacional) | média | médio | IA local por padrão; externo só com autorização registrada (quem/quando); mascaramento automático; assistente restrito à TTDD (recusa outros assuntos); contrato sem retenção a cargo do órgão |
 
 ## 6. Direitos do titular — operacionalização
 
@@ -86,3 +96,4 @@ Cidadão/Servidor
 - [ ] Homologação jurídica das **bases legais** aqui presumidas.
 - [ ] Contratos de **operador** com os provedores de hospedagem.
 - [ ] Avaliação de **transferência internacional** (se a hospedagem for fora do país).
+- [ ] Contrato com o **fornecedor de IA** externo, se usado no assistente da TTDD (operador, sem retenção/treino com os dados, local de processamento) — ADR 020.
