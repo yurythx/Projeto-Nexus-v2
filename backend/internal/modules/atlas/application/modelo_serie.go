@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/yurythx/projeto-nexus/internal/domain/pagination"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/domain"
 	"github.com/yurythx/projeto-nexus/internal/platform/audit"
 	"github.com/yurythx/projeto-nexus/internal/platform/auth"
@@ -80,4 +81,32 @@ func (s *Service) DesligarModeloSerie(ctx context.Context, codigo string, modelo
 			map[string]any{"modelo": modeloID.String()}, nil))
 	})
 	return out, mapModeloError(err)
+}
+
+// BuscarSeries alimenta a Busca Global com as séries vigentes da TTDD.
+func (s *Service) BuscarSeries(ctx context.Context, query string, limit int) ([]domain.ClassificacaoTTDD, error) {
+	items, _, err := s.repo.ListTTDD(ctx, s.pool, domain.FiltroTTDD{Query: query}, pagination.New(1, limit, limit))
+	return items, MapError(err)
+}
+
+// BuscarModelos alimenta a Busca Global com os modelos ativos cujo nome ou
+// descrição contêm todos os termos (a biblioteca é pequena: filtro em memória).
+func (s *Service) BuscarModelos(ctx context.Context, query string, limit int) ([]domain.Modelo, error) {
+	todos, err := s.repo.ListModelos(ctx, s.pool, false)
+	if err != nil {
+		return nil, mapModeloError(err)
+	}
+	out := []domain.Modelo{}
+	for _, m := range todos {
+		if len(out) < limit && domain.CasaModelo(m, query) {
+			out = append(out, m)
+		}
+	}
+	return out, nil
+}
+
+// Cobertura devolve o painel de cobertura do Atlas (atlas:manage na rota).
+func (s *Service) Cobertura(ctx context.Context) (domain.Cobertura, error) {
+	c, err := s.repo.Cobertura(ctx, s.pool)
+	return c, MapError(err)
 }

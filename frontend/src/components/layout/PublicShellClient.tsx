@@ -16,6 +16,8 @@ import type { PublicModule } from "@/lib/nexus/types";
 
 const PUBLIC_LINKS: { href: string; label: string; module?: string }[] = [
   { href: "/servicos", label: "Serviços", module: "catalog" },
+  { href: "/procedimentos", label: "Procedimentos", module: "atlas" },
+  { href: "/temporalidade", label: "Temporalidade", module: "atlas" },
   { href: "/setores", label: "Setores", module: "directory" },
   { href: "/eventos", label: "Agenda", module: "calendar" },
   { href: "/contato", label: "Contato", module: "contact" },
@@ -57,11 +59,19 @@ export function PublicShellClient({
         <GovHeader
           homeHref="/"
           nav={
-            <nav id="main-menu" tabIndex={-1} aria-label="Menu principal" className="ml-4 hidden outline-none lg:block">
+            <nav
+              id="main-menu"
+              tabIndex={-1}
+              aria-label="Menu principal"
+              className="ml-4 hidden outline-none lg:block"
+            >
               <ul className="flex items-center gap-5 text-sm">
                 {links.map((l) => (
                   <li key={l.href}>
-                    <Link href={l.href} className="text-muted transition-colors hover:text-foreground">
+                    <Link
+                      href={l.href}
+                      className="text-muted transition-colors hover:text-foreground"
+                    >
                       {l.label}
                     </Link>
                   </li>
@@ -73,7 +83,9 @@ export function PublicShellClient({
             <>
               <ThemeToggle />
               <Link href={status === "authenticated" ? "/dashboard" : "/login"}>
-                <Button size="sm">{status === "authenticated" ? "Acessar o painel" : "Entrar"}</Button>
+                <Button size="sm">
+                  {status === "authenticated" ? "Acessar o painel" : "Entrar"}
+                </Button>
               </Link>
             </>
           }

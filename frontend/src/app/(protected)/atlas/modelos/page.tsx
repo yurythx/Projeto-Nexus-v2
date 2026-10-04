@@ -1,8 +1,10 @@
 "use client";
 
-import { Download, FileText, History, Pencil, Plus, Upload } from "lucide-react";
-import { useId, useMemo, useState } from "react";
+import { Download, FileText, History, Pencil, Plus, Upload, Eye } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useId, useMemo, useState } from "react";
 
+import { EnvioEmLote } from "@/components/atlas/EnvioEmLote";
 import { Trilha } from "@/components/atlas/Trilha";
 import { DataState } from "@/components/nexus/DataState";
 import { PageHeader } from "@/components/nexus/PageHeader";
@@ -21,6 +23,7 @@ import type { ModeloDocumento } from "@/lib/nexus/types";
 
 type Edicao =
   | { tipo: "novo" }
+  | { tipo: "lote" }
   | { tipo: "versao"; modelo: ModeloDocumento }
   | { tipo: "editar"; modelo: ModeloDocumento };
 
@@ -59,7 +62,13 @@ function CampoArquivo({ onChange }: { onChange: (f: File | null) => void }) {
 }
 
 /** Cadastro, nova versão ou edição de um modelo (atlas:manage). */
-function FormModelo({ edicao, onDone }: { edicao: Edicao; onDone: () => void }) {
+function FormModelo({
+  edicao,
+  onDone,
+}: {
+  edicao: Exclude<Edicao, { tipo: "lote" }>;
+  onDone: () => void;
+}) {
   const { run, pending } = useAction();
   const atual = edicao.tipo === "novo" ? undefined : edicao.modelo;
   const [nome, setNome] = useState(atual?.nome ?? "");
@@ -235,6 +244,17 @@ function CartaoModelo({
         >
           <Download size={14} aria-hidden="true" /> Baixar
         </a>
+        {extensao(m.atual.arquivo_nome) === "PDF" && (
+          <a
+            href={`${urlArquivoModelo(m.id)}?inline=1`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Visualizar ${m.nome} (abre em nova janela)`}
+            className={buttonClass("ghost", "sm")}
+          >
+            <Eye size={14} aria-hidden="true" /> Visualizar
+          </a>
+        )}
         <Button
           variant="ghost"
           size="sm"
@@ -274,14 +294,15 @@ function CartaoModelo({
 /** Biblioteca de modelos de documento (ADR 024): um catálogo reutilizável;
  * as peças dos procedimentos apontam para um modelo, e publicar uma nova
  * versão aqui vale para todos os fluxos que o usam. */
-export default function ModelosPage() {
+function Biblioteca() {
   const { can } = useNexus();
   const canManage = can("atlas:manage");
   const id = useId();
   const lista = useApiQuery<ModeloDocumento[]>(
     canManage ? "v1/atlas/admin/modelos" : "v1/atlas/modelos",
   );
-  const [busca, setBusca] = useState("");
+  // ?q= vem da Busca Global (resultado do tipo modelo).
+  const [busca, setBusca] = useState(useSearchParams().get("q") ?? "");
   const [edicao, setEdicao] = useState<Edicao | null>(null);
   const itens = useMemo(() => {
     const q = busca.trim().toLowerCase();
@@ -298,9 +319,14 @@ export default function ModelosPage() {
         description="Minutas e formulários padronizados das peças dos procedimentos. Baixe o modelo, preencha e junte ao processo."
         actions={
           canManage && (
-            <Button onClick={() => setEdicao({ tipo: "novo" })}>
-              <Plus size={16} aria-hidden="true" className="mr-1" /> Novo modelo
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => setEdicao({ tipo: "lote" })}>
+                <Upload size={16} aria-hidden="true" className="mr-1" /> Enviar vários
+              </Button>
+              <Button onClick={() => setEdicao({ tipo: "novo" })}>
+                <Plus size={16} aria-hidden="true" className="mr-1" /> Novo modelo
+              </Button>
+            </div>
           )
         }
       />
@@ -334,13 +360,16 @@ export default function ModelosPage() {
         title={
           edicao?.tipo === "novo"
             ? "Novo modelo"
-            : edicao?.tipo === "versao"
-              ? `Nova versão — ${edicao.modelo.nome}`
-              : "Editar modelo"
+            : edicao?.tipo === "lote"
+              ? "Enviar vários modelos"
+              : edicao?.tipo === "versao"
+                ? `Nova versão — ${edicao.modelo.nome}`
+                : "Editar modelo"
         }
         size="lg"
       >
-        {edicao && (
+        {edicao?.tipo === "lote" && <EnvioEmLote onDone={() => void lista.mutate()} />}
+        {edicao && edicao.tipo !== "lote" && (
           <FormModelo
             edicao={edicao}
             onDone={() => {
@@ -351,5 +380,13 @@ export default function ModelosPage() {
         )}
       </Dialog>
     </div>
+  );
+}
+
+export default function ModelosPage() {
+  return (
+    <Suspense>
+      <Biblioteca />
+    </Suspense>
   );
 }

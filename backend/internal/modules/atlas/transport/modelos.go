@@ -90,7 +90,13 @@ func (h *Handlers) ArquivoModelo(w http.ResponseWriter, r *http.Request) {
 	defer rc.Close()
 	w.Header().Set("Content-Type", v.ContentType)
 	w.Header().Set("Content-Length", strconv.FormatInt(v.Tamanho, 10))
-	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": v.ArquivoNome}))
+	// ?inline=1 abre o PDF no navegador (visualizar antes de baixar); os
+	// demais formatos são sempre baixados.
+	disposicao := "attachment"
+	if r.URL.Query().Get("inline") == "1" && v.ContentType == "application/pdf" {
+		disposicao = "inline"
+	}
+	w.Header().Set("Content-Disposition", mime.FormatMediaType(disposicao, map[string]string{"filename": v.ArquivoNome}))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("ETag", `"`+v.SHA256+`"`)
 	if _, err := io.Copy(w, rc); err != nil {

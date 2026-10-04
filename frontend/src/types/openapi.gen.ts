@@ -88,6 +88,26 @@ export interface paths {
         patch: operations["patchAdminModulesKey"];
         trace?: never;
     };
+    "/api/v1/atlas/admin/cobertura": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/cobertura
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getAtlasAdminCobertura"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atlas/admin/modelos": {
         parameters: {
             query?: never;
@@ -250,6 +270,66 @@ export interface paths {
          * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
          */
         post: operations["postAtlasAdminWorkflows"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/admin/workflows/exportar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/workflows/exportar
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getAtlasAdminWorkflowsExportar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/admin/workflows/importacao/aplicar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/workflows/importacao/aplicar
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtlasAdminWorkflowsImportacaoAplicar"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/admin/workflows/importacao/simular": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/workflows/importacao/simular
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        post: operations["postAtlasAdminWorkflowsImportacaoSimular"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2511,6 +2591,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tramite/processos/{id}/classificacao": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Trâmite — Salvar /tramite/processos/{id}/classificacao */
+        put: operations["putTramiteProcessosIdClassificacao"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tramite/processos/{id}/concluir": {
         parameters: {
             query?: never;
@@ -3119,6 +3216,19 @@ export interface components {
             revogada_em: string | null;
             subfuncao?: components["schemas"]["AtlasSubfuncaoTTDD"];
         };
+        AtlasCobertura: {
+            modelos_sem_uso: components["schemas"]["AtlasModeloSemUso"][];
+            orgaos: components["schemas"]["AtlasCoberturaOrgao"][];
+            pecas_sem_modelo: components["schemas"]["AtlasPecaSemModelo"][];
+            totais: components["schemas"]["AtlasTotaisCobertura"];
+        };
+        AtlasCoberturaOrgao: {
+            nome: string;
+            prefixo: string;
+            series: number;
+            series_com_modelo: number;
+            series_com_procedimento: number;
+        };
         AtlasCreateRequest: {
             codigo_processual: string;
             codigo_ttdd: string;
@@ -3239,6 +3349,22 @@ export interface components {
                 [key: string]: number;
             };
         };
+        AtlasImportacaoProcedimentos: {
+            aplicada: boolean;
+            hash: string;
+            itens: components["schemas"]["AtlasItemImportacao"][];
+            totais: {
+                [key: string]: number;
+            };
+        };
+        AtlasItemImportacao: {
+            codigo_processual: string;
+            erro?: string;
+            linha: number;
+            situacao: string;
+            titulo: string;
+            versao: number;
+        };
         AtlasLigarModeloRequest: {
             /** Format: uuid */
             modelo_id?: string | null;
@@ -3267,6 +3393,11 @@ export interface components {
             nome: string;
             versao: number;
         };
+        AtlasModeloSemUso: {
+            /** Format: uuid */
+            id: string;
+            nome: string;
+        };
         AtlasModeloVersao: {
             arquivo_nome: string;
             content_type: string;
@@ -3285,6 +3416,14 @@ export interface components {
             nome: string;
             prefixo: string;
             versao: string;
+        };
+        AtlasPecaSemModelo: {
+            codigo_processual: string;
+            etapa: number;
+            peca: string;
+            titulo: string;
+            /** Format: uuid */
+            workflow_id: string;
         };
         AtlasPrazosTTDD: {
             descritor: string;
@@ -3326,6 +3465,16 @@ export interface components {
             funcao: components["schemas"]["AtlasFuncaoTTDD"];
             nome: string;
             recomendacao: string;
+        };
+        AtlasTotaisCobertura: {
+            modelos: number;
+            modelos_sem_uso: number;
+            pecas: number;
+            pecas_com_modelo: number;
+            procedimentos: number;
+            series: number;
+            series_com_modelo: number;
+            series_com_procedimento: number;
         };
         AtlasTransicaoRequest: {
             condicao_transicao: string;
@@ -4530,6 +4679,9 @@ export interface components {
         };
         TramiteAbrirRequest: {
             assunto: string;
+            /** Format: uuid */
+            atlas_procedimento_id?: string | null;
+            codigo_ttdd?: string;
             descricao?: string;
             interessado?: string;
             /** @enum {string} */
@@ -4546,6 +4698,11 @@ export interface components {
         TramiteAssinaturaRequest: {
             sequential?: boolean;
             signer_ids: string[];
+        };
+        TramiteClassificacaoRequest: {
+            /** Format: uuid */
+            atlas_procedimento_id?: string | null;
+            codigo_ttdd?: string;
         };
         TramiteDespachoRequest: {
             despacho: string;
@@ -4633,6 +4790,9 @@ export interface components {
         };
         TramiteProcesso: {
             assunto: string;
+            /** Format: uuid */
+            atlas_procedimento_id: string | null;
+            codigo_ttdd: string;
             /** Format: date-time */
             concluido_at?: string;
             /** Format: date-time */
@@ -4674,8 +4834,11 @@ export interface components {
         TramiteView: {
             acessos: components["schemas"]["TramiteGrant"][];
             assunto: string;
+            /** Format: uuid */
+            atlas_procedimento_id: string | null;
             can_act: boolean;
             can_route: boolean;
+            codigo_ttdd: string;
             /** Format: date-time */
             concluido_at?: string;
             /** Format: date-time */
@@ -5108,6 +5271,33 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtlasAdminCobertura: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasCobertura"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getAtlasAdminModelos: {
         parameters: {
             query?: never;
@@ -5448,6 +5638,89 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtlasAdminWorkflowsExportar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Success"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtlasAdminWorkflowsImportacaoAplicar: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasImportacaoProcedimentos"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    postAtlasAdminWorkflowsImportacaoSimular: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasImportacaoProcedimentos"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     getAtlasAdminWorkflowsId: {
         parameters: {
             query?: never;
@@ -5719,6 +5992,7 @@ export interface operations {
         parameters: {
             query?: {
                 versao?: string;
+                inline?: string;
             };
             header?: never;
             path: {
@@ -10504,6 +10778,44 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TramiteDespachoRequest"];
+            };
+        };
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["TramiteProcesso"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    putTramiteProcessosIdClassificacao: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description Chave única por operação lógica (recomenda-se um UUID gerado no cliente), escopada ao usuário autenticado. Reenviar a mesma requisição com a mesma chave reproduz a resposta original em vez de reexecutar a operação — ver a nota de Idempotência na descrição geral da API.
+                 * @example 3f2b9e0a-6d34-4e77-9c3e-2b6f8e6b6a3d
+                 */
+                "X-Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TramiteClassificacaoRequest"];
             };
         };
         responses: {

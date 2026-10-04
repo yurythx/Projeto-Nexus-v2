@@ -173,34 +173,42 @@ func (s *Service) NovaVersao(ctx context.Context, identity auth.Identity, origem
 		if err != nil {
 			return err
 		}
-		maior, err := s.repo.MaxVersao(ctx, tx, base.CodigoProcessual)
-		if err != nil {
-			return err
-		}
-		w.Normalize()
-		w.CodigoProcessual, w.Versao = base.CodigoProcessual, maior+1
-		if err := w.Validate(); err != nil {
-			return err
-		}
-		if out, err = s.inserir(ctx, tx, identity, w, modelosDe(base)); err != nil {
-			return err
-		}
-		ids, err := s.repo.DesativarVersoes(ctx, tx, out.CodigoProcessual, out.ID)
-		if err != nil {
-			return err
-		}
-		for _, id := range ids {
-			antiga, err := s.repo.Get(ctx, tx, id, false)
-			if err != nil {
-				return err
-			}
-			if err := s.substituida(ctx, tx, antiga, out); err != nil {
-				return err
-			}
-		}
-		return nil
+		out, err = s.novaVersaoTx(ctx, tx, identity, base, w)
+		return err
 	})
 	return out, MapError(err)
+}
+
+// novaVersaoTx publica, na transação, a versão seguinte de base com o
+// conteúdo de w e desativa as demais versões (eventos e auditoria).
+func (s *Service) novaVersaoTx(ctx context.Context, tx pgx.Tx, identity auth.Identity, base, w domain.Workflow) (domain.Workflow, error) {
+	maior, err := s.repo.MaxVersao(ctx, tx, base.CodigoProcessual)
+	if err != nil {
+		return w, err
+	}
+	w.Normalize()
+	w.CodigoProcessual, w.Versao = base.CodigoProcessual, maior+1
+	if err := w.Validate(); err != nil {
+		return w, err
+	}
+	out, err := s.inserir(ctx, tx, identity, w, modelosDe(base))
+	if err != nil {
+		return out, err
+	}
+	ids, err := s.repo.DesativarVersoes(ctx, tx, out.CodigoProcessual, out.ID)
+	if err != nil {
+		return out, err
+	}
+	for _, id := range ids {
+		antiga, err := s.repo.Get(ctx, tx, id, false)
+		if err != nil {
+			return out, err
+		}
+		if err := s.substituida(ctx, tx, antiga, out); err != nil {
+			return out, err
+		}
+	}
+	return out, nil
 }
 
 // substituida registra (evento e auditoria) a versão desativada por `nova`.
@@ -343,6 +351,7 @@ func recusar(resp *Resposta, pergunta string) {
 type candidato struct {
 	fonte   Fonte
 	sintese string
+	serie   string // série da TTDD (a própria ou a do procedimento)
 }
 
 // focar mantém só o tipo de fonte que a pergunta pede, quando ele tem
@@ -394,12 +403,12 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 		if r := domain.RelevanciaProcedimento(w, pergunta); r > 0 {
 			id := w.ID
 			hits = append(hits, candidato{Fonte{Tipo: FonteProcedimento, ID: &id, Codigo: w.CodigoProcessual, Titulo: w.Titulo, Relevancia: r},
-				domain.SinteseFluxo(w)})
+				domain.SinteseFluxo(w), w.CodigoTTDD})
 		}
 	}
 	for _, c := range series {
 		if r := domain.RelevanciaTTDD(c, pergunta); r > 0 {
-			hits = append(hits, candidato{Fonte{Tipo: FonteTTDD, Codigo: c.Codigo, Titulo: c.Descritor, Relevancia: r}, domain.SinteseTTDD(c)})
+			hits = append(hits, candidato{Fonte{Tipo: FonteTTDD, Codigo: c.Codigo, Titulo: c.Descritor, Relevancia: r}, domain.SinteseTTDD(c), c.Codigo})
 		}
 	}
 	// Empate: o nome mais curto (mais específico) vem antes — o PDF tem
@@ -420,7 +429,11 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 		if h.fonte.Relevancia < domain.LimiarRelevancia || h.fonte.Relevancia < resp.Score-margemFontes || len(contexto) == maxFontes {
 			break
 		}
-		contexto = append(contexto, h.sintese)
+		modelos, err := s.repo.ModelosDaSerie(ctx, s.pool, h.serie)
+		if err != nil {
+			return resp, MapError(err)
+		}
+		contexto = append(contexto, domain.ComModelos(h.sintese, h.serie, modelos))
 		resp.Sources = append(resp.Sources, h.fonte)
 	}
 	sintese := strings.Join(contexto, "\n\n")

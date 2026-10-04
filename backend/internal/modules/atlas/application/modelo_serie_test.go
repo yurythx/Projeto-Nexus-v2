@@ -155,3 +155,41 @@ func TestModelosDaSerieHTTP(t *testing.T) {
 		}
 	}
 }
+
+// Busca Global: procedimentos, séries da TTDD e modelos; o assistente cita os
+// modelos ativos da série das fontes.
+func TestBuscaGlobalEAssistenteComModelos(t *testing.T) {
+	e := &env{t: t, pool: dbtest.Pool(t)}
+	ctx := context.Background()
+	s := e.real()
+	unico := "Zelofax" + strings.ToUpper(uuid.NewString()[:6])
+	m, err := s.CriarModelo(ctx, gestor, domain.Modelo{Nome: "Modelo " + unico, Descricao: "Edital de pregão"}, docx())
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := s.BuscaGlobal(ctx, "atlas", unico, 5)
+	if err != nil || len(res) != 1 || res[0].Type != "modelo" || res[0].ID != m.ID.String() ||
+		res[0].URL != "/atlas/modelos?q=Modelo+"+unico || res[0].Module != "atlas" {
+		t.Fatalf("modelo na busca: %+v %v", res, err)
+	}
+	res, err = s.BuscaGlobal(ctx, "atlas", serieVigente, 5)
+	exata := false // código exato: a série com a maior pontuação
+	for _, r := range res {
+		exata = exata || (r.Type == "serie_ttdd" && r.URL == "/atlas/ttdd/"+serieVigente && r.Score == 1)
+	}
+	if err != nil || !exata {
+		t.Fatalf("série na busca: %+v %v", res, err)
+	}
+
+	if _, err := s.LigarModeloSerie(ctx, gestor, serieVigente, m.ID); err != nil {
+		t.Fatal(err)
+	}
+	r, err := s.Perguntar(ctx, "qual o prazo de guarda dos processos de pregão eletrônico?")
+	if err != nil || !strings.Contains(r.Answer, "Modelos de documento para baixar (biblioteca do Atlas, série "+serieVigente+")") ||
+		!strings.Contains(r.Answer, "Modelo "+unico) {
+		t.Fatalf("assistente sem os modelos da série: %+v %v", r, err)
+	}
+	if _, err := s.DesligarModeloSerie(ctx, serieVigente, m.ID); err != nil {
+		t.Fatal(err)
+	}
+}

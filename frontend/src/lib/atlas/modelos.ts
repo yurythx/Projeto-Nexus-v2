@@ -6,9 +6,10 @@ export const FORMATOS_MODELO = ".docx,.odt,.pdf,.doc,.rtf,.xlsx,.ods";
 /** Limite do arquivo de um modelo (o mesmo do backend). */
 export const MAX_MODELO_BYTES = 10 * 1024 * 1024;
 
-/** Download pela API (mesma origem): a versão atual ou uma específica. */
-export function urlArquivoModelo(id: UUID, versao?: number): string {
-  const base = `/api/backend/v1/atlas/modelos/${encodeURIComponent(id)}/arquivo`;
+/** Download pela API (mesma origem): a versão atual ou uma específica.
+ * `publico`: pelo proxy anônimo (site institucional, sem login). */
+export function urlArquivoModelo(id: UUID, versao?: number, publico = false): string {
+  const base = `/api/${publico ? "public" : "backend"}/v1/atlas/modelos/${encodeURIComponent(id)}/arquivo`;
   return versao ? `${base}?versao=${versao}` : base;
 }
 
@@ -19,7 +20,7 @@ export function extensao(nome: string): string {
 }
 
 /** Normaliza para comparar nomes (sem acento, minúsculas). */
-function chave(s: string): string {
+export function chave(s: string): string {
   return s
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
@@ -34,4 +35,13 @@ export function sugerirModelo<T extends { id: UUID; nome: string }>(
 ): T | undefined {
   const k = chave(peca);
   return k ? modelos.find((m) => chave(m.nome) === k) : undefined;
+}
+
+/** Nome do modelo a partir do nome do arquivo (sem a extensão); se começar
+ * por um código de série da TTDD ("2.0.02.00.07 - Edital.docx"), devolve a
+ * série para ligar o modelo a ela. */
+export function nomeDoArquivo(arquivo: string): { nome: string; serie?: string } {
+  const base = arquivo.replace(/\.[^.]+$/, "").trim();
+  const m = /^(\d{1,2}\.0\.\d{2}\.\d{2}\.\d{2})\s*[-–—_]?\s*(.+)$/.exec(base);
+  return m ? { nome: m[2]!.trim(), serie: m[1] } : { nome: base };
 }

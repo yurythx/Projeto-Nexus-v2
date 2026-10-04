@@ -200,6 +200,49 @@ components:
                 - revogada_em
             type: object
             x-nexus-generated: true
+        AtlasCobertura:
+            properties:
+                modelos_sem_uso:
+                    items:
+                        $ref: '#/components/schemas/AtlasModeloSemUso'
+                    type: array
+                orgaos:
+                    items:
+                        $ref: '#/components/schemas/AtlasCoberturaOrgao'
+                    type: array
+                pecas_sem_modelo:
+                    items:
+                        $ref: '#/components/schemas/AtlasPecaSemModelo'
+                    type: array
+                totais:
+                    $ref: '#/components/schemas/AtlasTotaisCobertura'
+            required:
+                - modelos_sem_uso
+                - orgaos
+                - pecas_sem_modelo
+                - totais
+            type: object
+            x-nexus-generated: true
+        AtlasCoberturaOrgao:
+            properties:
+                nome:
+                    type: string
+                prefixo:
+                    type: string
+                series:
+                    type: integer
+                series_com_modelo:
+                    type: integer
+                series_com_procedimento:
+                    type: integer
+            required:
+                - nome
+                - prefixo
+                - series
+                - series_com_modelo
+                - series_com_procedimento
+            type: object
+            x-nexus-generated: true
         AtlasCreateRequest:
             properties:
                 codigo_processual:
@@ -560,6 +603,49 @@ components:
                 - totais
             type: object
             x-nexus-generated: true
+        AtlasImportacaoProcedimentos:
+            properties:
+                aplicada:
+                    type: boolean
+                hash:
+                    type: string
+                itens:
+                    items:
+                        $ref: '#/components/schemas/AtlasItemImportacao'
+                    type: array
+                totais:
+                    additionalProperties:
+                        type: integer
+                    type: object
+            required:
+                - aplicada
+                - hash
+                - itens
+                - totais
+            type: object
+            x-nexus-generated: true
+        AtlasItemImportacao:
+            properties:
+                codigo_processual:
+                    type: string
+                erro:
+                    type: string
+                linha:
+                    type: integer
+                situacao:
+                    type: string
+                titulo:
+                    type: string
+                versao:
+                    type: integer
+            required:
+                - codigo_processual
+                - linha
+                - situacao
+                - titulo
+                - versao
+            type: object
+            x-nexus-generated: true
         AtlasLigarModeloRequest:
             properties:
                 modelo_id:
@@ -630,6 +716,18 @@ components:
                 - versao
             type: object
             x-nexus-generated: true
+        AtlasModeloSemUso:
+            properties:
+                id:
+                    format: uuid
+                    type: string
+                nome:
+                    type: string
+            required:
+                - id
+                - nome
+            type: object
+            x-nexus-generated: true
         AtlasModeloVersao:
             properties:
                 arquivo_nome:
@@ -680,6 +778,27 @@ components:
                 - nome
                 - prefixo
                 - versao
+            type: object
+            x-nexus-generated: true
+        AtlasPecaSemModelo:
+            properties:
+                codigo_processual:
+                    type: string
+                etapa:
+                    type: integer
+                peca:
+                    type: string
+                titulo:
+                    type: string
+                workflow_id:
+                    format: uuid
+                    type: string
+            required:
+                - codigo_processual
+                - etapa
+                - peca
+                - titulo
+                - workflow_id
             type: object
             x-nexus-generated: true
         AtlasPrazosTTDD:
@@ -803,6 +922,35 @@ components:
                 - funcao
                 - nome
                 - recomendacao
+            type: object
+            x-nexus-generated: true
+        AtlasTotaisCobertura:
+            properties:
+                modelos:
+                    type: integer
+                modelos_sem_uso:
+                    type: integer
+                pecas:
+                    type: integer
+                pecas_com_modelo:
+                    type: integer
+                procedimentos:
+                    type: integer
+                series:
+                    type: integer
+                series_com_modelo:
+                    type: integer
+                series_com_procedimento:
+                    type: integer
+            required:
+                - modelos
+                - modelos_sem_uso
+                - pecas
+                - pecas_com_modelo
+                - procedimentos
+                - series
+                - series_com_modelo
+                - series_com_procedimento
             type: object
             x-nexus-generated: true
         AtlasTransicaoRequest:
@@ -3925,6 +4073,13 @@ components:
                 assunto:
                     maxLength: 300
                     type: string
+                atlas_procedimento_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                codigo_ttdd:
+                    maxLength: 32
+                    type: string
                 descricao:
                     maxLength: 20000
                     type: string
@@ -3972,6 +4127,17 @@ components:
                     type: array
             required:
                 - signer_ids
+            type: object
+            x-nexus-generated: true
+        TramiteClassificacaoRequest:
+            properties:
+                atlas_procedimento_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                codigo_ttdd:
+                    maxLength: 32
+                    type: string
             type: object
             x-nexus-generated: true
         TramiteDespachoRequest:
@@ -4168,6 +4334,12 @@ components:
             properties:
                 assunto:
                     type: string
+                atlas_procedimento_id:
+                    format: uuid
+                    nullable: true
+                    type: string
+                codigo_ttdd:
+                    type: string
                 concluido_at:
                     format: date-time
                     type: string
@@ -4212,6 +4384,8 @@ components:
                     type: string
             required:
                 - assunto
+                - atlas_procedimento_id
+                - codigo_ttdd
                 - created_at
                 - created_by
                 - created_by_name
@@ -4272,10 +4446,16 @@ components:
                     type: array
                 assunto:
                     type: string
+                atlas_procedimento_id:
+                    format: uuid
+                    nullable: true
+                    type: string
                 can_act:
                     type: boolean
                 can_route:
                     type: boolean
+                codigo_ttdd:
+                    type: string
                 concluido_at:
                     format: date-time
                     type: string
@@ -4329,8 +4509,10 @@ components:
             required:
                 - acessos
                 - assunto
+                - atlas_procedimento_id
                 - can_act
                 - can_route
+                - codigo_ttdd
                 - created_at
                 - created_by
                 - created_by_name
@@ -4829,6 +5011,38 @@ paths:
             summary: Alterar /admin/modules/{key}
             tags:
                 - kernel
+    /api/v1/atlas/admin/cobertura:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtlasAdminCobertura
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasCobertura'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/cobertura
+            tags:
+                - atlas
     /api/v1/atlas/admin/modelos:
         get:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -5455,6 +5669,96 @@ paths:
             summary: Atlas — Procedimentos e Temporalidade — Executar ação /atlas/admin/workflows/{id}/versoes
             tags:
                 - atlas
+    /api/v1/atlas/admin/workflows/exportar:
+        get:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: getAtlasAdminWorkflowsExportar
+            responses:
+                "200":
+                    $ref: '#/components/responses/Success'
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/workflows/exportar
+            tags:
+                - atlas
+    /api/v1/atlas/admin/workflows/importacao/aplicar:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflowsImportacaoAplicar
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasImportacaoProcedimentos'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/workflows/importacao/aplicar
+            tags:
+                - atlas
+    /api/v1/atlas/admin/workflows/importacao/simular:
+        post:
+            description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+            operationId: postAtlasAdminWorkflowsImportacaoSimular
+            parameters:
+                - $ref: '#/components/parameters/IdempotencyKey'
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/AtlasImportacaoProcedimentos'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "403":
+                    $ref: '#/components/responses/Forbidden'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/workflows/importacao/simular
+            tags:
+                - atlas
     /api/v1/atlas/chat:
         post:
             description: Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
@@ -5567,6 +5871,12 @@ paths:
                     type: string
                 - in: query
                   name: versao
+                  required: false
+                  schema:
+                    type: string
+                  x-nexus-generated: true
+                - in: query
+                  name: inline
                   required: false
                   schema:
                     type: string
@@ -11275,6 +11585,49 @@ paths:
             security:
                 - bearerAuth: []
             summary: Trâmite — Executar ação /tramite/processos/{id}/arquivar
+            tags:
+                - tramite
+    /api/v1/tramite/processos/{id}/classificacao:
+        put:
+            operationId: putTramiteProcessosIdClassificacao
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                    type: string
+                - $ref: '#/components/parameters/IdempotencyKey'
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/TramiteClassificacaoRequest'
+                required: true
+                x-nexus-generated: true
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: '#/components/schemas/Envelope'
+                                    - properties:
+                                        data:
+                                            $ref: '#/components/schemas/TramiteProcesso'
+                                      type: object
+                    description: Sucesso — payload em `data`.
+                    x-nexus-generated: true
+                "401":
+                    $ref: '#/components/responses/Unauthorized'
+                "404":
+                    $ref: '#/components/responses/ModuleDisabledOrNotFound'
+                "422":
+                    $ref: '#/components/responses/ValidationError'
+                "429":
+                    $ref: '#/components/responses/TooManyRequests'
+            security:
+                - bearerAuth: []
+            summary: Trâmite — Salvar /tramite/processos/{id}/classificacao
             tags:
                 - tramite
     /api/v1/tramite/processos/{id}/concluir:

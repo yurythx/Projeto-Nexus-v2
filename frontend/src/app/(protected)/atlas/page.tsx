@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Building2, FileClock, FileText, Plus } from "lucide-react";
+import { ArrowRight, Building2, ChartPie, FileClock, FileText, FileUp, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -120,6 +120,16 @@ function Inicio() {
             <Link href="/atlas/modelos" className={buttonClass("secondary")}>
               <FileText size={16} aria-hidden="true" /> Modelos de documento
             </Link>
+            {canManage && (
+              <>
+                <Link href="/atlas/cobertura" className={buttonClass("secondary")}>
+                  <ChartPie size={16} aria-hidden="true" /> Cobertura
+                </Link>
+                <Link href="/atlas/importar" className={buttonClass("secondary")}>
+                  <FileUp size={16} aria-hidden="true" /> Importar
+                </Link>
+              </>
+            )}
             {canManage && (
               <Button onClick={() => setCreating(true)}>
                 <Plus size={16} aria-hidden="true" className="mr-1" /> Novo procedimento

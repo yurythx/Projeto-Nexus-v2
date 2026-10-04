@@ -78,3 +78,14 @@ func TestSinteseFluxo(t *testing.T) {
 		t.Fatalf("procedimento público sem classificação:\n%s", s)
 	}
 }
+
+// O caminho normal vem antes das devoluções em diligência, mesmo cadastrado depois.
+func TestSinteseFluxoCaminhoNormalPrimeiro(t *testing.T) {
+	w := validWorkflow()
+	w.Etapas[1].Transicoes = append(w.Etapas[1].Transicoes, EtapaTransicao{DestinoOrdem: 1, CondicaoTransicao: "Homologado"})
+	s := SinteseFluxo(w)
+	normal, dilig := strings.Index(s, "Para seguir: Homologado"), strings.Index(s, "Devolução em diligência: se Pendência")
+	if normal < 0 || dilig < 0 || normal > dilig {
+		t.Fatalf("ordem das transições:\n%s", s)
+	}
+}

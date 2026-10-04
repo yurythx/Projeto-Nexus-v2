@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,6 +34,8 @@ var (
 	ErrPublicGrant = errors.New("tramite: processo público não usa credencial de acesso")
 	// ErrInactiveTipo: tipos desativados não aceitam novos processos.
 	ErrInactiveTipo = errors.New("tramite: tipo de processo inexistente ou desativado")
+	// ErrSerieInvalida: o código da série da TTDD não tem o formato 2.0.02.00.07.
+	ErrSerieInvalida = errors.New("tramite: código de série da TTDD inválido")
 	// ErrInactiveUnidade: unidade (ou a entidade dela) inexistente ou
 	// desativada não abre nem recebe processos.
 	ErrInactiveUnidade = errors.New("tramite: unidade inexistente ou desativada")
@@ -92,6 +95,21 @@ type Processo struct {
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	ConcluidoAt     *time.Time `json:"concluido_at,omitempty"`
+	// Classificação pelo Atlas (ADR 026): o procedimento que o processo segue
+	// e a série da TTDD que define a guarda.
+	AtlasProcedimentoID *uuid.UUID `json:"atlas_procedimento_id"`
+	CodigoTTDD          string     `json:"codigo_ttdd"`
+}
+
+// codigoTTDD: código de série da TTDD ("2.0.02.00.07").
+var codigoTTDD = regexp.MustCompile(`^[0-9]{1,2}\.0\.[0-9]{2}\.[0-9]{2}\.[0-9]{2}$`)
+
+// ValidarClassificacao confere o código da série (vazio = sem série).
+func ValidarClassificacao(codigo string) error {
+	if codigo != "" && !codigoTTDD.MatchString(codigo) {
+		return ErrSerieInvalida
+	}
+	return nil
 }
 
 // Documento é uma peça do processo.

@@ -281,3 +281,11 @@ func (fr *faultRepo) DesligarModeloSerie(ctx context.Context, db database.DBTX, 
 	defer fr.post(ctx, db)
 	return fr.inner.DesligarModeloSerie(ctx, db, codigo, modeloID)
 }
+
+func (fr *faultRepo) Cobertura(ctx context.Context, db database.DBTX) (domain.Cobertura, error) {
+	if err := fr.hook("Cobertura"); err != nil {
+		return domain.Cobertura{}, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.Cobertura(ctx, db)
+}

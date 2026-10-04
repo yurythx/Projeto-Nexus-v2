@@ -313,6 +313,17 @@ func TestModeloHTTP(t *testing.T) {
 		!strings.Contains(rec.Body.String(), `"versao":2`) {
 		t.Fatalf("nova versão: %d %s", rec.Code, rec.Body.String())
 	}
+	// ?inline=1: só o PDF abre no navegador; os demais formatos baixam.
+	if rec = do(http.MethodGet, "/atlas/modelos/"+id+"/arquivo?versao=1&inline=1", nil, ""); !strings.HasPrefix(rec.Header().Get("Content-Disposition"), "attachment") {
+		t.Fatalf("docx com inline: %v", rec.Header())
+	}
+	body, ct = formModelo(nil, "oficio.pdf", []byte("%PDF-1.7 x"))
+	if rec = do(http.MethodPost, "/atlas/admin/modelos/"+id+"/versoes", body, ct); rec.Code != http.StatusCreated {
+		t.Fatalf("versão em PDF: %d %s", rec.Code, rec.Body.String())
+	}
+	if rec = do(http.MethodGet, "/atlas/modelos/"+id+"/arquivo?inline=1", nil, ""); !strings.HasPrefix(rec.Header().Get("Content-Disposition"), "inline") {
+		t.Fatalf("pdf com inline: %v", rec.Header())
+	}
 	if rec = do(http.MethodGet, "/atlas/modelos/"+id+"/arquivo?versao=1", nil, ""); !bytes.Equal(rec.Body.Bytes(), conteudoDocx) {
 		t.Fatalf("versão 1: %d", rec.Code)
 	}

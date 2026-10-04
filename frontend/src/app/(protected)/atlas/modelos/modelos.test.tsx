@@ -111,6 +111,14 @@ describe("Atlas — biblioteca de modelos", () => {
 
     const lista = await screen.findByRole("list", { name: "Modelos" });
     expect(within(lista).getByText("Desativado")).toBeInTheDocument();
+    // PDF tem "Visualizar" (abre no navegador); docx não.
+    expect(within(lista).getByRole("link", { name: /Visualizar Ofício padrão/ })).toHaveAttribute(
+      "href",
+      "/api/backend/v1/atlas/modelos/mod-2/arquivo?inline=1",
+    );
+    expect(
+      within(lista).queryByRole("link", { name: /Visualizar Requerimento/ }),
+    ).not.toBeInTheDocument();
     expect(within(lista).getByText("Nenhuma peça ligada")).toBeInTheDocument();
     expect(within(lista).getAllByText(/por maria/)).toHaveLength(2);
 
@@ -542,5 +550,17 @@ describe("Atlas — modelos da série da TTDD", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent("passa de 10 MB");
     expect(screen.getByRole("button", { name: /Enviar/ })).toBeDisabled();
+  });
+});
+
+describe("Atlas — biblioteca pela Busca Global", () => {
+  it("?q= da Busca Global já filtra a biblioteca", async () => {
+    resetNavigation({}, "/atlas/modelos", "q=Ofício");
+    mockBackend(rotas(["atlas:manage"]));
+    renderApp(<ModelosPage />);
+    expect(await screen.findByLabelText("Procurar modelo")).toHaveValue("Ofício");
+    const lista = await screen.findByRole("list", { name: "Modelos" });
+    expect(within(lista).getByRole("heading", { name: "Ofício padrão" })).toBeInTheDocument();
+    expect(within(lista).queryByRole("heading", { name: "Requerimento" })).not.toBeInTheDocument();
   });
 });

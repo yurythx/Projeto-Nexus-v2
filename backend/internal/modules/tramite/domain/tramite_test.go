@@ -89,3 +89,16 @@ func TestCanActRequiresReadAndStates(t *testing.T) {
 		}
 	}
 }
+
+func TestValidarClassificacao(t *testing.T) {
+	for _, ok := range []string{"", "2.0.02.00.07", "12.0.03.01.02"} {
+		if ValidarClassificacao(ok) != nil {
+			t.Errorf("%q é válido", ok)
+		}
+	}
+	for _, ruim := range []string{"2.0", "2.0.02.00", "x", "2.1.02.00.07"} {
+		if ValidarClassificacao(ruim) == nil {
+			t.Errorf("%q é inválido", ruim)
+		}
+	}
+}

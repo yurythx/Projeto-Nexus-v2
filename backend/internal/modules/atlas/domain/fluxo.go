@@ -143,12 +143,16 @@ func SinteseFluxo(w Workflow) string {
 				b.WriteString("\n")
 			}
 		}
+		// O caminho normal primeiro; as devoluções em diligência depois.
+		for _, t := range e.Transicoes {
+			if !t.IsDevolucaoDiligencia {
+				fmt.Fprintf(&b, "   Para seguir: %s → etapa %d (%s)\n", t.CondicaoTransicao, t.DestinoOrdem, setor[t.DestinoOrdem])
+			}
+		}
 		for _, t := range e.Transicoes {
 			if t.IsDevolucaoDiligencia {
 				fmt.Fprintf(&b, "   Devolução em diligência: se %s, volta à etapa %d (%s) — %s\n", t.CondicaoTransicao, t.DestinoOrdem,
 					setor[t.DestinoOrdem], t.DescricaoDiligencia)
-			} else {
-				fmt.Fprintf(&b, "   Para seguir: %s → etapa %d (%s)\n", t.CondicaoTransicao, t.DestinoOrdem, setor[t.DestinoOrdem])
 			}
 		}
 		if e.ManterAbertoAposRemessa {
@@ -163,4 +167,36 @@ func SinteseFluxo(w Workflow) string {
 		b.WriteString(strings.TrimPrefix(Temporalidade(*c), "Temporalidade: "))
 	}
 	return b.String()
+}
+
+// ComModelos acrescenta à síntese os modelos ativos da série para baixar
+// (ADR 024); sem modelo ativo, a síntese fica como está.
+func ComModelos(sintese, codigo string, modelos []Modelo) string {
+	var nomes []string
+	for _, m := range modelos {
+		if m.Ativo {
+			nomes = append(nomes, fmt.Sprintf("%s (versão %d)", m.Nome, m.Atual.Versao))
+		}
+	}
+	if len(nomes) == 0 {
+		return sintese
+	}
+	return strings.TrimRight(sintese, "\n") + "\nModelos de documento para baixar (biblioteca do Atlas, série " + codigo + "): " +
+		strings.Join(nomes, "; ") + "\n"
+}
+
+// CasaModelo diz se todos os termos da busca aparecem (no início de uma
+// palavra, sem acento) no nome ou na descrição do modelo.
+func CasaModelo(m Modelo, busca string) bool {
+	termos := Termos(busca)
+	if len(termos) == 0 {
+		return false
+	}
+	texto := Fold(m.Nome + " " + m.Descricao)
+	for _, t := range termos {
+		if !contem(texto, t) {
+			return false
+		}
+	}
+	return true
 }

@@ -34,6 +34,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.With(auth.RequirePermission(h.logger, auth.PermTramiteCreate)).Post("/tramite/processos", h.Abrir)
 	r.With(auth.RequirePermission(h.logger, auth.PermTramiteRoute)).Post("/tramite/processos/{id}/tramitar", h.Tramitar)
 	r.Post("/tramite/processos/{id}/concluir", h.Concluir)
+	r.Put("/tramite/processos/{id}/classificacao", h.Classificar)
 	r.Post("/tramite/processos/{id}/arquivar", h.Arquivar)
 	r.With(auth.RequirePermission(h.logger, auth.PermTramiteManage)).Post("/tramite/processos/{id}/reabrir", h.Reabrir)
 	r.Post("/tramite/processos/{id}/acessos", h.ConcederAcesso)
@@ -102,6 +103,9 @@ type abrirRequest struct {
 	Descricao       string    `json:"descricao" validate:"max=20000"`
 	Sigilo          string    `json:"sigilo" validate:"required,oneof=publico restrito sigiloso"`
 	UnidadeOrigemID uuid.UUID `json:"unidade_origem_id" validate:"required"`
+	// Classificação pelo Atlas (opcional — ADR 026).
+	AtlasProcedimentoID *uuid.UUID `json:"atlas_procedimento_id"`
+	CodigoTTDD          string     `json:"codigo_ttdd" validate:"max=32"`
 }
 
 func (h *Handlers) Abrir(w http.ResponseWriter, r *http.Request) {
@@ -113,6 +117,7 @@ func (h *Handlers) Abrir(w http.ResponseWriter, r *http.Request) {
 	p, err := h.svc.Abrir(r.Context(), identity(r), application.AbrirInput{
 		TipoID: req.TipoID, Assunto: req.Assunto, Interessado: req.Interessado, Descricao: req.Descricao,
 		Sigilo: req.Sigilo, UnidadeOrigemID: req.UnidadeOrigemID,
+		AtlasProcedimentoID: req.AtlasProcedimentoID, CodigoTTDD: req.CodigoTTDD,
 	})
 	if err != nil {
 		h.fail(w, r, err)
@@ -320,4 +325,29 @@ func (h *Handlers) SolicitarAssinatura(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httputil.WriteOK(w, d)
+}
+
+type classificacaoRequest struct {
+	AtlasProcedimentoID *uuid.UUID `json:"atlas_procedimento_id"`
+	CodigoTTDD          string     `json:"codigo_ttdd" validate:"max=32"`
+}
+
+// Classificar define o procedimento do Atlas e a série da TTDD do processo.
+func (h *Handlers) Classificar(w http.ResponseWriter, r *http.Request) {
+	id, err := httputil.UUIDParam(r, "id")
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	var req classificacaoRequest
+	if err := httputil.Bind(w, r, &req); err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	p, err := h.svc.Classificar(r.Context(), identity(r), id, req.AtlasProcedimentoID, req.CodigoTTDD)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, p)
 }

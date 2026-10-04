@@ -18,12 +18,23 @@ const ALLOW: { method: string; prefix: string }[] = [
   { method: "GET", prefix: "v1/transparencia/" },
   { method: "POST", prefix: "v1/contact/messages" },
   { method: "POST", prefix: "v1/lgpd/accept-anon" },
+  // Atlas (ADR 026): TTDD, procedimentos e modelos — só leitura; a gestão
+  // (v1/atlas/admin) e o assistente ficam de fora.
+  { method: "GET", prefix: "v1/atlas/ttdd" },
+  { method: "GET", prefix: "v1/atlas/workflows" },
+  { method: "GET", prefix: "v1/atlas/modelos" },
 ];
 
 async function forward(req: NextRequest, path: string[]): Promise<NextResponse> {
   const joined = path.join("/");
-  if (joined.includes("..") || !ALLOW.some((a) => a.method === req.method && joined.startsWith(a.prefix))) {
-    return NextResponse.json({ data: null, error: { code: "NOT_FOUND", message: "rota pública inexistente" } }, { status: 404 });
+  if (
+    joined.includes("..") ||
+    !ALLOW.some((a) => a.method === req.method && joined.startsWith(a.prefix))
+  ) {
+    return NextResponse.json(
+      { data: null, error: { code: "NOT_FOUND", message: "rota pública inexistente" } },
+      { status: 404 },
+    );
   }
   const target = new URL(`/api/${joined}`, BACKEND_INTERNAL_URL);
   target.search = req.nextUrl.search;
@@ -41,13 +52,22 @@ async function forward(req: NextRequest, path: string[]): Promise<NextResponse> 
     });
     // 204/205/304 não podem ter corpo (o construtor de Response lança).
     const noBody = res.status === 204 || res.status === 205 || res.status === 304;
-    return new NextResponse(noBody ? null : await res.text(), {
-      status: res.status,
-      headers: { "Content-Type": res.headers.get("content-type") ?? "application/json" },
-    });
+    const contentType = res.headers.get("content-type") ?? "application/json";
+    // Arquivos (modelo do Atlas, CSV da TTDD) passam em bytes, com o nome:
+    // .text() corromperia o binário e tiraria o BOM do CSV.
+    const respHeaders: Record<string, string> = { "Content-Type": contentType };
+    const disposition = res.headers.get("content-disposition");
+    if (disposition) respHeaders["Content-Disposition"] = disposition;
+    const body = contentType.startsWith("application/json")
+      ? await res.text()
+      : await res.arrayBuffer();
+    return new NextResponse(noBody ? null : body, { status: res.status, headers: respHeaders });
   } catch {
     return NextResponse.json(
-      { data: null, error: { code: "DEPENDENCY_UNAVAILABLE", message: "serviço indisponível no momento" } },
+      {
+        data: null,
+        error: { code: "DEPENDENCY_UNAVAILABLE", message: "serviço indisponível no momento" },
+      },
       { status: 503 },
     );
   }

@@ -35,6 +35,11 @@ func (f fakeRepo) CandidatosTTDD(context.Context, database.DBTX, string, int) ([
 	return f.series, f.errTTDD
 }
 
+// ModelosDaSerie: as séries do fake não têm modelos ligados.
+func (f fakeRepo) ModelosDaSerie(context.Context, database.DBTX, string) ([]domain.Modelo, error) {
+	return nil, nil
+}
+
 func (f fakeRepo) ListTTDD(context.Context, database.DBTX, domain.FiltroTTDD, pagination.Params) ([]domain.ClassificacaoTTDD, int64, error) {
 	return nil, 0, f.err
 }

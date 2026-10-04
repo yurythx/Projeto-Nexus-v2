@@ -56,3 +56,20 @@ func TestValidarArquivoModelo(t *testing.T) {
 		}
 	}
 }
+
+func TestComModelosECasaModelo(t *testing.T) {
+	ativo := Modelo{Nome: "Ofício padrão", Descricao: "Comunicação externa", Ativo: true, Atual: ModeloVersao{Versao: 3}}
+	inativo := Modelo{Nome: "Antigo", Atual: ModeloVersao{Versao: 1}}
+	if got := ComModelos("síntese\n", "2.0", []Modelo{inativo}); got != "síntese\n" {
+		t.Fatalf("sem modelo ativo, a síntese não muda: %q", got)
+	}
+	if got := ComModelos("síntese\n", "2.0", []Modelo{ativo, inativo}); got !=
+		"síntese\nModelos de documento para baixar (biblioteca do Atlas, série 2.0): Ofício padrão (versão 3)\n" {
+		t.Fatalf("com modelo: %q", got)
+	}
+	for busca, want := range map[string]bool{"oficio": true, "comunicação ofício": true, "ofício interno": false, "de": false, "": false} {
+		if CasaModelo(ativo, busca) != want {
+			t.Errorf("CasaModelo(%q) != %v", busca, want)
+		}
+	}
+}

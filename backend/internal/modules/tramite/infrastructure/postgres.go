@@ -79,14 +79,16 @@ func (r *Repository) NextNumero(ctx context.Context, db database.DBTX, ano int) 
 
 func (r *Repository) Insert(ctx context.Context, db database.DBTX, p domain.Processo) error {
 	_, err := db.Exec(ctx, `INSERT INTO tramite_processos (id, numero, tipo_id, assunto, interessado, descricao, sigilo, status,
-		unidade_origem_id, unidade_atual_id, created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$10)`,
-		p.ID, p.Numero, p.TipoID, p.Assunto, p.Interessado, p.Descricao, p.Sigilo, p.Status, p.UnidadeOrigemID, p.CreatedBy)
+		unidade_origem_id, unidade_atual_id, created_by, atlas_procedimento_id, codigo_ttdd)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9,$10,$11,NULLIF($12,''))`,
+		p.ID, p.Numero, p.TipoID, p.Assunto, p.Interessado, p.Descricao, p.Sigilo, p.Status, p.UnidadeOrigemID, p.CreatedBy,
+		p.AtlasProcedimentoID, p.CodigoTTDD)
 	return wrap(err)
 }
 
 const procCols = `p.id, p.numero, p.tipo_id, t.nome, p.assunto, p.interessado, p.descricao, p.sigilo, p.status,
 	p.unidade_origem_id, uo.nome, p.unidade_atual_id, ua.nome, p.created_by, COALESCE(NULLIF(u.display_name,''), u.username, ''),
-	p.created_at, p.updated_at, p.concluido_at`
+	p.created_at, p.updated_at, p.concluido_at, p.atlas_procedimento_id, COALESCE(p.codigo_ttdd, '')`
 
 const procFrom = ` FROM tramite_processos p
 	JOIN tramite_tipos t ON t.id = p.tipo_id
@@ -98,7 +100,7 @@ func scanProc(row interface{ Scan(...any) error }) (domain.Processo, error) {
 	var p domain.Processo
 	err := row.Scan(&p.ID, &p.Numero, &p.TipoID, &p.Tipo, &p.Assunto, &p.Interessado, &p.Descricao, &p.Sigilo, &p.Status,
 		&p.UnidadeOrigemID, &p.UnidadeOrigem, &p.UnidadeAtualID, &p.UnidadeAtual, &p.CreatedBy, &p.CreatedByName,
-		&p.CreatedAt, &p.UpdatedAt, &p.ConcluidoAt)
+		&p.CreatedAt, &p.UpdatedAt, &p.ConcluidoAt, &p.AtlasProcedimentoID, &p.CodigoTTDD)
 	return p, err
 }
 
@@ -176,8 +178,9 @@ func (r *Repository) ListVisible(ctx context.Context, db database.DBTX, identity
 
 func (r *Repository) Update(ctx context.Context, db database.DBTX, p domain.Processo) error {
 	tag, err := db.Exec(ctx, `UPDATE tramite_processos SET assunto=$2, interessado=$3, descricao=$4, sigilo=$5, status=$6,
-		unidade_atual_id=$7, concluido_at=$8 WHERE id=$1`,
-		p.ID, p.Assunto, p.Interessado, p.Descricao, p.Sigilo, p.Status, p.UnidadeAtualID, p.ConcluidoAt)
+		unidade_atual_id=$7, concluido_at=$8, atlas_procedimento_id=$9, codigo_ttdd=NULLIF($10,'') WHERE id=$1`,
+		p.ID, p.Assunto, p.Interessado, p.Descricao, p.Sigilo, p.Status, p.UnidadeAtualID, p.ConcluidoAt,
+		p.AtlasProcedimentoID, p.CodigoTTDD)
 	if err == nil && tag.RowsAffected() == 0 {
 		return domain.ErrNotFound
 	}

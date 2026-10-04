@@ -66,7 +66,8 @@ func MapError(err error) error {
 	case errors.Is(err, domain.ErrInvalidState), errors.Is(err, domain.ErrDocumentState),
 		errors.Is(err, domain.ErrClosed), errors.Is(err, domain.ErrPendingSignature):
 		return apperrors.Conflict(err.Error())
-	case errors.Is(err, domain.ErrPublicGrant), errors.Is(err, domain.ErrInactiveTipo), errors.Is(err, domain.ErrInactiveUnidade):
+	case errors.Is(err, domain.ErrPublicGrant), errors.Is(err, domain.ErrInactiveTipo), errors.Is(err, domain.ErrInactiveUnidade),
+		errors.Is(err, domain.ErrSerieInvalida):
 		return apperrors.Validation(err.Error())
 	case errors.Is(err, domain.ErrSignatureOff):
 		return apperrors.FeatureDisabled(err.Error())
@@ -127,6 +128,9 @@ type AbrirInput struct {
 	Descricao       string
 	Sigilo          string
 	UnidadeOrigemID uuid.UUID
+	// Classificação pelo Atlas (opcional — ADR 026).
+	AtlasProcedimentoID *uuid.UUID
+	CodigoTTDD          string
 }
 
 // Abrir numera e abre um processo (tramite:create exigido na rota).
@@ -135,6 +139,10 @@ func (s *Service) Abrir(ctx context.Context, identity auth.Identity, in AbrirInp
 	// unidade dele e nas subunidades); tramite:manage idem.
 	if origem := auth.InUnidade(in.UnidadeOrigemID); !auth.Can(identity, auth.PermTramiteCreate, origem) && !auth.Can(identity, auth.PermTramiteManage, origem) {
 		return domain.Processo{}, apperrors.Forbidden("você só pode abrir processos nas unidades em que tem o perfil de protocolo")
+	}
+	in.CodigoTTDD = strings.TrimSpace(in.CodigoTTDD)
+	if err := domain.ValidarClassificacao(in.CodigoTTDD); err != nil {
+		return domain.Processo{}, MapError(err)
 	}
 	var out domain.Processo
 	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
@@ -158,7 +166,8 @@ func (s *Service) Abrir(ctx context.Context, identity auth.Identity, in AbrirInp
 		}
 		p := domain.Processo{ID: uuid.New(), Numero: domain.FormatNumero(seq, ano), TipoID: in.TipoID,
 			Assunto: strings.TrimSpace(in.Assunto), Interessado: in.Interessado, Descricao: in.Descricao, Sigilo: in.Sigilo,
-			Status: domain.StatusAberto, UnidadeOrigemID: in.UnidadeOrigemID, CreatedBy: identity.UserID}
+			Status: domain.StatusAberto, UnidadeOrigemID: in.UnidadeOrigemID, CreatedBy: identity.UserID,
+			AtlasProcedimentoID: in.AtlasProcedimentoID, CodigoTTDD: in.CodigoTTDD}
 		if err := s.repo.Insert(ctx, tx, p); err != nil {
 			return err
 		}
@@ -625,4 +634,32 @@ func (s *Service) HandleSignatureEvent(ctx context.Context, ev events.Event) err
 func (s *Service) Search(ctx context.Context, identity auth.Identity, q string, limit int) ([]domain.Processo, error) {
 	items, _, err := s.repo.ListVisible(ctx, s.pool, identity, domain.Filter{Query: q}, pagination.New(1, limit, limit))
 	return items, err
+}
+
+// Classificar define (ou troca) o procedimento do Atlas e a série da TTDD
+// do processo — também depois de encerrado, para a guarda (ADR 026). Exige
+// poder movimentar o processo; auditado com a classificação anterior.
+func (s *Service) Classificar(ctx context.Context, identity auth.Identity, id uuid.UUID, procedimento *uuid.UUID, codigo string) (domain.Processo, error) {
+	codigo = strings.TrimSpace(codigo)
+	if err := domain.ValidarClassificacao(codigo); err != nil {
+		return domain.Processo{}, MapError(err)
+	}
+	var out domain.Processo
+	err := database.WithTx(ctx, s.pool, func(ctx context.Context, tx pgx.Tx) error {
+		p, err := s.load(ctx, tx, identity, id, true, true)
+		if err != nil {
+			return err
+		}
+		antes := map[string]any{"atlas_procedimento_id": p.AtlasProcedimentoID, "codigo_ttdd": p.CodigoTTDD}
+		p.AtlasProcedimentoID, p.CodigoTTDD = procedimento, codigo
+		if err := s.repo.Update(ctx, tx, p); err != nil {
+			return err
+		}
+		if out, err = s.repo.Get(ctx, tx, id, false); err != nil {
+			return err
+		}
+		return audit.NewWriter(tx).Record(ctx, audit.Meta(ctx, "tramite.processo.classificado", "tramite_processo", id.String(), antes,
+			map[string]any{"atlas_procedimento_id": out.AtlasProcedimentoID, "codigo_ttdd": out.CodigoTTDD}))
+	})
+	return out, MapError(err)
 }

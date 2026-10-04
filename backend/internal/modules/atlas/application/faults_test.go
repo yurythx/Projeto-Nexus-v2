@@ -174,6 +174,32 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 				return err
 			}
 		},
+		"SimularImportacao": func() func(*application.Service) error {
+			igual, outro := e.workflow(true), e.workflow(true)
+			c := arquivo(itemArquivo(codigoNovo(), "Novo", ""), itemArquivo(igual.CodigoProcessual, "Procedimento de teste", ""),
+				itemArquivo(outro.CodigoProcessual, "Revisto", ""))
+			return func(s *application.Service) error {
+				_, err := s.ImportarProcedimentos(ctx, gestor, c, "", false)
+				return err
+			}
+		},
+		"AplicarImportacao": func() func(*application.Service) error {
+			outro := e.workflow(true)
+			c := arquivo(itemArquivo(codigoNovo(), "Novo", ""), itemArquivo(outro.CodigoProcessual, "Revisto", ""))
+			return func(s *application.Service) error {
+				_, err := s.ImportarProcedimentos(ctx, gestor, c, application.HashCarga(c), true)
+				return err
+			}
+		},
+		"ExportarProcedimentos": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.ExportarProcedimentos(ctx); return err }
+		},
+		"Cobertura": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.Cobertura(ctx); return err }
+		},
+		"BuscaGlobal": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.BuscaGlobal(ctx, "atlas", "pregão", 5); return err }
+		},
 		"ModelosDaSerie": func() func(*application.Service) error {
 			return func(s *application.Service) error { _, err := s.ModelosDaSerie(ctx, serieVigente); return err }
 		},

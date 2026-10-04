@@ -547,6 +547,9 @@ export interface Processo {
   created_at: string;
   updated_at: string;
   concluido_at?: string;
+  /** Classificação pelo Atlas (ADR 026). */
+  atlas_procedimento_id?: UUID | null;
+  codigo_ttdd?: string;
 }
 
 export interface Documento {
@@ -741,6 +744,54 @@ export interface ModeloVersao {
 }
 
 /** Modelo de documento: a versão atual e, no detalhe, o histórico. */
+// ------------------------------------- importação e cobertura (ADR 025)
+
+export type SituacaoImportacao = "NOVO" | "NOVA_VERSAO" | "INALTERADO" | "ERRO";
+
+export interface ItemImportacao {
+  linha: number;
+  codigo_processual: string;
+  titulo: string;
+  situacao: SituacaoImportacao;
+  versao: number;
+  erro?: string;
+}
+
+export interface ImportacaoProcedimentos {
+  hash: string;
+  aplicada: boolean;
+  totais: Partial<Record<SituacaoImportacao, number>>;
+  itens: ItemImportacao[];
+}
+
+export interface CoberturaAtlas {
+  totais: {
+    series: number;
+    series_com_procedimento: number;
+    series_com_modelo: number;
+    procedimentos: number;
+    pecas: number;
+    pecas_com_modelo: number;
+    modelos: number;
+    modelos_sem_uso: number;
+  };
+  orgaos: {
+    prefixo: string;
+    nome: string;
+    series: number;
+    series_com_procedimento: number;
+    series_com_modelo: number;
+  }[];
+  pecas_sem_modelo: {
+    workflow_id: UUID;
+    codigo_processual: string;
+    titulo: string;
+    etapa: number;
+    peca: string;
+  }[];
+  modelos_sem_uso: { id: UUID; nome: string }[];
+}
+
 export interface ModeloDocumento {
   id: UUID;
   nome: string;

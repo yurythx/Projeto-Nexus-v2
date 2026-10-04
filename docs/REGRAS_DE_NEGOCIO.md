@@ -642,6 +642,34 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   - a peça **sem modelo próprio** mostra, no checklist e nos Detalhes, os
     modelos **ativos** da série da TTDD do procedimento; o modelo próprio
     da peça tem precedência.
+- **Importação e exportação em lote (ADR 025, `atlas:manage`):**
+  - o arquivo JSON da exportação (`procedimentos.json`) é o mesmo da
+    importação; a peça aponta para o modelo pelo nome; até 500
+    procedimentos; campo desconhecido é erro;
+  - cada item é NOVO, NOVA_VERSAO (conteúdo diferente da versão em vigor),
+    INALTERADO (mesmo conteúdo) ou ERRO (a regra que falhou); a simulação
+    não grava; aplicar exige o arquivo simulado (hash) e nenhum erro;
+  - procedimentos fora do arquivo não mudam (nada é desativado);
+  - modelos em lote: o nome vem do arquivo; um código de série no início
+    do nome liga o modelo à série.
+- **Painel de cobertura (`atlas:manage`):** séries com fluxo e com modelo
+  por secretaria, peças sem modelo (nem próprio nem da série) e modelos sem
+  uso.
+- **Busca Global:** procedimentos, séries vigentes da TTDD (código exato
+  primeiro) e modelos ativos.
+- **Ligação com o Trâmite (ADR 026):** o processo pode ser classificado
+  com o procedimento do Atlas e a série da TTDD (na abertura ou depois,
+  também encerrado; exige poder movimentar o processo; auditado); o
+  processo mostra o checklist das peças (juntada = documento com tipo ou
+  título igual ao nome da peça, sem acento e caixa; cancelado não conta),
+  o modelo de cada peça e a guarda; a página Guarda documental lista os
+  encerrados por série com a situação (fase corrente, intermediário,
+  eliminação com aprovação da CCPAD, recolhimento ao permanente), contando
+  do encerramento.
+- **Atlas público (sem login):** `/procedimentos` e `/temporalidade` no
+  site institucional, com os modelos para baixar e a planilha da TTDD; o
+  proxy anônimo libera só a leitura do Atlas.
+- **Visualizar modelo:** só PDF abre no navegador (`?inline=1`).
 - **Páginas (URL própria, compartilhável e imprimível):**
   - `/atlas` — busca unificada (procedimentos e séries em paralelo, ou a
     pergunta ao assistente), procedimentos e atalhos por secretaria;
@@ -652,6 +680,8 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   - `/atlas/ttdd/{codigo}` — a série, a fonte oficial, os procedimentos
     que a produzem e o histórico de prazos (série revogada abre com aviso);
   - `/atlas/ttdd/atualizar` — atualização da TTDD (gestão);
+  - `/atlas/importar` e `/atlas/cobertura` — importação em lote e painel
+    de cobertura (gestão);
   - `/atlas/modelos` — biblioteca de modelos de documento (consulta,
     download e histórico; a gestão cadastra, publica versões e desativa);
   - os links antigos `/atlas?procedimento=` e `/atlas?ttdd=` redirecionam.

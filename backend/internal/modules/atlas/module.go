@@ -80,17 +80,5 @@ type provider struct{ svc *application.Service }
 func (provider) Module() string { return Key }
 
 func (p provider) Search(ctx context.Context, _ auth.Identity, q string, limit int) ([]search.Result, error) {
-	items, ranks, err := p.svc.Search(ctx, q, limit)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]search.Result, 0, len(items))
-	for i, w := range items {
-		updated := w.UpdatedAt
-		out = append(out, search.Result{
-			Module: Key, Type: "procedimento", ID: w.ID.String(), Title: w.CodigoProcessual + " — " + w.Titulo,
-			Snippet: modkit.Snippet(w.Objetivo, 180), URL: "/atlas/procedimentos/" + w.ID.String(), Score: ranks[i], UpdatedAt: &updated,
-		})
-	}
-	return out, nil
+	return p.svc.BuscaGlobal(ctx, Key, q, limit)
 }
