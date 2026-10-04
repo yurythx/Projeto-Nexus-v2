@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -34,6 +35,10 @@ const (
 const (
 	maxCandidatos = 10
 	maxFontes     = 3
+	// margemFontes: além da melhor série, só entram as que ficam até 0,15
+	// abaixo dela — séries que só passaram do limiar por palavras genéricas
+	// ("documentos", "legislação") não poluem a resposta.
+	margemFontes = 0.15
 )
 
 // Service implementa os casos de uso.
@@ -348,14 +353,22 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 			hits = append(hits, candidato{Fonte{Tipo: FonteTTDD, Codigo: c.Codigo, Titulo: c.Descritor, Relevancia: r}, domain.SinteseTTDD(c)})
 		}
 	}
-	sort.SliceStable(hits, func(i, j int) bool { return hits[i].fonte.Relevancia > hits[j].fonte.Relevancia })
+	// Empate: a série de nome mais curto (mais específico) vem antes — o PDF
+	// tem descritores com notas longas coladas que casam com muitas palavras.
+	sort.SliceStable(hits, func(i, j int) bool {
+		if hits[i].fonte.Relevancia != hits[j].fonte.Relevancia {
+			return hits[i].fonte.Relevancia > hits[j].fonte.Relevancia
+		}
+		return utf8.RuneCountInString(hits[i].fonte.Titulo) < utf8.RuneCountInString(hits[j].fonte.Titulo)
+	})
+	melhor := "" // nome da série mais relevante (para o filtro de pedidos)
 	if len(hits) > 0 {
-		resp.Score = hits[0].fonte.Relevancia
+		resp.Score, melhor = hits[0].fonte.Relevancia, hits[0].fonte.Titulo
 	}
 
 	var contexto []string
 	for _, h := range hits {
-		if h.fonte.Relevancia < domain.LimiarRelevancia || len(contexto) == maxFontes {
+		if h.fonte.Relevancia < domain.LimiarRelevancia || h.fonte.Relevancia < resp.Score-margemFontes || len(contexto) == maxFontes {
 			break
 		}
 		contexto = append(contexto, h.sintese)
@@ -364,7 +377,7 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 	sintese := strings.Join(contexto, "\n\n")
 
 	switch {
-	case domain.PedidoDeProcedimento(pergunta):
+	case domain.PedidoForaDoObjetivo(pergunta, melhor):
 		recusar(&resp, "")
 	case len(contexto) == 0:
 		recusar(&resp, pergunta)

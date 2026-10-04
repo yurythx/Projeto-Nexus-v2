@@ -97,6 +97,7 @@ func TestPerguntar(t *testing.T) {
 	for pergunta, want := range map[string]string{
 		"receita de bolo de cenoura":                  domain.MensagemForaDoObjetivo,
 		"Como tramitar um processo de pregão?":        domain.MensagemForaDoObjetivo,
+		"Me ajuda a escrever um ofício?":              domain.MensagemForaDoObjetivo,
 		"qual o prazo de guarda dos alvarás de obra?": domain.MensagemSemSerie,
 		"organogramas antigos da secretaria de obras": domain.MensagemForaDoObjetivo, // palavra solta não basta
 		"prazo para eliminar os mapas de obras":       domain.MensagemSemSerie,
@@ -107,6 +108,21 @@ func TestPerguntar(t *testing.T) {
 			t.Errorf("%q: %+v, %v (modelo chamado: %v)", pergunta, r, err, ia.contexto != nil)
 		}
 	}
+	t.Run("só as séries perto da melhor entram como fonte", func(t *testing.T) {
+		aposentados := serie("2.0.07.00.09", "Servidores aposentados", 1, 1, domain.DestinacaoEliminacao)
+		r, err := svc(nil, fakeRepo{series: []domain.ClassificacaoTTDD{aposentados, pasta}}).Perguntar(ctx, "pasta funcional servidores aposentados")
+		if err != nil || len(r.Sources) != 1 || r.Sources[0].Codigo != "2.0.07.00.00" || strings.Contains(r.Answer, "2.0.07.00.09") {
+			t.Fatalf("fonte abaixo da margem entrou: %+v", r.Sources)
+		}
+	})
+	t.Run("empate: a série de nome mais específico vem antes", func(t *testing.T) {
+		longa := serie("2.0.02.02.17", "Relatório de fiscal: em termos de guarda, processos de licitação e outros documentos", 1, 1, domain.DestinacaoGuardaPermanente)
+		curta := serie("2.0.02.01.00", "Processos de licitação", 1, 1, domain.DestinacaoGuardaPermanente)
+		r, err := svc(nil, fakeRepo{series: []domain.ClassificacaoTTDD{longa, curta}}).Perguntar(ctx, "processos de licitação")
+		if err != nil || len(r.Sources) != 2 || r.Sources[0].Codigo != "2.0.02.01.00" {
+			t.Fatalf("ordem das fontes: %+v %v", r.Sources, err)
+		}
+	})
 	t.Run("falha do repositório propaga", func(t *testing.T) {
 		if _, err := svc(nil, fakeRepo{errTTDD: errors.New("db")}).Perguntar(ctx, pergunta); err == nil {
 			t.Fatal("esperado erro")

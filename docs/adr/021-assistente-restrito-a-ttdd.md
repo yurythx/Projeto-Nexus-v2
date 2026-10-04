@@ -31,7 +31,17 @@ Tabela de Temporalidade e Destinação de Documentos e nada mais.
      TTDD oficial uma série documental…"*. Uma coincidência fraca de
      palavras com alguma série (abaixo do limiar) não torna o assunto
      válido: sem termo de temporalidade, a recusa é a de assunto.
-3. **Decisão determinística antes do modelo:** pedido de procedimento
+3. **Decisão determinística antes do modelo** (revista em 2026-10-04): o
+   filtro cobre pedido de procedimento e de **tarefa** ("me ajuda a
+   escrever", "resuma", "traduza", "piada") — "Me ajuda a escrever um
+   ofício?" casava com séries de "ofícios". Um termo do filtro que faz parte
+   do nome da série mais relevante não conta (22 séries têm "protocolo" no
+   nome, 35 "encaminhamento", 9 "resumo"); conferido contra as 1.686 séries:
+   todas, perguntadas pelo nome, passam no filtro e no limiar. Além do
+   limiar, uma série só entra como fonte se ficar até 0,15 abaixo da melhor.
+   Os termos casam no início de uma palavra (antes casavam no meio:
+   "licitação" achava "Solicitação de Material").
+   Texto original da decisão: pedido de procedimento
    ("tramitar", "etapa", "setor", "quem assina"…) sem termo de
    temporalidade é recusado direto — senão "Como tramitar o processo de
    pregão?" casaria por palavras com a série "Processos relativos a pregão".

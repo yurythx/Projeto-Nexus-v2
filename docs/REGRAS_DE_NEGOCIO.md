@@ -635,13 +635,19 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     tramitar, etapas, peças) e qualquer outro assunto recebem: *"Esse
     assunto foge do objetivo da IA: este assistente responde apenas sobre a
     Tabela de Temporalidade e Destinação de Documentos (TTDD)…"*;
-  - a decisão é **determinística**, antes do modelo: pedido de procedimento
-    sem termo de temporalidade é recusado direto; a resposta exige uma
+  - a decisão é **determinística**, antes do modelo: pedido de
+    procedimento ("como tramitar", "quem assina") ou de tarefa ("me ajuda a
+    escrever", "resuma", "traduza") sem termo de temporalidade é recusado
+    direto — salvo quando a palavra faz parte do nome da série encontrada
+    ("Cadernos de Protocolo", "Relatório Resumido…"); a resposta exige uma
     série com relevância ≥ **0,65** (fração dos termos da pergunta
-    presentes no descritor, sem acentos e sem palavras vazias, com bônus
+    presentes no descritor — no início de uma palavra, aceitando plural e
+    gênero: "licitação" não casa com "solicitação" —, sem acentos e sem
+    palavras vazias, com bônus
     para o código exato e o descritor; palavras de temporalidade — "prazo",
     "guarda", "destinação", "por quanto tempo" — que a série não contém não
-    entram na conta); usa até 3 séries;
+    entram na conta); usa até 3 séries, só as que ficam até 0,15 abaixo da
+    melhor;
   - pergunta sobre temporalidade sem série correspondente: *"Não localizei
     na TTDD oficial uma série documental que corresponda à sua consulta…"*;
   - o modelo de IA recebe a mesma regra no prompt (inclusive ignorar

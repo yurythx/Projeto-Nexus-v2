@@ -114,11 +114,23 @@ func TestObjetivoDoAssistente(t *testing.T) {
 		"Como tramitar o processo de pregão?":           true,
 		"quais etapas e setores do pedido de diárias":   true,
 		"quem assina o termo de referência?":            true,
+		"Me ajuda a escrever um ofício?":                true,
+		"resuma a lei de licitações":                    true,
 		"qual o prazo de guarda do processo de pregão?": false, // fala de temporalidade
 		"receita de bolo":                               false, // fora do objetivo, mas não é procedimento
 	} {
-		if PedidoDeProcedimento(p) != want {
-			t.Errorf("PedidoDeProcedimento(%q) != %v", p, want)
+		if PedidoForaDoObjetivo(p, "Processos relativos a Pregão Presencial/Pregão Eletrônico") != want {
+			t.Errorf("PedidoForaDoObjetivo(%q) != %v", p, want)
+		}
+	}
+	// O termo que faz parte do nome da série não é pedido de tarefa.
+	for p, serie := range map[string]string{
+		"cadernos de protocolo":                          "Cadernos de Protocolo",
+		"relatório resumido de execução orçamentária":    "RREO - Relatório Resumido de Execução Orçamentária",
+		"despacho de encaminhamento do relatório social": "Despacho de Encaminhamento",
+	} {
+		if PedidoForaDoObjetivo(p, serie) {
+			t.Errorf("%q é o nome da série %q, não um pedido", p, serie)
 		}
 	}
 	if !strings.HasPrefix(MensagemForaDoObjetivo, "Esse assunto foge do objetivo da IA") || !ForaDoObjetivo("  "+MensagemForaDoObjetivo) ||
@@ -249,6 +261,11 @@ func TestRelevanciaTTDD(t *testing.T) {
 	}
 	if r := RelevanciaTTDD(org, "Qual o prazo de guarda e a destinação final?"); r != 0 {
 		t.Fatalf("só palavras de temporalidade não escolhem série: %.2f", r)
+	}
+	// Casa no início da palavra, não no meio ("licitação" x "solicitação").
+	if contem(Fold("Solicitação de Material"), "licitacao") || !contem(Fold("Processos de licitações"), "licitacao") ||
+		!contem("pagamento (nota fiscal", "nota") || !contem("serie 2.0.07.00.00", "2.0.07.00.00") {
+		t.Fatal("casamento por palavra")
 	}
 	// Quando a palavra de temporalidade está na série, ela conta a favor.
 	if r := RelevanciaTTDD(ClassificacaoTTDD{Descritor: "Processo de Eliminação de documentos"}, "processo de eliminação"); r < LimiarRelevancia {

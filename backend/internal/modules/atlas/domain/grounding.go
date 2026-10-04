@@ -44,23 +44,33 @@ func SobreTemporalidade(pergunta string) bool {
 	return false
 }
 
-// termosProcedimento indicam pedido de como tramitar ou instruir um
-// processo — fora do objetivo, mesmo que palavras casem com uma série
-// ("Como tramitar o processo de pregão?" x "Processos relativos a pregão").
-var termosProcedimento = []string{
+// termosForaDoObjetivo indicam pedido de procedimento (como tramitar ou
+// instruir um processo) ou de tarefa (redigir, resumir, traduzir…) — fora
+// do objetivo, mesmo que palavras casem com uma série ("Como tramitar o
+// processo de pregão?" x "Processos relativos a pregão"; "Me ajuda a
+// escrever um ofício?" x "Livro de registro de ofícios").
+var termosForaDoObjetivo = []string{
+	// procedimento
 	"tramit", "etapa", "setor", "fluxo", "protocol", "instruir", "instrucao", "assinar", "assinatura", "peca", "pecas",
 	"como faco", "como fazer", "passo a passo", "quem aprova", "quem assina", "encaminh",
+	// tarefa (só verbos inequívocos: "elaboração", "revisão", "receita",
+	// "conselho" aparecem em nomes de séries e órgãos da TTDD)
+	"escrev", "redig", "redacao", "resum", "traduz", "me ajud", "ajude", "poema", "piada", "opiniao",
 }
 
-// PedidoDeProcedimento informa se a pergunta pede um procedimento (e não
-// fala de temporalidade): recusa direta, sem consultar a TTDD.
-func PedidoDeProcedimento(pergunta string) bool {
+// PedidoForaDoObjetivo informa se a pergunta pede um procedimento ou uma
+// tarefa (e não fala de temporalidade): recusa direta. descritor é o nome
+// da série mais relevante ("" se nenhuma): um termo que faz parte dele não
+// conta como pedido — 22 séries têm "protocolo" no nome, 35
+// "encaminhamento", 9 "resumo" ("Cadernos de Protocolo", "Relatório
+// Resumido de Execução Orçamentária").
+func PedidoForaDoObjetivo(pergunta, descritor string) bool {
 	if SobreTemporalidade(pergunta) {
 		return false
 	}
-	texto := " " + Fold(pergunta)
-	for _, t := range termosProcedimento {
-		if strings.Contains(texto, " "+t) {
+	texto, nome := " "+Fold(pergunta), " "+Fold(descritor)
+	for _, t := range termosForaDoObjetivo {
+		if strings.Contains(texto, " "+t) && !strings.Contains(nome, " "+t) {
 			return true
 		}
 	}
@@ -115,15 +125,28 @@ func Termos(pergunta string) []string {
 	return out
 }
 
-// contem casa o termo inteiro ou, a partir de 6 letras, o radical sem as
-// duas últimas (plural e gênero: "documentos" ~ "documento", "licitacoes" ~
-// "licitacao").
+// contem casa o termo no INÍCIO de uma palavra — inteiro ou, a partir de 6
+// letras, pelo radical sem as duas últimas (plural e gênero: "documentos" ~
+// "documento", "licitacoes" ~ "licitacao"). No meio da palavra não vale:
+// "licitação" não casa com "solicitação".
 func contem(texto, termo string) bool {
-	if strings.Contains(texto, termo) {
+	t := palavras(texto)
+	if strings.Contains(t, " "+termo) {
 		return true
 	}
 	r := []rune(termo)
-	return len(r) >= 6 && strings.Contains(texto, string(r[:len(r)-2]))
+	return len(r) >= 6 && strings.Contains(t, " "+string(r[:len(r)-2]))
+}
+
+// palavras separa o texto em palavras por espaço (pontuação vira espaço; o
+// ponto fica, para os códigos "2.0.01.00.05").
+func palavras(texto string) string {
+	return " " + strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '.' {
+			return r
+		}
+		return ' '
+	}, texto)
 }
 
 // Temporalidade descreve prazos, destinação, recomendação e fonte de uma
