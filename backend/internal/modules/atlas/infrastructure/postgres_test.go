@@ -41,6 +41,7 @@ func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {
 		"Insert":           func(db database.DBTX) error { return r.Insert(ctx, db, wf) },
 		"SetAtivo":         func(db database.DBTX) error { return r.SetAtivo(ctx, db, id, true) },
 		"Search":           func(db database.DBTX) error { _, _, err := r.Search(ctx, db, "x", 5); return err },
+		"Candidatos":       func(db database.DBTX) error { _, err := r.Candidatos(ctx, db, "x", 5); return err },
 		"HistoricoTTDD":    func(db database.DBTX) error { _, err := r.HistoricoTTDD(ctx, db, "x"); return err },
 		"MaxVersao":        func(db database.DBTX) error { _, err := r.MaxVersao(ctx, db, "X"); return err },
 		"DesativarVersoes": func(db database.DBTX) error { _, err := r.DesativarVersoes(ctx, db, "X", id); return err },
@@ -50,7 +51,7 @@ func TestRepositoryPropagatesDatabaseErrors(t *testing.T) {
 			t.Errorf("%s com o banco fora: %v", name, err)
 		}
 	}
-	for _, name := range []string{"Search", "EstruturaTTDD", "CandidatosTTDD", "HistoricoTTDD", "MaxVersao", "DesativarVersoes"} {
+	for _, name := range []string{"Search", "Candidatos", "EstruturaTTDD", "CandidatosTTDD", "HistoricoTTDD", "MaxVersao", "DesativarVersoes"} {
 		if err := calls[name](dbtest.ScanFail{}); err == nil {
 			t.Errorf("%s com linha ilegível deveria falhar", name)
 		}
@@ -180,6 +181,9 @@ func TestRepositoryFailuresAfterSuccessfulReads(t *testing.T) {
 	}
 	if _, err := r.Get(ctx, &dbtest.Seq{Row: workflowRow(id), Queries: []dbtest.QueryResult{fail}}, id, false); err == nil {
 		t.Error("get: falha ao carregar etapas engolida")
+	}
+	if _, err := r.Candidatos(ctx, &dbtest.Seq{Queries: append(q(&valRows{data: [][]any{workflowRow(id)}}), fail)}, "x", 5); err == nil {
+		t.Error("candidatos: falha ao carregar etapas engolida")
 	}
 
 	// Listagens: contagem ok, página falha (consulta, linha, leitura).

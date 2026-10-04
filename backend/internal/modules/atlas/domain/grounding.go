@@ -10,19 +10,22 @@ import (
 
 // LimiarRelevancia é a relevância mínima (0..1) para o assistente
 // responder. Abaixo dela a resposta é uma das recusas canônicas — nada de
-// orientação inventada sem série da TTDD que a sustente.
+// orientação inventada sem procedimento homologado ou série da TTDD que a
+// sustente.
 const LimiarRelevancia = 0.65
 
-// O assistente responde SÓ sobre a TTDD oficial (ADR 021). Duas recusas:
+// O assistente responde SÓ sobre o acervo documental do Atlas — os fluxos
+// homologados e a TTDD oficial (ADRs 021 e 023). Duas recusas:
 const (
-	// MensagemForaDoObjetivo: a pergunta não é sobre temporalidade de
-	// documentos (qualquer outro assunto, inclusive procedimentos).
-	MensagemForaDoObjetivo = "Esse assunto foge do objetivo da IA: este assistente responde apenas sobre a Tabela de " +
-		"Temporalidade e Destinação de Documentos (TTDD) — prazos de guarda, destinação final e classificação das séries documentais."
-	// MensagemSemSerie: é sobre temporalidade, mas nenhuma série da TTDD
-	// corresponde à pergunta.
-	MensagemSemSerie = "Não localizei na TTDD oficial uma série documental que corresponda à sua consulta. " +
-		"Verifique o nome ou o código do documento na Tabela de Temporalidade, ou consulte a unidade de gestão documental."
+	// MensagemForaDoObjetivo: a pergunta não é sobre fluxos nem sobre
+	// temporalidade de documentos.
+	MensagemForaDoObjetivo = "Esse assunto foge do objetivo da IA: este assistente responde apenas sobre os fluxos " +
+		"documentais do Atlas (como cada processo tramita, do início ao fim) e a Tabela de Temporalidade e Destinação de " +
+		"Documentos (TTDD) — prazos de guarda e destinação final."
+	// MensagemSemFonte: é sobre fluxo ou temporalidade, mas nenhum
+	// procedimento homologado nem série da TTDD corresponde à pergunta.
+	MensagemSemFonte = "Não localizei um fluxo homologado nem uma série da TTDD que corresponda à sua consulta. " +
+		"Verifique o nome do processo ou do documento, ou consulte a unidade de gestão documental."
 )
 
 // termosTemporalidade indicam que a pergunta é sobre a TTDD mesmo quando
@@ -44,28 +47,22 @@ func SobreTemporalidade(pergunta string) bool {
 	return false
 }
 
-// termosForaDoObjetivo indicam pedido de procedimento (como tramitar ou
-// instruir um processo) ou de tarefa (redigir, resumir, traduzir…) — fora
-// do objetivo, mesmo que palavras casem com uma série ("Como tramitar o
-// processo de pregão?" x "Processos relativos a pregão"; "Me ajuda a
-// escrever um ofício?" x "Livro de registro de ofícios").
+// termosForaDoObjetivo indicam pedido de TAREFA (redigir, resumir,
+// traduzir…) — fora do objetivo, mesmo que palavras casem com uma série ou
+// um procedimento ("Me ajuda a escrever um ofício?" x "Livro de registro de
+// ofícios"). Só verbos inequívocos: "elaboração", "revisão", "receita",
+// "conselho" aparecem em nomes de séries e órgãos da TTDD.
 var termosForaDoObjetivo = []string{
-	// procedimento
-	"tramit", "etapa", "setor", "fluxo", "protocol", "instruir", "instrucao", "assinar", "assinatura", "peca", "pecas",
-	"como faco", "como fazer", "passo a passo", "quem aprova", "quem assina", "encaminh",
-	// tarefa (só verbos inequívocos: "elaboração", "revisão", "receita",
-	// "conselho" aparecem em nomes de séries e órgãos da TTDD)
 	"escrev", "redig", "redacao", "resum", "traduz", "me ajud", "ajude", "poema", "piada", "opiniao",
 }
 
-// PedidoForaDoObjetivo informa se a pergunta pede um procedimento ou uma
-// tarefa (e não fala de temporalidade): recusa direta. descritor é o nome
-// da série mais relevante ("" se nenhuma): um termo que faz parte dele não
-// conta como pedido — 22 séries têm "protocolo" no nome, 35
-// "encaminhamento", 9 "resumo" ("Cadernos de Protocolo", "Relatório
-// Resumido de Execução Orçamentária").
+// PedidoForaDoObjetivo informa se a pergunta pede uma tarefa (e não fala de
+// fluxo nem de temporalidade): recusa direta. descritor é o nome da fonte
+// mais relevante ("" se nenhuma): um termo que faz parte dele não conta
+// como pedido (9 séries têm "resumo" no nome: "Relatório Resumido de
+// Execução Orçamentária").
 func PedidoForaDoObjetivo(pergunta, descritor string) bool {
-	if SobreTemporalidade(pergunta) {
+	if SobreTemporalidade(pergunta) || SobreFluxo(pergunta) {
 		return false
 	}
 	texto, nome := " "+Fold(pergunta), " "+Fold(descritor)

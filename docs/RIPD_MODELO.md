@@ -32,7 +32,7 @@
 | Consentimento | versão, data/hora, IP, user-agent | art. 7º II + art. 8º §1º | permanente (prova) |
 | Preferências de UI | contraste, fonte, tema | art. 7º IX (interesse legítimo) | só no navegador do titular |
 | Consentimento anônimo | device_hash opaco, versão, IP, user-agent | art. 7º II | permanente (prova) |
-| Pergunta ao assistente da TTDD (Atlas) | texto livre digitado pelo servidor — pode conter dados pessoais de terceiros | art. 7º III (execução de política pública — gestão documental) | **não é armazenada**: a auditoria guarda só modo, relevância, séries usadas e tamanho (ADR 015/021) |
+| Pergunta ao assistente do Atlas (fluxos e TTDD) | texto livre digitado pelo servidor — pode conter dados pessoais de terceiros | art. 7º III (execução de política pública — gestão documental) | **não é armazenada**: a auditoria guarda só modo, relevância, séries usadas e tamanho (ADR 015/021) |
 
 **Dados sensíveis (art. 11):** nenhum tratado pela base. Sistemas
 derivados que tratem dados sensíveis fazem seu próprio RIPD.
@@ -49,8 +49,8 @@ Cidadão/Servidor
        └─ data_subject_requests (Postgres)  — pedidos art. 18
   Worker: anonimização (erasure) · export WORM diário com cadeia de hash
 
-  Assistente da TTDD (Atlas, ADR 020/021):
-  Servidor ──pergunta──► API Go ──séries públicas da TTDD + pergunta──► IA configurada
+  Assistente do Atlas (fluxos e TTDD, ADRs 020/021/023):
+  Servidor ──pergunta──► API Go ──fluxos e séries públicos + pergunta──► IA configurada
        IA local (ia-local, na rede)  ou  fornecedor externo (autorização
        registrada; CPF, CNPJ, e-mail e telefone mascarados antes do envio)
 ```
@@ -78,7 +78,7 @@ Cidadão/Servidor
 | DoS / abuso | média | médio | rate limiting distribuído em todo `/api/v1`, timeouts de servidor |
 | Retenção excessiva | média | médio | **pendente:** política de retenção por categoria a ser definida pelo DPO |
 | XFF forjado poluindo prova de consentimento | baixa | baixo | `httpserver.ClientIP` só confia em `TRUSTED_PROXIES` |
-| Pergunta com dados pessoais enviada a fornecedor de IA externo (transferência, inclusive internacional) | média | médio | IA local por padrão; externo só com autorização registrada (quem/quando); mascaramento automático; assistente restrito à TTDD (recusa outros assuntos); contrato sem retenção a cargo do órgão |
+| Pergunta com dados pessoais enviada a fornecedor de IA externo (transferência, inclusive internacional) | média | médio | IA local por padrão; externo só com autorização registrada (quem/quando); mascaramento automático; assistente restrito ao acervo do Atlas — fluxos e TTDD (recusa outros assuntos); contrato sem retenção a cargo do órgão |
 
 ## 6. Direitos do titular — operacionalização
 
@@ -96,4 +96,4 @@ Cidadão/Servidor
 - [ ] Homologação jurídica das **bases legais** aqui presumidas.
 - [ ] Contratos de **operador** com os provedores de hospedagem.
 - [ ] Avaliação de **transferência internacional** (se a hospedagem for fora do país).
-- [ ] Contrato com o **fornecedor de IA** externo, se usado no assistente da TTDD (operador, sem retenção/treino com os dados, local de processamento) — ADR 020.
+- [ ] Contrato com o **fornecedor de IA** externo, se usado no assistente do Atlas (operador, sem retenção/treino com os dados, local de processamento) — ADR 020.

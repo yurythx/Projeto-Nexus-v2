@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/yurythx/projeto-nexus/internal/domain/pagination"
 	"github.com/yurythx/projeto-nexus/internal/modules/atlas/domain"
 	"github.com/yurythx/projeto-nexus/internal/platform/database"
@@ -15,12 +17,18 @@ import (
 	"github.com/yurythx/projeto-nexus/internal/platform/outbox"
 )
 
-// fakeRepo entrega séries fixas ao grounding.
+// fakeRepo entrega procedimentos e séries fixos ao grounding.
 type fakeRepo struct {
 	domain.Repository
+	procs   []domain.Workflow
 	series  []domain.ClassificacaoTTDD
 	err     error
 	errTTDD error
+	errProc error
+}
+
+func (f fakeRepo) Candidatos(context.Context, database.DBTX, string, int) ([]domain.Workflow, error) {
+	return f.procs, f.errProc
 }
 
 func (f fakeRepo) CandidatosTTDD(context.Context, database.DBTX, string, int) ([]domain.ClassificacaoTTDD, error) {
@@ -96,11 +104,11 @@ func TestPerguntar(t *testing.T) {
 	// temporalidade sem série correspondente (nenhuma ou abaixo do limiar).
 	for pergunta, want := range map[string]string{
 		"receita de bolo de cenoura":                  domain.MensagemForaDoObjetivo,
-		"Como tramitar um processo de pregão?":        domain.MensagemForaDoObjetivo,
+		"Como tramitar um processo de pregão?":        domain.MensagemSemFonte, // fluxo, mas sem procedimento
 		"Me ajuda a escrever um ofício?":              domain.MensagemForaDoObjetivo,
-		"qual o prazo de guarda dos alvarás de obra?": domain.MensagemSemSerie,
+		"qual o prazo de guarda dos alvarás de obra?": domain.MensagemSemFonte,
 		"organogramas antigos da secretaria de obras": domain.MensagemForaDoObjetivo, // palavra solta não basta
-		"prazo para eliminar os mapas de obras":       domain.MensagemSemSerie,
+		"prazo para eliminar os mapas de obras":       domain.MensagemSemFonte,
 	} {
 		ia := &fakeAssistente{answer: "não deveria"}
 		r, err := svc(ia, repo).Perguntar(ctx, pergunta)
@@ -124,10 +132,44 @@ func TestPerguntar(t *testing.T) {
 		}
 	})
 	t.Run("falha do repositório propaga", func(t *testing.T) {
-		if _, err := svc(nil, fakeRepo{errTTDD: errors.New("db")}).Perguntar(ctx, pergunta); err == nil {
-			t.Fatal("esperado erro")
+		for _, r := range []fakeRepo{{errTTDD: errors.New("db")}, {errProc: errors.New("db")}} {
+			if _, err := svc(nil, r).Perguntar(ctx, pergunta); err == nil {
+				t.Fatal("esperado erro")
+			}
 		}
 	})
+	// Fluxos (ADR 023): o procedimento do início ao fim; a pergunta escolhe o
+	// tipo de fonte quando há candidato dele acima do limiar.
+	pregao := domain.Workflow{ID: uuid.New(), CodigoProcessual: "ADM.LIC.001", Titulo: "Pregão Eletrônico", Objetivo: "Aquisição de bens comuns",
+		Versao: 1, NivelAcesso: domain.NivelPublico, Etapas: []domain.Etapa{{Ordem: 1, NomeSetor: "Licitações", UnidadeAdministrativa: "LIC",
+			AtribuicoesSetor: "Conduzir o certame", PrazoSLAEmDias: 10}}}
+	pregaoSerie := serie("2.0.02.00.07", "Processos relativos a Pregão Eletrônico", 1, 4, domain.DestinacaoGuardaPermanente)
+	ambos := fakeRepo{procs: []domain.Workflow{pregao}, series: []domain.ClassificacaoTTDD{pregaoSerie}}
+	for q, want := range map[string][]string{
+		"Como funciona o fluxo do pregão eletrônico?":                {"procedimento"},
+		"Qual o prazo de guarda dos processos de pregão eletrônico?": {"ttdd"},
+		"Quais as etapas e o prazo de guarda do pregão eletrônico?":  {"procedimento", "ttdd"},
+		"pregão eletrônico": {"procedimento", "ttdd"},
+	} {
+		r, err := svc(nil, ambos).Perguntar(ctx, q)
+		var tipos []string
+		for _, f := range r.Sources {
+			tipos = append(tipos, f.Tipo)
+		}
+		if err != nil || r.Refused || strings.Join(tipos, ",") != strings.Join(want, ",") {
+			t.Errorf("%q: fontes %v (quero %v) %v", q, tipos, want, err)
+		}
+	}
+	r, err := svc(nil, ambos).Perguntar(ctx, "Como funciona o fluxo do pregão eletrônico?")
+	if err != nil || r.Sources[0].ID == nil || *r.Sources[0].ID != pregao.ID || !strings.Contains(r.Answer, "Fluxo em 1 etapa") ||
+		!strings.Contains(r.Answer, "1. Licitações (LIC) — prazo: 10 dias") {
+		t.Fatalf("fluxo: %+v %v", r, err)
+	}
+	// Pergunta de fluxo sem procedimento acima do limiar: a série responde.
+	if r, err := svc(nil, fakeRepo{series: []domain.ClassificacaoTTDD{organogramas}}).Perguntar(ctx, "fluxo dos organogramas"); err != nil ||
+		len(r.Sources) != 1 || r.Sources[0].Tipo != FonteTTDD {
+		t.Fatalf("fluxo sem procedimento: %+v %v", r, err)
+	}
 }
 
 func TestMapError(t *testing.T) {

@@ -1,6 +1,6 @@
 # 021 — Assistente do Atlas restrito à TTDD
 
-- **Status:** Aceito e implementado
+- **Status:** Aceito e implementado — **ampliado pelo [ADR 023](023-assistente-fluxos-e-ttdd.md)**: o assistente voltou a responder sobre os fluxos (do início ao fim), além da TTDD
 - **Data:** 2026-10-03
 - **Relacionado:** [ADR 015](015-atlas-padronizado.md) (grounding), [ADR 017](017-ttdd-oficial.md) (TTDD oficial), [ADR 020](020-conexoes-de-ia.md) (conexões de IA)
 

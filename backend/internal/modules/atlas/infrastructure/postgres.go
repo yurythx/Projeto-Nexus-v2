@@ -480,3 +480,39 @@ func (r *Repository) Search(ctx context.Context, db database.DBTX, query string,
 	}
 	return out, ranks, wrap(rows.Err())
 }
+
+// Candidatos: basta UM termo da pergunta casar (OR) — em linguagem natural
+// a pergunta tem palavras que o procedimento não usa. A relevância real é
+// medida depois, no domínio (domain.RelevanciaProcedimento), sobre o procedimento
+// completo; aqui só se recorta o universo pelo índice.
+func (r *Repository) Candidatos(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]domain.Workflow, error) {
+	rows, err := db.Query(ctx, `WITH q AS (
+			SELECT NULLIF(replace(plainto_tsquery('portuguese', nexus_unaccent($1))::text, ' & ', ' | '), '')::tsquery AS q
+		), hits AS (
+			SELECT w.id, ts_rank(w.search, q.q) AS rank FROM atlas_workflows w, q WHERE w.ativo AND w.search @@ q.q
+			UNION ALL
+			SELECT e.workflow_id, ts_rank(e.search, q.q) * 0.5 FROM atlas_etapas e, q WHERE e.search @@ q.q
+			UNION ALL
+			SELECT e.workflow_id, ts_rank(d.search, q.q) * 0.5 FROM atlas_etapa_documentos d
+				JOIN atlas_etapas e ON e.id = d.etapa_id, q WHERE d.search @@ q.q
+		)
+		SELECT `+wfCols+wfFrom+` JOIN (SELECT id, SUM(rank) AS rank FROM hits GROUP BY id) h ON h.id = w.id
+		WHERE w.ativo ORDER BY h.rank DESC, w.codigo_processual LIMIT $2`, pergunta, limit)
+	if err != nil {
+		return nil, wrap(err)
+	}
+	var out []domain.Workflow
+	for rows.Next() {
+		w, err := scanWorkflow(rows)
+		if err != nil {
+			rows.Close()
+			return nil, wrap(err)
+		}
+		out = append(out, w)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, wrap(err)
+	}
+	return r.loadEtapas(ctx, db, out)
+}

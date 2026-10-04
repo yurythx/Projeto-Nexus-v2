@@ -14,20 +14,22 @@ type Mensagem =
   | { id: number; autor: "assistente"; texto: string; resposta?: AtlasResposta; erro?: boolean };
 
 const MODO: Record<AtlasResposta["mode"], string> = {
-  ia: "Redigida por IA a partir da TTDD oficial",
-  sintese: "Síntese direta da TTDD oficial",
-  recusada: "Fora do objetivo ou sem série da TTDD correspondente",
+  ia: "Redigida por IA a partir dos fluxos e da TTDD oficial",
+  sintese: "Síntese direta dos fluxos e da TTDD oficial",
+  recusada: "Fora do objetivo ou sem fluxo/série correspondente",
 };
 
 const SUGESTOES = [
+  "Como funciona o fluxo do pregão eletrônico, do início ao fim?",
   "Qual o prazo de guarda da pasta funcional do servidor?",
-  "Por quanto tempo guardar os processos de pregão eletrônico?",
-  "Qual a destinação final dos organogramas?",
+  "O que preciso para dar continuidade a uma dispensa de licitação?",
 ];
 
 /** Link da fonte: a página da série da TTDD. */
 export function hrefFonte(f: AtlasFonte): string {
-  return `/atlas/ttdd/${encodeURIComponent(f.codigo)}`;
+  return f.tipo === "procedimento"
+    ? `/atlas/procedimentos/${f.id}`
+    : `/atlas/ttdd/${encodeURIComponent(f.codigo)}`;
 }
 
 function Fontes({ fontes, onNavegar }: { fontes: AtlasFonte[]; onNavegar?: () => void }) {
@@ -46,16 +48,16 @@ function Fontes({ fontes, onNavegar }: { fontes: AtlasFonte[]; onNavegar?: () =>
           >
             {f.codigo}
           </Link>
-          <span className="sr-only">{" (série da TTDD)"}</span>
+          <span className="sr-only">{f.tipo === "ttdd" ? " (série da TTDD)" : " (fluxo)"}</span>
         </span>
       ))}
     </p>
   );
 }
 
-/** Assistente da TTDD (atlas:read — ADR 021): só responde sobre a Tabela de
- * Temporalidade oficial, a partir das séries acima do limiar de relevância;
- * qualquer outro assunto recebe a recusa padronizada. */
+/** Assistente do Atlas (atlas:read — ADRs 021 e 023): só responde sobre os
+ * fluxos homologados e a TTDD oficial, a partir das fontes acima do limiar
+ * de relevância; qualquer outro assunto recebe a recusa padronizada. */
 export function AssistentePanel({
   perguntaInicial = "",
   onNavegar,
@@ -72,7 +74,7 @@ export function AssistentePanel({
       id: 0,
       autor: "assistente",
       texto:
-        "Olá! Respondo apenas sobre a Tabela de Temporalidade e Destinação de Documentos (TTDD) oficial: prazos de guarda, destinação final e classificação das séries documentais. Outros assuntos fogem do objetivo deste assistente.",
+        "Olá! Respondo sobre os fluxos documentais do Atlas — como cada processo tramita, do início ao fim: etapas, setores, prazos e peças exigidas — e sobre a Tabela de Temporalidade (TTDD): prazos de guarda e destinação. Outros assuntos fogem do objetivo deste assistente.",
     },
   ]);
 
@@ -105,8 +107,9 @@ export function AssistentePanel({
     <section aria-label="Conversa com o assistente" className="flex min-h-0 flex-1 flex-col">
       <p className="flex items-start gap-2 border-b border-surface-border bg-primary/5 px-4 py-2 text-xs text-muted">
         <Shield size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-primary" />
-        Só responde sobre a TTDD oficial e quando uma série cobre a pergunta (relevância mínima de
-        65%); outros assuntos são recusados — nunca inventa. Confira sempre as séries citadas.
+        Só responde sobre os fluxos homologados e a TTDD oficial, quando uma fonte cobre a pergunta
+        (relevância mínima de 65%); outros assuntos são recusados — nunca inventa. Confira as
+        fontes.
       </p>
 
       <div
@@ -176,7 +179,7 @@ export function AssistentePanel({
         <div className="flex-1">
           <Input
             id="atlas-pergunta"
-            placeholder="Pergunte sobre prazos de guarda ou destinação de documentos…"
+            placeholder="Pergunte sobre um fluxo ou sobre prazos de guarda…"
             value={input}
             maxLength={500}
             onChange={(e) => setInput(e.target.value)}

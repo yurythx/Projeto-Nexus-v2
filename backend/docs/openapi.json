@@ -634,6 +634,10 @@
           "codigo": {
             "type": "string"
           },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
           "relevancia": {
             "type": "number"
           },
@@ -18756,7 +18760,7 @@
       "name": "administracao"
     },
     {
-      "description": "Atlas — Procedimentos e Temporalidade. Plug-in — Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) oficial e assistente da TTDD.",
+      "description": "Atlas — Procedimentos e Temporalidade. Plug-in — Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) oficial e assistente sobre fluxos e TTDD.",
       "name": "atlas"
     },
     {

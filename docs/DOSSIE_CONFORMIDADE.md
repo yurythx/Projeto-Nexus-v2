@@ -34,7 +34,7 @@ homologação junto à Secretaria de Governo Digital.
 | `docs/adr/007` | Exceção de CSP `style-src` (VLibras) |
 | `docs/adr/013` | Permissão com escopo e herança (RBAC multi-escopo) |
 | `docs/adr/017`, `019`, `022` | TTDD oficial (CCPAD): vigência, histórico e atualização auditada |
-| `docs/adr/020`, `021` | IA governada: conexões com chave cifrada, autorização e mascaramento para fornecedor externo (LGPD art. 33); assistente restrito à TTDD |
+| `docs/adr/020`, `021` | IA governada: conexões com chave cifrada, autorização e mascaramento para fornecedor externo (LGPD art. 33); assistente restrito ao acervo do Atlas — fluxos e TTDD (ADR 023) |
 
 ## 3. Rastreamento do roadmap
 

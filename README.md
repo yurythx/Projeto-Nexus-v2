@@ -88,7 +88,7 @@ O Projeto Nexus foi construído sobre os 5 eixos de conformidade da Secretaria d
 | Busca Global | Plug-in | `/busca` (campo `#global-search`, Alt+3) | — |
 | Signum | Plug-in | `/signum` | `/verificar/{id}` |
 | Trâmite | Plug-in | `/tramite` | — |
-| Atlas | Plug-in | `/atlas` (procedimentos SEI, TTDD oficial com vigência e histórico, assistente só da TTDD com `atlas:read`, gestão — procedimentos, versões e atualização da TTDD — com `atlas:manage`) | API pública `GET /api/v1/atlas/ttdd` (e `/estrutura`, `/exportar`, `/{codigo}/historico`) e `/workflows` |
+| Atlas | Plug-in | `/atlas` (procedimentos SEI, TTDD oficial com vigência e histórico, assistente sobre fluxos (do início ao fim) e TTDD com `atlas:read`, gestão — procedimentos, versões e atualização da TTDD — com `atlas:manage`) | API pública `GET /api/v1/atlas/ttdd` (e `/estrutura`, `/exportar`, `/{codigo}/historico`) e `/workflows` |
 
 Os plug-ins são ativados e desativados em runtime em **Configurações → Módulos**: o menu, as páginas públicas e o sitemap acompanham o estado do Kernel. A tela mostra o grafo de dependências (hoje, **Trâmite depende de Signum**): desligar um módulo pede para desligar antes quem depende dele, e ligar pede para ligar antes as dependências.
 

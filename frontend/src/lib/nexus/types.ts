@@ -758,9 +758,11 @@ export interface Workflow {
   updated_at: string;
 }
 
-/** Série da TTDD que sustentou a resposta (o assistente só trata da TTDD — ADR 021). */
+/** Fonte da resposta: um fluxo homologado (procedimento, com id) ou uma
+ * série da TTDD — o assistente só trata do acervo do Atlas (ADRs 021/023). */
 export interface AtlasFonte {
-  tipo: "ttdd";
+  tipo: "procedimento" | "ttdd";
+  id?: UUID;
   codigo: string;
   titulo: string;
   relevancia: number;

@@ -1,7 +1,7 @@
 // Package atlas é o plugin Atlas: catálogo de procedimentos canônicos de
 // processo administrativo eletrônico (padrão SEI), Tabela de
 // Temporalidade e Destinação de Documentos (TTDD/CCPAD) com vigência e
-// histórico, e assistente restrito à TTDD com grounding estrito (consulta
+// histórico, e assistente sobre fluxos e TTDD com grounding estrito (consulta
 // pública; assistente com atlas:read; gestão com atlas:manage).
 package atlas
 
@@ -50,14 +50,14 @@ func (m *Module) Manifest() kernel.Manifest {
 	return kernel.Manifest{
 		Key:            Key,
 		Name:           "Atlas — Procedimentos e Temporalidade",
-		Description:    "Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) oficial e assistente da TTDD.",
+		Description:    "Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) oficial e assistente sobre fluxos e TTDD.",
 		DefaultEnabled: true,
 		Public:         true,
 		Icon:           "clipboard-list",
 		Route:          "/atlas",
 		Permissions: []kernel.PermissionInfo{
-			{Key: string(auth.PermAtlasRead), Description: "Consultar o assistente da TTDD (Atlas)"},
-			{Key: string(auth.PermAtlasManage), Description: "Cadastrar, ativar e desativar procedimentos do Atlas"},
+			{Key: string(auth.PermAtlasRead), Description: "Consultar o assistente do Atlas (fluxos e TTDD)"},
+			{Key: string(auth.PermAtlasManage), Description: "Gerir os procedimentos do Atlas (cadastro, novas versões, ativação) e atualizar a TTDD"},
 		},
 	}
 }

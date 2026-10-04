@@ -200,9 +200,10 @@ type atlasResposta struct {
 	} `json:"sources"`
 }
 
-// Assistente: atlas:read, só a TTDD (ADR 021) com grounding estrito
-// (limiar), recusa para qualquer outro assunto, síntese canônica sem IA
-// configurada, auditoria sem o texto da pergunta e limite por identidade.
+// Assistente: atlas:read, só o acervo do Atlas — fluxos e TTDD (ADRs 021 e
+// 023) — com grounding estrito (limiar), recusa para qualquer outro
+// assunto, síntese canônica sem IA configurada, auditoria sem o texto da
+// pergunta e limite por identidade.
 func TestAtlasAssistenteHTTP(t *testing.T) {
 	h := newHarness(t)
 	_, comum := h.user("nexus-user")
@@ -225,15 +226,18 @@ func TestAtlasAssistenteHTTP(t *testing.T) {
 		!strings.Contains(ttdd.Answer, "99 anos") || !strings.Contains(ttdd.Answer, "eliminação") {
 		t.Fatalf("resposta pela TTDD: %+v", ttdd)
 	}
-	// Fora do objetivo (outro assunto ou procedimento): a recusa canônica.
+	// Fora do objetivo (outro assunto ou tarefa): a recusa canônica.
 	recusa := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
 		`{"query":"licença para viagem internacional de férias"}`))
 	if !recusa.Refused || recusa.Mode != "recusada" || len(recusa.Sources) != 0 || !strings.HasPrefix(recusa.Answer, "Esse assunto foge do objetivo da IA") {
 		t.Fatalf("assunto fora da TTDD deve ser recusado: %+v", recusa)
 	}
+	// Fluxo (ADR 023): o procedimento do início ao fim, com etapas e peças.
 	if proc := data[atlasResposta](t, h.expect(http.StatusOK, http.MethodPost, "/api/v1/atlas/chat", leitor,
-		`{"query":"Como tramitar o processo de pregão eletrônico?"}`)); !proc.Refused || !strings.Contains(proc.Answer, "foge do objetivo") {
-		t.Fatalf("procedimento está fora do objetivo: %+v", proc)
+		`{"query":"Como tramitar o processo de pregão eletrônico?"}`)); proc.Refused || len(proc.Sources) == 0 ||
+		proc.Sources[0].Tipo != "procedimento" || proc.Sources[0].Codigo != "ADM.LIC.001" || !strings.Contains(proc.Answer, "Fluxo em") ||
+		!strings.Contains(proc.Answer, "Peças exigidas") {
+		t.Fatalf("fluxo do pregão: %+v", proc)
 	}
 	var vazou int
 	if err := h.d.DB.QueryRow(context.Background(),

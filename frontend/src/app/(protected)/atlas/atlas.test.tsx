@@ -156,7 +156,10 @@ const CHAT_OK = {
   score: 0.9,
   refused: false,
   mode: "sintese",
-  sources: [{ tipo: "ttdd", codigo: "2.0.02.00.07", titulo: "Pregão", relevancia: 0.85 }],
+  sources: [
+    { tipo: "procedimento", id: "wf-1", codigo: "ADM.LIC.001", titulo: "Pregão", relevancia: 0.9 },
+    { tipo: "ttdd", codigo: "2.0.02.00.07", titulo: "Pregão", relevancia: 0.85 },
+  ],
   generated_at: "2026-10-01T00:00:00Z",
 };
 
@@ -358,7 +361,7 @@ describe("Atlas — procedimento", () => {
 
     // Sem atlas:read não há "Perguntar"; imprimir sempre.
     expect(
-      screen.queryByRole("button", { name: "Perguntar sobre a temporalidade" }),
+      screen.queryByRole("button", { name: "Perguntar sobre este fluxo" }),
     ).not.toBeInTheDocument();
     const print = vi.spyOn(window, "print").mockImplementation(() => {});
     await userEvent.click(screen.getByRole("button", { name: "Imprimir" }));
@@ -382,10 +385,10 @@ describe("Atlas — procedimento", () => {
       await screen.findByRole("button", { name: "Desativar procedimento" }),
     ).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Perguntar sobre a temporalidade" }));
+    await userEvent.click(screen.getByRole("button", { name: "Perguntar sobre este fluxo" }));
     const gaveta = await screen.findByRole("dialog", { name: "Assistente do Atlas" });
     expect(within(gaveta).getByLabelText("Sua pergunta")).toHaveValue(
-      'Por quanto tempo guardar "Pregão Presencial / Eletrônico" (2.0.02.00.07) e qual a destinação?',
+      'Como funciona o fluxo de "Pregão Eletrônico" (ADM.LIC.001), do início ao fim?',
     );
   });
 
@@ -642,8 +645,12 @@ describe("Atlas — assistente em gaveta", () => {
       await within(gaveta).findByText("Guarde por 1 ano na fase corrente e 4 na intermediária."),
     ).toBeInTheDocument();
     expect(
-      within(gaveta).getByText(/Síntese direta da TTDD oficial · relevância 90%/),
+      within(gaveta).getByText(/Síntese direta dos fluxos e da TTDD oficial · relevância 90%/),
     ).toBeInTheDocument();
+    expect(within(gaveta).getByRole("link", { name: "ADM.LIC.001" })).toHaveAttribute(
+      "href",
+      "/atlas/procedimentos/wf-1",
+    );
     expect(within(gaveta).getByRole("link", { name: "2.0.02.00.07" })).toHaveAttribute(
       "href",
       "/atlas/ttdd/2.0.02.00.07",

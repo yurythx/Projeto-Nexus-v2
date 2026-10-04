@@ -95,8 +95,8 @@ func TestTermos(t *testing.T) {
 	}
 }
 
-// O assistente só trata da TTDD: as duas recusas e o reconhecimento da
-// recusa na resposta do modelo (ADR 021).
+// O assistente trata dos fluxos e da TTDD: as duas recusas e o
+// reconhecimento da recusa na resposta do modelo (ADRs 021 e 023).
 func TestObjetivoDoAssistente(t *testing.T) {
 	for _, p := range []string{"Qual o prazo de guarda da pasta funcional?", "posso ELIMINAR os empenhos?", "série documental do alvará",
 		"o que diz a TTDD sobre diárias", "destinação final dos contratos", "arquivo intermediário"} {
@@ -111,13 +111,14 @@ func TestObjetivoDoAssistente(t *testing.T) {
 		}
 	}
 	for p, want := range map[string]bool{
-		"Como tramitar o processo de pregão?":           true,
-		"quais etapas e setores do pedido de diárias":   true,
-		"quem assina o termo de referência?":            true,
+		"Como tramitar o processo de pregão?":           false, // fluxo: assunto do Atlas
+		"quais etapas e setores do pedido de diárias":   false,
+		"quem assina o termo de referência?":            false,
 		"Me ajuda a escrever um ofício?":                true,
 		"resuma a lei de licitações":                    true,
 		"qual o prazo de guarda do processo de pregão?": false, // fala de temporalidade
-		"receita de bolo":                               false, // fora do objetivo, mas não é procedimento
+		"receita de bolo":                               false, // fora do objetivo, mas não é pedido de tarefa
+		"me ajuda a entender o fluxo do pregão":         false, // pedido de ajuda sobre fluxo
 	} {
 		if PedidoForaDoObjetivo(p, "Processos relativos a Pregão Presencial/Pregão Eletrônico") != want {
 			t.Errorf("PedidoForaDoObjetivo(%q) != %v", p, want)
@@ -134,7 +135,7 @@ func TestObjetivoDoAssistente(t *testing.T) {
 		}
 	}
 	if !strings.HasPrefix(MensagemForaDoObjetivo, "Esse assunto foge do objetivo da IA") || !ForaDoObjetivo("  "+MensagemForaDoObjetivo) ||
-		ForaDoObjetivo(MensagemSemSerie) || ForaDoObjetivo("2.0.07.00.00 — Pasta funcional: 1 ano + 99 anos") {
+		ForaDoObjetivo(MensagemSemFonte) || ForaDoObjetivo("2.0.07.00.00 — Pasta funcional: 1 ano + 99 anos") {
 		t.Fatal("recusa por assunto")
 	}
 }

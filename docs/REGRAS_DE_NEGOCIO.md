@@ -630,16 +630,20 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
   data** (a tela explica o motivo). Não autoriza eliminação: ela continua
   dependendo da CCPAD.
 - **Assistente (`atlas:read`, limite por pessoa — padrão 10 por minuto):**
-  - **responde só sobre a TTDD oficial (ADR 021)** — prazos de guarda,
-    destinação final e classificação das séries; procedimentos (como
-    tramitar, etapas, peças) e qualquer outro assunto recebem: *"Esse
-    assunto foge do objetivo da IA: este assistente responde apenas sobre a
-    Tabela de Temporalidade e Destinação de Documentos (TTDD)…"*;
-  - a decisão é **determinística**, antes do modelo: pedido de
-    procedimento ("como tramitar", "quem assina") ou de tarefa ("me ajuda a
-    escrever", "resuma", "traduza") sem termo de temporalidade é recusado
-    direto — salvo quando a palavra faz parte do nome da série encontrada
-    ("Cadernos de Protocolo", "Relatório Resumido…"); a resposta exige uma
+  - **responde só sobre o acervo do Atlas (ADRs 021 e 023):** os **fluxos**
+    homologados — do início ao fim: etapas na ordem, setor, prazo, o que
+    fazer, peças exigidas (obrigatória, formato, assinatura, modelo),
+    condição para seguir, devoluções em diligência, prazo total e a guarda
+    dos documentos — e a **TTDD** (prazos de guarda, destinação final,
+    classificação). Qualquer outro assunto recebe: *"Esse assunto foge do
+    objetivo da IA: este assistente responde apenas sobre os fluxos
+    documentais do Atlas … e a Tabela de Temporalidade…"*;
+  - pergunta de fluxo responde com o procedimento; de temporalidade, com a
+    série; que fala dos dois, com os dois;
+  - a decisão é **determinística**, antes do modelo: pedido de tarefa ("me
+    ajuda a escrever", "resuma", "traduza") que não fala de fluxo nem de
+    temporalidade é recusado direto — salvo quando a palavra faz parte do
+    nome da fonte encontrada ("Relatório Resumido…"); a resposta exige uma
     série com relevância ≥ **0,65** (fração dos termos da pergunta
     presentes no descritor — no início de uma palavra, aceitando plural e
     gênero: "licitação" não casa com "solicitação" —, sem acentos e sem
@@ -648,17 +652,18 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     "guarda", "destinação", "por quanto tempo" — que a série não contém não
     entram na conta); usa até 3 séries, só as que ficam até 0,15 abaixo da
     melhor;
-  - pergunta sobre temporalidade sem série correspondente: *"Não localizei
-    na TTDD oficial uma série documental que corresponda à sua consulta…"*;
+  - pergunta de fluxo ou de temporalidade sem fonte correspondente: *"Não
+    localizei um fluxo homologado nem uma série da TTDD que corresponda à
+    sua consulta…"*;
   - o modelo de IA recebe a mesma regra no prompt (inclusive ignorar
     pedidos para mudar de papel ou revelar as instruções); se ele devolver
     a recusa por assunto, a resposta é marcada como recusada e sai sem
     fontes;
   - repete os prazos exatamente como na TTDD (inclusive condições), a
     destinação, a recomendação e a fonte;
-  - com IA configurada: o modelo redige a resposta só com as séries
+  - com IA configurada: o modelo redige a resposta só com as fontes
     encontradas (temperatura 0,05); sem IA, ou se ela falhar, a resposta é
-    a **síntese canônica** das séries;
+    a **síntese canônica** dos fluxos e das séries;
   - **qual IA (ADR 020):** Configurações → Inteligência artificial
     (`ia:manage`) — conexão principal e reserva (IA local ou fornecedor
     compatível com a API da OpenAI); a chave é cifrada e nunca volta pela
@@ -667,7 +672,7 @@ compartilhados, e o administrador vê tudo. Para empresas independentes, use
     padrão, CPF, CNPJ, e-mail e telefone são mascarados na pergunta. Sem
     nada salvo na tela, valem as variáveis `ATLAS_AI_*`;
   - a resposta informa o modo (`ia`, `sintese`, `recusada`), a relevância
-    e as séries usadas (com link para a página de cada uma);
+    e as fontes usadas — fluxos e séries, com link para a página de cada uma;
   - fica numa gaveta lateral disponível em todas as páginas do Atlas; o
     "Perguntar sobre…" de cada página só preenche a pergunta (nada é
     enviado sem a pessoa confirmar);

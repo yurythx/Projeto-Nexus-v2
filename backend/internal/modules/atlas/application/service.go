@@ -30,13 +30,13 @@ const (
 	EventWorkflowDeactivated = "atlas.workflow.deactivated"
 )
 
-// Grounding: quantas séries o índice entrega e quantas, no máximo,
-// sustentam uma resposta.
+// Grounding: quantos candidatos o índice entrega (de cada tipo) e quantas
+// fontes, no máximo, sustentam uma resposta.
 const (
 	maxCandidatos = 10
 	maxFontes     = 3
-	// margemFontes: além da melhor série, só entram as que ficam até 0,15
-	// abaixo dela — séries que só passaram do limiar por palavras genéricas
+	// margemFontes: além da melhor fonte, só entram as que ficam até 0,15
+	// abaixo dela — fontes que só passaram do limiar por palavras genéricas
 	// ("documentos", "legislação") não poluem a resposta.
 	margemFontes = 0.15
 )
@@ -290,23 +290,27 @@ func summary(w domain.Workflow) map[string]any {
 		"titulo": w.Titulo, "codigo_ttdd": w.CodigoTTDD, "nivel_acesso": w.NivelAcesso, "ativo": w.Ativo, "etapas": len(w.Etapas)}
 }
 
-// FonteTTDD é o tipo da fonte das respostas: o assistente só responde
-// sobre a TTDD (ADR 021).
-const FonteTTDD = "ttdd"
+// Tipos de fonte do assistente: um fluxo homologado (procedimento) ou uma
+// série da TTDD (ADRs 021 e 023).
+const (
+	FonteProcedimento = "procedimento"
+	FonteTTDD         = "ttdd"
+)
 
-// Fonte é a série da TTDD que sustentou a resposta.
+// Fonte é o procedimento ou a série da TTDD que sustentou a resposta.
 type Fonte struct {
-	Tipo       string  `json:"tipo"`
-	Codigo     string  `json:"codigo"`
-	Titulo     string  `json:"titulo"`
-	Relevancia float64 `json:"relevancia"`
+	Tipo       string     `json:"tipo"`
+	ID         *uuid.UUID `json:"id,omitempty"`
+	Codigo     string     `json:"codigo"`
+	Titulo     string     `json:"titulo"`
+	Relevancia float64    `json:"relevancia"`
 }
 
 // Modos de resposta do assistente.
 const (
 	ModoIA       = "ia"       // redigida pelo modelo de linguagem
 	ModoSintese  = "sintese"  // síntese canônica (IA desligada ou indisponível)
-	ModoRecusada = "recusada" // fora do objetivo ou sem série acima do limiar
+	ModoRecusada = "recusada" // fora do objetivo ou sem fonte acima do limiar
 )
 
 // Resposta do assistente.
@@ -320,54 +324,92 @@ type Resposta struct {
 }
 
 // recusar devolve a recusa canônica: fora do objetivo da IA, ou — se a
-// pergunta fala de temporalidade — sem série da TTDD correspondente.
-// Coincidência fraca de palavras com uma série não torna o assunto válido.
+// pergunta fala de fluxo ou de temporalidade — sem fonte correspondente.
+// Coincidência fraca de palavras com uma fonte não torna o assunto válido.
 func recusar(resp *Resposta, pergunta string) {
 	resp.Answer, resp.Refused, resp.Mode, resp.Sources = domain.MensagemForaDoObjetivo, true, ModoRecusada, []Fonte{}
-	if domain.SobreTemporalidade(pergunta) {
-		resp.Answer = domain.MensagemSemSerie
+	if domain.SobreTemporalidade(pergunta) || domain.SobreFluxo(pergunta) {
+		resp.Answer = domain.MensagemSemFonte
 	}
 }
 
-// Perguntar responde SÓ sobre a TTDD oficial, com grounding estrito: só
-// séries com relevância >= domain.LimiarRelevancia sustentam a resposta
-// (até maxFontes); abaixo disso, a recusa canônica. Qualquer outro assunto
-// — inclusive procedimentos — recebe "foge do objetivo da IA", decidido
-// aqui (determinístico) e reforçado no prompt do modelo. Exige atlas:read
-// (na rota).
+type candidato struct {
+	fonte   Fonte
+	sintese string
+}
+
+// focar mantém só o tipo de fonte que a pergunta pede, quando ele tem
+// candidato acima do limiar: "como funciona o fluxo do pregão" responde
+// com o procedimento (que já traz a temporalidade); "prazo de guarda do
+// pregão", com a série. Pergunta que fala dos dois mantém os dois.
+func focar(hits []candidato, pergunta string) []candidato {
+	tipo := ""
+	switch fluxo, ttdd := domain.SobreFluxo(pergunta), domain.SobreTemporalidade(pergunta); {
+	case fluxo && !ttdd:
+		tipo = FonteProcedimento
+	case ttdd && !fluxo:
+		tipo = FonteTTDD
+	default:
+		return hits
+	}
+	var out []candidato
+	for _, h := range hits {
+		if h.fonte.Tipo == tipo {
+			out = append(out, h)
+		}
+	}
+	if len(out) == 0 || out[0].fonte.Relevancia < domain.LimiarRelevancia {
+		return hits
+	}
+	return out
+}
+
+// Perguntar responde SÓ sobre o acervo do Atlas — fluxos homologados e a
+// TTDD oficial —, com grounding estrito: só procedimentos e séries com
+// relevância >= domain.LimiarRelevancia sustentam a resposta (até
+// maxFontes); abaixo disso, a recusa canônica. Qualquer outro assunto
+// recebe "foge do objetivo da IA", decidido aqui (determinístico) e
+// reforçado no prompt do modelo. Exige atlas:read (na rota).
 func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, error) {
 	pergunta = strings.TrimSpace(pergunta)
 	resp := Resposta{Sources: []Fonte{}, GeneratedAt: s.now()}
 
+	procs, err := s.repo.Candidatos(ctx, s.pool, pergunta, maxCandidatos)
+	if err != nil {
+		return resp, MapError(err)
+	}
 	series, err := s.repo.CandidatosTTDD(ctx, s.pool, pergunta, maxCandidatos)
 	if err != nil {
 		return resp, MapError(err)
 	}
-	type candidato struct {
-		fonte   Fonte
-		sintese string
-	}
 	var hits []candidato
+	for _, w := range procs {
+		if r := domain.RelevanciaProcedimento(w, pergunta); r > 0 {
+			id := w.ID
+			hits = append(hits, candidato{Fonte{Tipo: FonteProcedimento, ID: &id, Codigo: w.CodigoProcessual, Titulo: w.Titulo, Relevancia: r},
+				domain.SinteseFluxo(w)})
+		}
+	}
 	for _, c := range series {
 		if r := domain.RelevanciaTTDD(c, pergunta); r > 0 {
 			hits = append(hits, candidato{Fonte{Tipo: FonteTTDD, Codigo: c.Codigo, Titulo: c.Descritor, Relevancia: r}, domain.SinteseTTDD(c)})
 		}
 	}
-	// Empate: a série de nome mais curto (mais específico) vem antes — o PDF
-	// tem descritores com notas longas coladas que casam com muitas palavras.
+	// Empate: o nome mais curto (mais específico) vem antes — o PDF tem
+	// descritores com notas longas coladas que casam com muitas palavras.
 	sort.SliceStable(hits, func(i, j int) bool {
 		if hits[i].fonte.Relevancia != hits[j].fonte.Relevancia {
 			return hits[i].fonte.Relevancia > hits[j].fonte.Relevancia
 		}
 		return utf8.RuneCountInString(hits[i].fonte.Titulo) < utf8.RuneCountInString(hits[j].fonte.Titulo)
 	})
-	melhor := "" // nome da série mais relevante (para o filtro de pedidos)
+	melhor := "" // nome da fonte mais relevante (para o filtro de pedidos)
 	if len(hits) > 0 {
 		resp.Score, melhor = hits[0].fonte.Relevancia, hits[0].fonte.Titulo
 	}
 
 	var contexto []string
-	for _, h := range hits {
+	for _, h := range focar(hits, pergunta) {
 		if h.fonte.Relevancia < domain.LimiarRelevancia || h.fonte.Relevancia < resp.Score-margemFontes || len(contexto) == maxFontes {
 			break
 		}
@@ -387,7 +429,7 @@ func (s *Service) Perguntar(ctx context.Context, pergunta string) (Resposta, err
 		answer, err := s.assistente.Responder(ctx, pergunta, contexto)
 		switch {
 		case err == nil && domain.ForaDoObjetivo(answer):
-			// O modelo reconheceu um pedido fora do objetivo (ex.: a série
+			// O modelo reconheceu um pedido fora do objetivo (ex.: a fonte
 			// casou por palavras, mas a pergunta pede outra coisa).
 			recusar(&resp, "")
 		case err == nil:

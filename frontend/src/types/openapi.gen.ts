@@ -3009,6 +3009,8 @@ export interface components {
         };
         AtlasFonte: {
             codigo: string;
+            /** Format: uuid */
+            id?: string;
             relevancia: number;
             tipo: string;
             titulo: string;

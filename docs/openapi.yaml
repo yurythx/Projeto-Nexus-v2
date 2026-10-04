@@ -456,6 +456,9 @@ components:
             properties:
                 codigo:
                     type: string
+                id:
+                    format: uuid
+                    type: string
                 relevancia:
                     type: number
                 tipo:
@@ -11977,7 +11980,7 @@ servers:
       url: /
 tags:
     - name: administracao
-    - description: Atlas — Procedimentos e Temporalidade. Plug-in — Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) oficial e assistente da TTDD.
+    - description: Atlas — Procedimentos e Temporalidade. Plug-in — Procedimentos canônicos de processo (padrão SEI), Tabela de Temporalidade (TTDD) oficial e assistente sobre fluxos e TTDD.
       name: atlas
     - description: Auditoria. Núcleo — Registro transacional e imutável de operações com encadeamento de hash SHA-256.
       name: audit

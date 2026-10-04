@@ -453,6 +453,9 @@ type Repository interface {
 	ListTTDD(ctx context.Context, db database.DBTX, f FiltroTTDD, p pagination.Params) ([]ClassificacaoTTDD, int64, error)
 	GetTTDD(ctx context.Context, db database.DBTX, codigo string) (ClassificacaoTTDD, error)
 	EstruturaTTDD(ctx context.Context, db database.DBTX) ([]EstruturaTTDD, error)
+	// Candidatos devolve os procedimentos ativos (completos) que casam com
+	// algum termo da pergunta — base do assistente sobre fluxos (ADR 023).
+	Candidatos(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]Workflow, error)
 	// CandidatosTTDD devolve séries que casam com algum termo da pergunta.
 	CandidatosTTDD(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]ClassificacaoTTDD, error)
 	// LockTTDD confere a série (inexistente, vigente ou revogada) e a trava

@@ -158,7 +158,7 @@ type EgressConfig struct {
 	AllowPrivateNetworks bool
 }
 
-// AtlasConfig parametriza a IA do assistente da TTDD (Atlas) enquanto nada
+// AtlasConfig parametriza a IA do assistente do Atlas (fluxos e TTDD) enquanto nada
 // for configurado em Configurações > Inteligência artificial (ADR 020).
 type AtlasConfig struct {
 	// AIEndpoint é a URL base de um provedor compatível com a API de chat

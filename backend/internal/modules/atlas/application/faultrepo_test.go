@@ -176,3 +176,12 @@ func (fr *faultRepo) CargaTTDD(ctx context.Context, db database.DBTX, c domain.C
 	defer fr.post(ctx, db)
 	return fr.inner.CargaTTDD(ctx, db, c, aplicar)
 }
+
+func (fr *faultRepo) Candidatos(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]domain.Workflow, error) {
+	if err := fr.hook("Candidatos"); err != nil {
+		var z0 []domain.Workflow
+		return z0, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.Candidatos(ctx, db, pergunta, limit)
+}
