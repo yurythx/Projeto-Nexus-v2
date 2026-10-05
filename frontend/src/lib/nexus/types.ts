@@ -808,6 +808,8 @@ export interface CoberturaAtlas {
     peca: string;
   }[];
   modelos_sem_uso: { id: UUID; nome: string }[];
+  /** Subfunções da TTDD com séries de processo e nenhum procedimento (ADR 028). */
+  lacunas: { codigo: string; nome: string; orgao: string; series: number; exemplos: string[] }[];
 }
 
 export interface ModeloDocumento {

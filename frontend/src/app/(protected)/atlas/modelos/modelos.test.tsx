@@ -261,7 +261,7 @@ describe("Atlas — modelos nas peças", () => {
     await userEvent.selectOptions(modelo("Anexo"), "mod-1");
 
     await fill(screen.getByLabelText("Classificação TTDD *"), "2.0.02.00.07");
-    await userEvent.click(screen.getByRole("button", { name: "Publicar nova versão" }));
+    await userEvent.click(screen.getByRole("button", { name: "Salvar rascunho" }));
     const body = backend.to("POST v1/atlas/admin/workflows/wf-1/versoes")[0]!.body as {
       etapas: { documentos: { nome_documento: string; modelo_id: string | null }[] }[];
     };

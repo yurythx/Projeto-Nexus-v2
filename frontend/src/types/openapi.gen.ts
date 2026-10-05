@@ -3369,6 +3369,7 @@ export interface components {
             subfuncao?: components["schemas"]["AtlasSubfuncaoTTDD"];
         };
         AtlasCobertura: {
+            lacunas: components["schemas"]["AtlasLacunaSubfuncao"][];
             modelos_sem_uso: components["schemas"]["AtlasModeloSemUso"][];
             orgaos: components["schemas"]["AtlasCoberturaOrgao"][];
             pecas_sem_modelo: components["schemas"]["AtlasPecaSemModelo"][];
@@ -3390,6 +3391,7 @@ export interface components {
             nivel_acesso: "PUBLICO" | "RESTRITO" | "SIGILOSO";
             objetivo: string;
             publico_alvo: string;
+            rascunho?: boolean;
             titulo: string;
             versao?: number;
         };
@@ -3516,6 +3518,13 @@ export interface components {
             situacao: string;
             titulo: string;
             versao: number;
+        };
+        AtlasLacunaSubfuncao: {
+            codigo: string;
+            exemplos: string[];
+            nome: string;
+            orgao: string;
+            series: number;
         };
         AtlasLigarModeloRequest: {
             /** Format: uuid */

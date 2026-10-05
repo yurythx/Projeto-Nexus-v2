@@ -276,6 +276,8 @@ type createRequest struct {
 	HipoteseLegal    string         `json:"hipotese_legal_restricao" validate:"max=255"`
 	CodigoTTDD       string         `json:"codigo_ttdd" validate:"required,max=32"`
 	Etapas           []etapaRequest `json:"etapas" validate:"required,min=1,max=50,dive"`
+	// Rascunho grava para validação, sem publicar (ADR 028).
+	Rascunho bool `json:"rascunho"`
 }
 
 func (req createRequest) toDomain() domain.Workflow {
@@ -283,6 +285,9 @@ func (req createRequest) toDomain() domain.Workflow {
 		CodigoProcessual: req.CodigoProcessual, Versao: req.Versao, Titulo: req.Titulo, Objetivo: req.Objetivo,
 		PublicoAlvo: req.PublicoAlvo, NivelAcesso: domain.NivelAcesso(req.NivelAcesso), HipoteseLegal: req.HipoteseLegal,
 		CodigoTTDD: req.CodigoTTDD,
+	}
+	if req.Rascunho {
+		w.Situacao = domain.SituacaoRascunho
 	}
 	for _, e := range req.Etapas {
 		etapa := domain.Etapa{Ordem: e.Ordem, UnidadeAdministrativa: e.UnidadeAdministrativa, NomeSetor: e.NomeSetor,

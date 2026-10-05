@@ -292,6 +292,8 @@ describe("Atlas — início", () => {
     await fill(screen.getAllByLabelText("Sigla da unidade *")[1]!, "SEFIN");
     await fill(screen.getAllByLabelText("Atribuições *")[1]!, "Analisar");
 
+    // Publicar direto: desmarca o rascunho (padrão).
+    await userEvent.click(screen.getByLabelText(/Salvar como rascunho/));
     await userEvent.click(screen.getByRole("button", { name: "Cadastrar procedimento" }));
     const body = backend.to("POST v1/atlas/admin/workflows")[0]!.body as {
       codigo_processual: string;
@@ -774,13 +776,16 @@ describe("Atlas — vigência da TTDD e versões", () => {
 
     await fill(d.getByLabelText("Classificação TTDD *"), "2.0.02.01.02");
     await fill(d.getAllByLabelText("Peças exigidas (uma por linha)")[0]!, "\nEstudo Técnico");
-    await userEvent.click(d.getByRole("button", { name: "Publicar nova versão" }));
+    // Padrão: a nova versão vai como rascunho para validação.
+    await userEvent.click(d.getByRole("button", { name: "Salvar rascunho" }));
 
     const body = backend.to("POST v1/atlas/admin/workflows/wf-1/versoes")[0]!.body as {
       codigo_processual: string;
       codigo_ttdd: string;
       etapas: { documentos: unknown[]; transicoes: unknown[] }[];
+      rascunho: boolean;
     };
+    expect(body.rascunho).toBe(true);
     expect(body.codigo_processual).toBe("ADM.LIC.001");
     expect(body.codigo_ttdd).toBe("2.0.02.01.02");
     // Peça existente mantém formato/assinatura; a nova entra com o padrão.
@@ -823,6 +828,7 @@ describe("Atlas — vigência da TTDD e versões", () => {
     expect(d.getByLabelText("Classificação TTDD *")).toHaveValue("2.0.02.00.07");
     await userEvent.click(d.getByRole("button", { name: "Remover etapa 1" }));
     expect(d.getByText("Pendência — removida (a etapa de destino saiu)")).toBeInTheDocument();
+    await userEvent.click(d.getByLabelText(/Salvar como rascunho/));
     await userEvent.click(d.getByRole("button", { name: "Publicar nova versão" }));
     const body = backend.to("POST v1/atlas/admin/workflows/wf-1/versoes")[0]!.body as {
       etapas: unknown[];

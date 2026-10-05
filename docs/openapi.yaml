@@ -202,6 +202,10 @@ components:
             x-nexus-generated: true
         AtlasCobertura:
             properties:
+                lacunas:
+                    items:
+                        $ref: '#/components/schemas/AtlasLacunaSubfuncao'
+                    type: array
                 modelos_sem_uso:
                     items:
                         $ref: '#/components/schemas/AtlasModeloSemUso'
@@ -217,6 +221,7 @@ components:
                 totais:
                     $ref: '#/components/schemas/AtlasTotaisCobertura'
             required:
+                - lacunas
                 - modelos_sem_uso
                 - orgaos
                 - pecas_sem_modelo
@@ -272,6 +277,8 @@ components:
                 publico_alvo:
                     maxLength: 255
                     type: string
+                rascunho:
+                    type: boolean
                 titulo:
                     maxLength: 255
                     type: string
@@ -644,6 +651,28 @@ components:
                 - situacao
                 - titulo
                 - versao
+            type: object
+            x-nexus-generated: true
+        AtlasLacunaSubfuncao:
+            properties:
+                codigo:
+                    type: string
+                exemplos:
+                    items:
+                        type: string
+                    type: array
+                nome:
+                    type: string
+                orgao:
+                    type: string
+                series:
+                    type: integer
+            required:
+                - codigo
+                - exemplos
+                - nome
+                - orgao
+                - series
             type: object
             x-nexus-generated: true
         AtlasLigarModeloRequest:

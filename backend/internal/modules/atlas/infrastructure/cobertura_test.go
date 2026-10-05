@@ -23,7 +23,9 @@ func TestCoberturaFalhas(t *testing.T) {
 		"peças: linha":      {ok(), {Rows: dbtest.BadRows()}},
 		"modelos: consulta": {ok(), ok(), {Err: dbtest.ErrInjected}},
 		"modelos: linha":    {ok(), ok(), {Rows: dbtest.BadRows()}},
-		"contagens":         {ok(), ok(), ok()},
+		"lacunas: consulta": {ok(), ok(), ok(), {Err: dbtest.ErrInjected}},
+		"lacunas: linha":    {ok(), ok(), ok(), {Rows: dbtest.BadRows()}},
+		"contagens":         {ok(), ok(), ok(), ok()},
 	} {
 		if _, err := r.Cobertura(ctx, &dbtest.Seq{Queries: q}); err == nil {
 			t.Errorf("%s: falha engolida", name)

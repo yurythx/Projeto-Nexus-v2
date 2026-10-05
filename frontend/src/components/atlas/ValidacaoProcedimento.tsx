@@ -1,6 +1,7 @@
 "use client";
 
-import { BadgeCheck, ClipboardCheck } from "lucide-react";
+import { BadgeCheck, ClipboardCheck, Printer } from "lucide-react";
+import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
 
 import { fmtDate, useAction } from "@/components/nexus/useAction";
@@ -188,6 +189,12 @@ export function ValidacaoProcedimento({
           )}
         </div>
       )}
+      <Link
+        href={`/atlas/procedimentos/${wf.id}/ficha`}
+        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+      >
+        <Printer size={14} aria-hidden="true" /> Ficha de validação para imprimir
+      </Link>
       <h3 className="mt-1 text-sm font-semibold text-foreground">
         Entrevistas ({entrevistas.length})
       </h3>

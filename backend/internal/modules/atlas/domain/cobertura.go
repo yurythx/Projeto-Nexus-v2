@@ -45,12 +45,23 @@ type TotaisCobertura struct {
 	EmValidacao int `json:"em_validacao"`
 }
 
+// LacunaSubfuncao é uma subfunção da TTDD com séries de processo e nenhum
+// procedimento (nem rascunho): candidata a novo fluxo (ADR 028).
+type LacunaSubfuncao struct {
+	Codigo   string   `json:"codigo"`
+	Nome     string   `json:"nome"`
+	Orgao    string   `json:"orgao"`
+	Series   int      `json:"series"`
+	Exemplos []string `json:"exemplos"`
+}
+
 // Cobertura é o painel.
 type Cobertura struct {
-	Totais         TotaisCobertura  `json:"totais"`
-	Orgaos         []CoberturaOrgao `json:"orgaos"`
-	PecasSemModelo []PecaSemModelo  `json:"pecas_sem_modelo"`
-	ModelosSemUso  []ModeloSemUso   `json:"modelos_sem_uso"`
+	Totais         TotaisCobertura   `json:"totais"`
+	Orgaos         []CoberturaOrgao  `json:"orgaos"`
+	PecasSemModelo []PecaSemModelo   `json:"pecas_sem_modelo"`
+	ModelosSemUso  []ModeloSemUso    `json:"modelos_sem_uso"`
+	Lacunas        []LacunaSubfuncao `json:"lacunas"`
 }
 
 // Somar preenche os totais das séries a partir dos órgãos e os de peças e

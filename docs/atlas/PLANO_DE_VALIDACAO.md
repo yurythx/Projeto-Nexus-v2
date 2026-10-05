@@ -60,8 +60,11 @@ correção é um novo registro.
 
 ## 3. Roteiro da entrevista
 
-Leve o rascunho impresso (botão **Imprimir** na página do procedimento) e
-percorra-o com quem executa o processo.
+Leve a **ficha de validação** impressa (cartão Validação → "Ficha de validação
+para imprimir"): ela traz o fluxo proposto item a item, com "confere /
+corrigir", a tabela de padronização de cada documento e o fechamento com as
+assinaturas. Percorra-a com quem executa o processo e depois registre a
+entrevista no sistema.
 
 ### 3.1 O processo
 
@@ -104,7 +107,30 @@ padronizados e cadastrados na biblioteca.
   secretaria).
 - Combine quem valida a versão final (chefia do departamento).
 
-## 4. Checklist antes de homologar
+## 4. Depois das entrevistas: a versão consolidada
+
+- Corrija o rascunho com o que foi validado (botão **Nova versão** — já vem
+  marcado "Salvar como rascunho") e ligue os modelos padronizados.
+- **Homologar** publica a versão consolidada: ela fica disponível na consulta
+  interna, no site público (`/procedimentos`), na busca, no assistente e no
+  Trâmite (abertura de processo, checklist de peças), com versão, histórico e
+  impressão. A versão anterior, se houver, sai do ar e quem segue o fluxo é
+  avisado.
+- Revisões futuras seguem o mesmo caminho: nova versão como rascunho →
+  entrevista → homologar. O homologado nunca volta a rascunho.
+
+## 5. Procedimentos novos
+
+Se a entrevista revelar um processo que não está na lista, cadastre-o em
+**Atlas → Novo procedimento** (vem marcado "Salvar como rascunho") ou inclua-o
+no arquivo de importação. Ele entra no mesmo ciclo de validação.
+
+O painel **Atlas → Cobertura → Processos da TTDD sem procedimento** lista as
+subfunções da TTDD com séries de processo (requerimento, licença, certidão…) e
+nenhum procedimento, nem rascunho — é a lista de candidatos, atualizada sozinha
+à medida que os procedimentos são criados.
+
+## 6. Checklist antes de homologar
 
 - [ ] Todas as unidades das etapas foram entrevistadas (ou consultadas).
 - [ ] As siglas das etapas são as **cadastradas** no sistema.
@@ -115,7 +141,7 @@ padronizados e cadastrados na biblioteca.
 - [ ] A série da TTDD foi confirmada pela gestão documental.
 - [ ] Nenhuma pendência aberta nas entrevistas.
 
-## 5. Ponto de atenção: siglas das unidades
+## 7. Ponto de atenção: siglas das unidades
 
 O cadastro de unidades (Configurações → Unidades) está quase todo com a
 sigla **"SEDE"**. Os rascunhos usam siglas descritivas (`SEMAD/COMPRAS`,
@@ -125,7 +151,7 @@ siglas oficiais** confirmadas nas entrevistas.
 O cadastro também precisa ser corrigido: o aviso de nova versão chega às
 unidades **pela sigla**, e com "SEDE" ninguém é avisado.
 
-## 6. Procedimentos prioritários (rascunhos)
+## 8. Procedimentos prioritários (rascunhos)
 
 **28 procedimentos, 93 etapas e 154 documentos.** A coluna "Entrevistar"
 indica quem conversar primeiro.
@@ -167,7 +193,7 @@ Já publicados (devem ser revisados nas mesmas entrevistas):
 - `ADM.DIR.002` (Dispensa por valor);
 - `ADM.MAT.003` (Carga patrimonial).
 
-## 7. Lacunas a tratar com a gestão documental
+## 9. Lacunas a tratar com a gestão documental
 
 - **7.0 Infraestrutura** não tem rascunho: a TTDD só traz a subfunção
   "Gestão Administrativa". Definir com a secretaria quais processos
@@ -175,11 +201,16 @@ Já publicados (devem ser revisados nas mesmas entrevistas):
 - **Educação** tem muitas unidades no cadastro, mas **não tem órgão na
   TTDD**. Os documentos escolares precisam de tabela ou enquadramento
   definido pela CCPAD antes de qualquer fluxo.
+- Na data da carga dos rascunhos, **50 subfunções** com séries de processo
+  ficaram sem procedimento (ex.: descontos em folha, licenças do servidor,
+  saúde ocupacional, cargos comissionados, processo seletivo, patrimônio,
+  cadastro imobiliário, averbação e cartografia, produção rural, áreas
+  industriais). Use o painel de Cobertura para escolher a próxima leva.
 - **Saúde (745 séries)** é a maior área: depois dos dois rascunhos,
   priorizar com a secretaria (regulação, farmácia, vigilância
   epidemiológica).
 
-## 8. Proteção de dados nas entrevistas
+## 10. Proteção de dados nas entrevistas
 
 - Registre os participantes pela **função** ("chefe do RH"), não pelo nome.
   O registro fica guardado e pode ser consultado pela gestão.

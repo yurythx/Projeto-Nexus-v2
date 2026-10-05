@@ -61,6 +61,19 @@ ainda não validado apareceria como fluxo oficial.
      checklist de padronização dos documentos e o checklist antes de
      homologar.
 
+7. **Também pela tela:** o cadastro e a nova versão de procedimento
+   vêm marcados "Salvar como rascunho" (desmarcado, publica direto). Assim, um
+   procedimento revelado numa entrevista entra no mesmo ciclo.
+8. **Ficha de validação** (`/atlas/procedimentos/{id}/ficha`): versão para
+   imprimir e levar à entrevista, com o fluxo proposto item a item
+   ("confere / corrigir"), a tabela de padronização de cada documento e o
+   fechamento com assinaturas.
+9. **Lacunas no painel de cobertura:** subfunções da TTDD com séries de
+   processo e nenhum procedimento, nem rascunho. É uma heurística pelo
+   início do descritor ("Processo", "Requerimento", "Solicitação",
+   "Licença", "Certidão"…). A lista é atualizada sozinha conforme os
+   procedimentos são criados.
+
 ## Consequências
 
 - Os fluxos podem ser levantados, corrigidos e padronizados sem nunca

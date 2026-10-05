@@ -145,6 +145,9 @@ export function NovoProcedimentoForm({
 }) {
   const { run, pending } = useAction();
   const [nivel, setNivel] = useState<NivelAcesso>(base?.nivel_acesso ?? "PUBLICO");
+  // Rascunho (padrão — ADR 028): o fluxo vai para validação nos departamentos
+  // e só é publicado ao ser homologado. Desmarcado, publica direto.
+  const [rascunho, setRascunho] = useState(true);
   const [etapas, setEtapas] = useState<EtapaForm[]>(base ? etapasDe(base) : [novaEtapa(1)]);
   const serieRevogada = base?.classificacao?.revogada_em ? base.codigo_ttdd : undefined;
   // Modelos da biblioteca (ADR 024): a peça sem escolha explícita recebe o
@@ -174,6 +177,7 @@ export function NovoProcedimentoForm({
       hipotese_legal_restricao:
         nivel === "PUBLICO" ? "" : String(fd.get("hipotese_legal") ?? "").trim(),
       codigo_ttdd: String(fd.get("codigo_ttdd") ?? "").trim(),
+      rascunho,
       etapas: etapas.map((etapa, i) => ({
         ordem: i + 1,
         nome_setor: etapa.nome_setor.trim(),
@@ -203,7 +207,11 @@ export function NovoProcedimentoForm({
         base
           ? apiClient.post<Workflow>(`v1/atlas/admin/workflows/${base.id}/versoes`, corpo)
           : apiClient.post<Workflow>("v1/atlas/admin/workflows", corpo),
-      base ? "Nova versão publicada" : "Procedimento cadastrado",
+      rascunho
+        ? "Rascunho salvo para validação"
+        : base
+          ? "Nova versão publicada"
+          : "Procedimento cadastrado",
     );
     if (res) onDone(res.data);
   }
@@ -429,9 +437,18 @@ export function NovoProcedimentoForm({
         </fieldset>
       )}
 
-      <div className="flex justify-end border-t border-surface-border pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-surface-border pt-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={rascunho}
+            onChange={(e) => setRascunho(e.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
+          Salvar como rascunho, para validação (não publica)
+        </label>
         <Button type="submit" loading={pending}>
-          {base ? "Publicar nova versão" : "Cadastrar procedimento"}
+          {rascunho ? "Salvar rascunho" : base ? "Publicar nova versão" : "Cadastrar procedimento"}
         </Button>
       </div>
     </form>

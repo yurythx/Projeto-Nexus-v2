@@ -183,6 +183,15 @@ describe("Atlas — cobertura", () => {
             },
           ],
           modelos_sem_uso: [{ id: "mod-1", nome: "Ofício padrão" }],
+          lacunas: [
+            {
+              codigo: "2.0.06.01",
+              nome: "Descontos na Folha",
+              orgao: "Administração",
+              series: 9,
+              exemplos: ["Vale transporte", "Pensão alimentícia", "Consignado"],
+            },
+          ],
         },
       },
     });
@@ -207,6 +216,14 @@ describe("Atlas — cobertura", () => {
       "href",
       "/atlas/modelos?q=Of%C3%ADcio%20padr%C3%A3o",
     );
+    const lacunas = screen.getByRole("list", { name: "Subfunções sem procedimento" });
+    expect(within(lacunas).getByRole("link", { name: /Descontos na Folha/ })).toHaveAttribute(
+      "href",
+      "/atlas/ttdd?codigo=2.0.06.01",
+    );
+    expect(
+      within(lacunas).getByText(/9 séries: Vale transporte; Pensão alimentícia; Consignado…/),
+    ).toBeInTheDocument();
   });
 
   it("tudo coberto: listas vazias avisam", async () => {
@@ -227,12 +244,16 @@ describe("Atlas — cobertura", () => {
           orgaos: [],
           pecas_sem_modelo: [],
           modelos_sem_uso: [],
+          lacunas: [],
         },
       },
     });
     renderApp(<CoberturaPage />);
     expect(await screen.findByText("Todas as peças têm modelo para baixar.")).toBeInTheDocument();
     expect(screen.getByText(/Todos os modelos ativos estão ligados/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Toda subfunção com processo já tem procedimento."),
+    ).toBeInTheDocument();
   });
 });
 

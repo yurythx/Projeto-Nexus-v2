@@ -165,6 +165,42 @@ export default function CoberturaPage() {
               </CardContent>
             </Card>
 
+            <Card>
+              <CardHeader>
+                <CardTitle as="h2">
+                  Processos da TTDD sem procedimento ({c.lacunas.length} subfunções)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-5 pt-3 text-sm">
+                <p className="mb-3 text-xs text-muted">
+                  Subfunções com séries que descrevem um processo ou pedido (requerimento, licença,
+                  certidão…) e nenhum procedimento, nem rascunho. Uma subfunção costuma virar um ou
+                  poucos fluxos — não um por série.
+                </p>
+                {c.lacunas.length === 0 ? (
+                  <p className="text-muted">Toda subfunção com processo já tem procedimento.</p>
+                ) : (
+                  <ul className="flex flex-col gap-2" aria-label="Subfunções sem procedimento">
+                    {c.lacunas.map((l) => (
+                      <li key={l.codigo}>
+                        <Link
+                          href={`/atlas/ttdd?codigo=${encodeURIComponent(l.codigo)}`}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          <span className="font-mono">{l.codigo}</span> {l.nome}
+                        </Link>{" "}
+                        <span className="text-xs text-muted">
+                          — {l.orgao} · {l.series} {l.series === 1 ? "série" : "séries"}:{" "}
+                          {l.exemplos.join("; ")}
+                          {l.series > l.exemplos.length && "…"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>

@@ -193,6 +193,12 @@ func TestValidacaoHTTP(t *testing.T) {
 		!strings.Contains(rec.Body.String(), `"aplicada":true`) {
 		t.Fatalf("importar rascunho: %d %s", rec.Code, rec.Body.String())
 	}
+	// Cadastro pela tela como rascunho (ADR 028).
+	novoCorpo := `{"codigo_processual":"` + codigoNovo() + `","titulo":"t","objetivo":"o","publico_alvo":"p","nivel_acesso":"PUBLICO","codigo_ttdd":"` + serieVigente + `","rascunho":true,"etapas":[{"ordem":1,"unidade_administrativa":"A","nome_setor":"S","atribuicoes_setor":"x"}]}`
+	if rec := do(ok, http.MethodPost, "/atlas/admin/workflows", novoCorpo); rec.Code != http.StatusCreated ||
+		!strings.Contains(rec.Body.String(), `"situacao":"RASCUNHO"`) || !strings.Contains(rec.Body.String(), `"ativo":false`) {
+		t.Fatalf("cadastro como rascunho: %d %s", rec.Code, rec.Body.String())
+	}
 	w := e.rascunho(s, itemArquivo(codigoNovo(), "Outro rascunho", ""))
 	base := "/atlas/admin/workflows/" + w.ID.String()
 	hoje := time.Now().Format("2006-01-02")

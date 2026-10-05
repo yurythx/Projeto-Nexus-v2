@@ -240,3 +240,42 @@ func TestCobertura(t *testing.T) {
 		}
 	}
 }
+
+// Lacunas: subfunção com série de processo e nenhum procedimento aparece no
+// painel; some quando ganha um procedimento (mesmo rascunho).
+func TestCoberturaLacunas(t *testing.T) {
+	e := &env{t: t, pool: dbtest.Pool(t)}
+	ctx := context.Background()
+	s := e.real()
+	for _, sql := range []string{
+		`INSERT INTO atlas_ttdd_subfuncoes (codigo, funcao_codigo, nome) VALUES ('2.0.02.98', '2.0.02', 'Subfunção de teste das lacunas')
+			ON CONFLICT (codigo) DO NOTHING`,
+		`INSERT INTO atlas_classificacao_ttdd (codigo, subfuncao_codigo, descritor, fase_corrente_anos, fase_interm_anos, destinacao_final)
+			VALUES ('2.0.02.98.01', '2.0.02.98', 'Processo de teste das lacunas', 1, 1, 'ELIMINACAO') ON CONFLICT (codigo) DO NOTHING`,
+	} {
+		if _, err := e.pool.Exec(ctx, sql); err != nil {
+			t.Fatal(err)
+		}
+	}
+	tem := func() bool {
+		c, err := s.Cobertura(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, l := range c.Lacunas {
+			if l.Codigo == "2.0.02.98" {
+				return l.Series == 1 && l.Exemplos[0] == "Processo de teste das lacunas" && l.Orgao != ""
+			}
+		}
+		return false
+	}
+	if !tem() {
+		t.Fatal("subfunção sem procedimento fora das lacunas")
+	}
+	item := itemArquivo(codigoNovo(), "Cobre a lacuna", "")
+	item.CodigoTTDD = "2.0.02.98.01"
+	e.rascunho(s, item)
+	if tem() {
+		t.Fatal("subfunção com rascunho continua nas lacunas")
+	}
+}
