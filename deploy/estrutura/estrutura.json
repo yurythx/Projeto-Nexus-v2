@@ -3,22 +3,24 @@
   "entidades": [
     {
       "nome": "Administração",
-      "sigla": "",
+      "sigla": "SEMAD",
+      "slug": "administracao",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEMAD",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Agricultura e Pecuária",
-      "sigla": "",
+      "sigla": "SEMAGRI",
+      "slug": "agricultura-e-pecuaria",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEMAGRI",
           "departamentos": []
         }
       ]
@@ -26,98 +28,107 @@
     {
       "nome": "Ciência, Tecnologia e Inovação",
       "sigla": "SECITI",
+      "slug": "ciencia-tecnologia-e-inovacao",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SECITI",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Cultura",
-      "sigla": "",
+      "sigla": "SECULT",
+      "slug": "cultura",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SECULT",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Desenvolvimento Econômico",
-      "sigla": "",
+      "sigla": "SEDEC",
+      "slug": "desenvolvimento-economico",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEDEC",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Esporte e Lazer",
-      "sigla": "",
+      "sigla": "SEMEL",
+      "slug": "esporte-e-lazer",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEMEL",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Finanças",
-      "sigla": "",
+      "sigla": "SEFIN",
+      "slug": "financas",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEFIN",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Gabinete Comunicação",
-      "sigla": "",
+      "sigla": "GAB",
+      "slug": "gabinete-comunicacao",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "GAB",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Gestão de Pessoas",
-      "sigla": "",
+      "sigla": "SEGEP",
+      "slug": "gestao-de-pessoas",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEGEP",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Governo",
-      "sigla": "",
+      "sigla": "SEGOV",
+      "slug": "governo",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEGOV",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Habitação",
-      "sigla": "",
+      "sigla": "SEHAB",
+      "slug": "habitacao",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEHAB",
           "departamentos": []
         }
       ]
@@ -125,43 +136,47 @@
     {
       "nome": "IPPUR - SINFRA",
       "sigla": "IPPUR",
+      "slug": "ippur-sinfra",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "IPPUR",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Meio Ambiente",
-      "sigla": "",
+      "sigla": "SEMMA",
+      "slug": "meio-ambiente",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEMMA",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Pesquisa e Planejamento Urbano",
-      "sigla": "",
+      "sigla": "SEPPU",
+      "slug": "pesquisa-e-planejamento-urbano",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEPPU",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Planejamento",
-      "sigla": "",
+      "sigla": "SEPLAN",
+      "slug": "planejamento",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEPLAN",
           "departamentos": []
         }
       ]
@@ -169,43 +184,47 @@
     {
       "nome": "PROCON",
       "sigla": "PROCON",
+      "slug": "procon",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "PROCON",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Procuradoria Geral",
-      "sigla": "",
+      "sigla": "PGM",
+      "slug": "procuradoria-geral",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "PGM",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Receita",
-      "sigla": "",
+      "sigla": "SEREC",
+      "slug": "receita",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SEREC",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Segurança Pública",
-      "sigla": "",
+      "sigla": "SESP",
+      "slug": "seguranca-publica",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SESP",
           "departamentos": []
         }
       ]
@@ -213,32 +232,35 @@
     {
       "nome": "SINFRA",
       "sigla": "SINFRA",
+      "slug": "sinfra",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SINFRA",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Transportes e Trânsito",
-      "sigla": "",
+      "sigla": "SETRAT",
+      "slug": "transportes-e-transito",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "SETRAT",
           "departamentos": []
         }
       ]
     },
     {
       "nome": "Unidade Central de Controle Interno",
-      "sigla": "",
+      "sigla": "UCCI",
+      "slug": "unidade-central-de-controle-interno",
       "unidades": [
         {
           "nome": "Sede",
-          "sigla": "SEDE",
+          "sigla": "UCCI",
           "departamentos": []
         }
       ]
@@ -249,7 +271,7 @@
       "unidades": [
         {
           "nome": "Secretaria Executiva",
-          "sigla": "SEDE",
+          "sigla": "SEMED",
           "departamentos": [
             {
               "nome": "Almoxarifado"
@@ -761,7 +783,7 @@
       "unidades": [
         {
           "nome": "Sede da SMS",
-          "sigla": "SEDE",
+          "sigla": "SMS",
           "departamentos": [
             {
               "nome": "Ações Programáticas de Saúde"
@@ -1294,7 +1316,7 @@
       "unidades": [
         {
           "nome": "Sede da SEMPRAS",
-          "sigla": "SEDE",
+          "sigla": "SEMPRAS",
           "departamentos": [
             {
               "nome": "Administrativo"

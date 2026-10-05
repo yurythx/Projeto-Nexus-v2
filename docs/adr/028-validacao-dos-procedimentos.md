@@ -81,8 +81,9 @@ ainda não validado apareceria como fluxo oficial.
 
 - Os fluxos podem ser levantados, corrigidos e padronizados sem nunca
   aparecer como oficiais antes da homologação.
-- **Siglas das unidades:** o cadastro de unidades está quase todo com a
-  sigla "SEDE". As entrevistas devem corrigir as siglas das etapas e o
-  cadastro, porque os avisos às unidades dependem da sigla.
+- **Siglas das unidades:** a sede de cada órgão levava a sigla "SEDE", e
+  os avisos às unidades dependem da sigla. Agora a sede leva a sigla do
+  órgão, e as etapas dos rascunhos usam as mesmas siglas. As siglas são
+  provisórias até a confirmação nas entrevistas (plano de validação, §7).
 - **Educação:** não tem órgão na TTDD, e o enquadramento dos documentos
   escolares depende da CCPAD.

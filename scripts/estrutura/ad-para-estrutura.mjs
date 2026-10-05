@@ -16,6 +16,10 @@
 //     Ciência, Tecnologia e Inovação;
 //   - turnos estendidos ("(3º Turno)") viram departamento da unidade-base;
 //   - órgão sem detalhe no AD ganha uma unidade "Sede";
+//   - a sede de cada órgão leva a sigla do órgão (não "SEDE"): os avisos do
+//     Atlas chegam à unidade pela sigla da etapa ("SEGEP/RH" → SEGEP). As
+//     siglas abaixo são provisórias até a confirmação nas entrevistas
+//     (docs/atlas/PLANO_DE_VALIDACAO.md §7).
 //   - repetições dentro da Saúde ficam uma vez só (unidade, não setor).
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -100,11 +104,20 @@ function folhas(nomes, prefixo = "") {
 // Prefeitura: cada OU é um órgão (entidade).
 const DETALHADO = { "Educação": true, "Saúde": true, "Promoção e Assistencia Social": true };
 const MESMO_QUE = { "Ação Social": "Promoção e Assistencia Social", Sempras: "Promoção e Assistencia Social", SECITI: "Ciência Tecnologia e Inovação" };
-const SIGLA_ORGAO = { "Ciência Tecnologia e Inovação": "SECITI", Sinfra: "SINFRA", "IPPUR - SINFRA": "IPPUR", Procon: "PROCON" };
+const SIGLA_ORGAO = {
+  "Ciência Tecnologia e Inovação": "SECITI", Sinfra: "SINFRA", "IPPUR - SINFRA": "IPPUR", Procon: "PROCON",
+  "Administração": "SEMAD", "Agricultura e Pecuária": "SEMAGRI", Cultura: "SECULT", "Desenvolvimento Econômico": "SEDEC",
+  "Esporte e Lazer": "SEMEL", "Finanças": "SEFIN", "Gabinete Comunicação": "GAB", "Gestao de Pessoas": "SEGEP",
+  Governo: "SEGOV", "Habitação": "SEHAB", "Meio Ambiente": "SEMMA", "Pesquisa e Planejamento Urbano": "SEPPU",
+  Planejamento: "SEPLAN", "Procuradoria Geral": "PGM", Receita: "SEREC", "Segurança Publica": "SESP",
+  "Transportes e Trânsito": "SETRAT", "Unidade Central de Controle Interno": "UCCI",
+};
 for (const o of ler("Prefeitura/prefeitura.txt", "PREF")) {
   if (MESMO_QUE[o] || DETALHADO[o]) continue;
   const nome = o === "Ciência Tecnologia e Inovação" ? "Ciência, Tecnologia e Inovação" : titulo(o);
-  entidades.push({ nome, sigla: SIGLA_ORGAO[o] ?? "", unidades: [{ nome: "Sede", sigla: "SEDE", departamentos: [] }] });
+  const sigla = SIGLA_ORGAO[o] ?? "";
+  // slug pelo nome, como antes de o órgão ganhar sigla.
+  entidades.push({ nome, sigla, slug: slug(nome), unidades: [{ nome: "Sede", sigla, departamentos: [] }] });
 }
 
 // Educação
@@ -113,7 +126,7 @@ ler(`${E}/educação.txt`, "SEMED");
 entidades.push({
   nome: "Secretaria Municipal de Educação", sigla: "SEMED",
   unidades: [
-    { nome: "Secretaria Executiva", sigla: "SEDE", departamentos: departamentos(ler(`${E}/secretaria executiva educação.txt`, "SEMED")) },
+    { nome: "Secretaria Executiva", sigla: "SEMED", departamentos: departamentos(ler(`${E}/secretaria executiva educação.txt`, "SEMED")) },
     { nome: "Escola de Música", departamentos: [] },
     { nome: "Educação Infantil", agrupadora: true, subunidades: folhas(ler(`${E}/unidades educação infantil.txt`, "SEMED")) },
     { nome: "Ensino Fundamental", agrupadora: true, subunidades: folhas(ler(`${E}/unidades ensino fundamental.txt`, "SEMED")) },
@@ -145,7 +158,7 @@ const setoresSaude = ler(`${S}/SMS.txt`, "SMS").map(titulo)
 entidades.push({
   nome: "Secretaria Municipal de Saúde", sigla: "SMS",
   unidades: [
-    { nome: "Sede da SMS", sigla: "SEDE", departamentos: setoresSaude.map((nome) => ({ nome })) },
+    { nome: "Sede da SMS", sigla: "SMS", departamentos: setoresSaude.map((nome) => ({ nome })) },
     ...raiz.map((nome) => ({ nome, departamentos: [] })),
     ...grupos,
   ],
@@ -158,7 +171,7 @@ const ousA = ler("Secretaria de promoção e Assistencia social/promoção e ass
 entidades.push({
   nome: "Secretaria Municipal de Promoção e Assistência Social", sigla: "SEMPRAS",
   unidades: [
-    { nome: "Sede da SEMPRAS", sigla: "SEDE", departamentos: departamentos(ousA.filter((o) => SETORES_SEMPRAS.has(o)))
+    { nome: "Sede da SEMPRAS", sigla: "SEMPRAS", departamentos: departamentos(ousA.filter((o) => SETORES_SEMPRAS.has(o)))
       .map((d) => ({ nome: d.nome.replace("Proteção Básica", "Proteção Social Básica").replace("Proteção Especial", "Proteção Social Especial") })) },
     ...folhas(ousA.filter((o) => !SETORES_SEMPRAS.has(o))),
   ],
@@ -188,7 +201,7 @@ function unidade(ent, entId, u, parentId) {
 }
 for (const e of entidades) {
   const id = uuid5(`entidade:${slug(e.nome)}`);
-  sql.push(`-- ${e.nome}`, `INSERT INTO entidades (id, nome, sigla, slug) VALUES (${q(id)}, ${q(e.nome)}, ${q(e.sigla)}, ${q(slug(e.sigla || e.nome))})`,
+  sql.push(`-- ${e.nome}`, `INSERT INTO entidades (id, nome, sigla, slug) VALUES (${q(id)}, ${q(e.nome)}, ${q(e.sigla)}, ${q(e.slug ?? slug(e.sigla || e.nome))})`,
     "  ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;");
   for (const u of e.unidades) unidade(e, id, u, null);
   sql.push("");

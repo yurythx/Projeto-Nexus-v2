@@ -143,15 +143,52 @@ nenhum procedimento, nem rascunho — é a lista de candidatos, atualizada sozin
 - [ ] A série da TTDD foi confirmada pela gestão documental.
 - [ ] Nenhuma pendência aberta nas entrevistas.
 
-## 7. Ponto de atenção: siglas das unidades
+## 7. Siglas das unidades
 
-O cadastro de unidades (Configurações → Unidades) está quase todo com a
-sigla **"SEDE"**. Os rascunhos usam siglas descritivas (`SEMAD/COMPRAS`,
-`SEGEP/RH`, `SEFAZ/CONTABILIDADE`…), que devem ser **substituídas pelas
-siglas oficiais** confirmadas nas entrevistas.
+Os avisos de nova versão chegam às unidades **pela sigla**: a sigla da
+etapa (`SEGEP/RH`) ou o primeiro segmento dela (`SEGEP`) tem de ser a sigla
+de uma unidade do cadastro.
 
-O cadastro também precisa ser corrigido: o aviso de nova versão chega às
-unidades **pela sigla**, e com "SEDE" ninguém é avisado.
+O cadastro trazia "SEDE" como sigla da sede de 25 órgãos, e 21 órgãos não
+tinham sigla. Agora cada órgão tem sigla e a sede leva a sigla do órgão. As
+etapas dos rascunhos foram alinhadas às mesmas siglas
+(`deploy/atlas/siglas-rascunhos.sql`).
+
+**As siglas abaixo são provisórias.** Confirme-as nas entrevistas e
+corrija-as em `scripts/estrutura/ad-para-estrutura.mjs` (`SIGLA_ORGAO`),
+para que a próxima carga da estrutura não as desfaça.
+
+| Órgão | Sigla | Órgão | Sigla |
+|---|---|---|---|
+| Administração | SEMAD | Meio Ambiente | SEMMA |
+| Agricultura e Pecuária | SEMAGRI | Pesquisa e Planejamento Urbano | SEPPU |
+| Ciência, Tecnologia e Inovação | SECITI | Planejamento | SEPLAN |
+| Cultura | SECULT | PROCON | PROCON |
+| Desenvolvimento Econômico | SEDEC | Procuradoria Geral | PGM |
+| Esporte e Lazer | SEMEL | Receita | SEREC |
+| Finanças | SEFIN | Segurança Pública | SESP |
+| Gabinete Comunicação | GAB | SINFRA | SINFRA |
+| Gestão de Pessoas | SEGEP | IPPUR - SINFRA | IPPUR |
+| Governo | SEGOV | Transportes e Trânsito | SETRAT |
+| Habitação | SEHAB | Controle Interno | UCCI |
+| Educação | SEMED | Saúde | SMS |
+| Assistência Social | SEMPRAS | | |
+
+Pontos a esclarecer:
+
+- "Pesquisa e Planejamento Urbano" e "IPPUR - SINFRA" parecem o mesmo órgão
+  (o IPPUR). Se forem, uma das entradas sai do cadastro.
+- Os rascunhos põem as **compras** na Administração (`SEMAD/COMPRAS`). Os
+  procedimentos já publicados, porém, usam `SEFIN/COMPRAS`. A entrevista
+  decide qual vale.
+- Com a separação entre Receita e Finanças, tributos, cadastro imobiliário e
+  dívida ativa ficaram em `SEREC`. Contabilidade, tesouraria e patrimônio
+  ficaram em `SEFIN`.
+- Os setores (a parte depois da barra) são descritivos. Para avisar um setor
+  específico, ele precisa existir no cadastro como unidade com essa sigla.
+  Até lá, o aviso vai para a sede do órgão.
+- `IMPRO` (previdência) não está no cadastro de unidades. `SECRETARIA` quer
+  dizer "a secretaria que pede" e não avisa ninguém.
 
 ## 8. Procedimentos prioritários (rascunhos)
 

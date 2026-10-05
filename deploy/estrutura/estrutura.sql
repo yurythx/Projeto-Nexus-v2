@@ -4,141 +4,141 @@
 BEGIN;
 
 -- Administração
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('2913c7f3-b37c-517c-b698-17f40dc95c32', 'Administração', '', 'administracao')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('2913c7f3-b37c-517c-b698-17f40dc95c32', 'Administração', 'SEMAD', 'administracao')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('d3557ec1-90a0-56d8-a80c-8232e2b5d6eb', '2913c7f3-b37c-517c-b698-17f40dc95c32', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('d3557ec1-90a0-56d8-a80c-8232e2b5d6eb', '2913c7f3-b37c-517c-b698-17f40dc95c32', NULL, 'Sede', 'SEMAD', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Agricultura e Pecuária
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('dd679d31-4a1e-53bb-bf5e-afa1c5d3b14e', 'Agricultura e Pecuária', '', 'agricultura-e-pecuaria')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('dd679d31-4a1e-53bb-bf5e-afa1c5d3b14e', 'Agricultura e Pecuária', 'SEMAGRI', 'agricultura-e-pecuaria')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('a7ffaa84-f21d-5e0c-9091-9b19de711661', 'dd679d31-4a1e-53bb-bf5e-afa1c5d3b14e', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('a7ffaa84-f21d-5e0c-9091-9b19de711661', 'dd679d31-4a1e-53bb-bf5e-afa1c5d3b14e', NULL, 'Sede', 'SEMAGRI', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Ciência, Tecnologia e Inovação
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('0cde932c-a8d0-5bbb-9f49-46486ad9ccdb', 'Ciência, Tecnologia e Inovação', 'SECITI', 'seciti')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('0cde932c-a8d0-5bbb-9f49-46486ad9ccdb', 'Ciência, Tecnologia e Inovação', 'SECITI', 'ciencia-tecnologia-e-inovacao')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('5ed40e60-26e2-57e0-9698-e267515cf348', '0cde932c-a8d0-5bbb-9f49-46486ad9ccdb', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('5ed40e60-26e2-57e0-9698-e267515cf348', '0cde932c-a8d0-5bbb-9f49-46486ad9ccdb', NULL, 'Sede', 'SECITI', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Cultura
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('18e3b74d-2495-5d5b-b412-7afff14515b0', 'Cultura', '', 'cultura')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('18e3b74d-2495-5d5b-b412-7afff14515b0', 'Cultura', 'SECULT', 'cultura')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('5126015b-16ec-5c0f-9294-2ad00df7b58a', '18e3b74d-2495-5d5b-b412-7afff14515b0', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('5126015b-16ec-5c0f-9294-2ad00df7b58a', '18e3b74d-2495-5d5b-b412-7afff14515b0', NULL, 'Sede', 'SECULT', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Desenvolvimento Econômico
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('a7bbbdf0-dc9e-54c5-987a-830c73e7fef0', 'Desenvolvimento Econômico', '', 'desenvolvimento-economico')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('a7bbbdf0-dc9e-54c5-987a-830c73e7fef0', 'Desenvolvimento Econômico', 'SEDEC', 'desenvolvimento-economico')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('e8d0f774-f182-5e4f-b0ab-c69177a9ee17', 'a7bbbdf0-dc9e-54c5-987a-830c73e7fef0', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('e8d0f774-f182-5e4f-b0ab-c69177a9ee17', 'a7bbbdf0-dc9e-54c5-987a-830c73e7fef0', NULL, 'Sede', 'SEDEC', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Esporte e Lazer
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('227ab076-cca5-5d6b-a862-9aa50c7bcbc3', 'Esporte e Lazer', '', 'esporte-e-lazer')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('227ab076-cca5-5d6b-a862-9aa50c7bcbc3', 'Esporte e Lazer', 'SEMEL', 'esporte-e-lazer')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('b76abef2-585c-5d6e-8fd7-cf9cb3686c3a', '227ab076-cca5-5d6b-a862-9aa50c7bcbc3', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('b76abef2-585c-5d6e-8fd7-cf9cb3686c3a', '227ab076-cca5-5d6b-a862-9aa50c7bcbc3', NULL, 'Sede', 'SEMEL', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Finanças
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('434b8b7a-9ad2-5a32-adab-37201cd561cc', 'Finanças', '', 'financas')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('434b8b7a-9ad2-5a32-adab-37201cd561cc', 'Finanças', 'SEFIN', 'financas')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('f6495e52-92a9-535d-b7e5-a2fc80b4d297', '434b8b7a-9ad2-5a32-adab-37201cd561cc', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('f6495e52-92a9-535d-b7e5-a2fc80b4d297', '434b8b7a-9ad2-5a32-adab-37201cd561cc', NULL, 'Sede', 'SEFIN', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Gabinete Comunicação
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('213b8f30-6543-5255-866d-876578a4d373', 'Gabinete Comunicação', '', 'gabinete-comunicacao')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('213b8f30-6543-5255-866d-876578a4d373', 'Gabinete Comunicação', 'GAB', 'gabinete-comunicacao')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('85156e0f-8178-5a9b-9987-6daf65418817', '213b8f30-6543-5255-866d-876578a4d373', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('85156e0f-8178-5a9b-9987-6daf65418817', '213b8f30-6543-5255-866d-876578a4d373', NULL, 'Sede', 'GAB', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Gestão de Pessoas
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('da126408-3525-516f-acd6-4e1c312a339e', 'Gestão de Pessoas', '', 'gestao-de-pessoas')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('da126408-3525-516f-acd6-4e1c312a339e', 'Gestão de Pessoas', 'SEGEP', 'gestao-de-pessoas')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('d84bcbce-54ec-5f3c-93c0-69b5f9a50360', 'da126408-3525-516f-acd6-4e1c312a339e', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('d84bcbce-54ec-5f3c-93c0-69b5f9a50360', 'da126408-3525-516f-acd6-4e1c312a339e', NULL, 'Sede', 'SEGEP', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Governo
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('f9e2aeb0-fb45-55cc-b10a-7a4066e7e147', 'Governo', '', 'governo')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('f9e2aeb0-fb45-55cc-b10a-7a4066e7e147', 'Governo', 'SEGOV', 'governo')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('696e621e-a985-5f8e-8975-8084d4ea0775', 'f9e2aeb0-fb45-55cc-b10a-7a4066e7e147', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('696e621e-a985-5f8e-8975-8084d4ea0775', 'f9e2aeb0-fb45-55cc-b10a-7a4066e7e147', NULL, 'Sede', 'SEGOV', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Habitação
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('0e13489f-62e0-581e-b6e6-da6fd0363771', 'Habitação', '', 'habitacao')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('0e13489f-62e0-581e-b6e6-da6fd0363771', 'Habitação', 'SEHAB', 'habitacao')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('7926ff91-d8b0-5211-8f16-bc37ea1695f9', '0e13489f-62e0-581e-b6e6-da6fd0363771', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('7926ff91-d8b0-5211-8f16-bc37ea1695f9', '0e13489f-62e0-581e-b6e6-da6fd0363771', NULL, 'Sede', 'SEHAB', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- IPPUR - SINFRA
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('128199a5-98aa-5d88-b2ee-f4ae54ef2b52', 'IPPUR - SINFRA', 'IPPUR', 'ippur')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('128199a5-98aa-5d88-b2ee-f4ae54ef2b52', 'IPPUR - SINFRA', 'IPPUR', 'ippur-sinfra')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('28df788d-5712-5436-a934-6be00ef2df01', '128199a5-98aa-5d88-b2ee-f4ae54ef2b52', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('28df788d-5712-5436-a934-6be00ef2df01', '128199a5-98aa-5d88-b2ee-f4ae54ef2b52', NULL, 'Sede', 'IPPUR', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Meio Ambiente
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('5033a2f8-0aba-58d3-a29e-b755119ae6fe', 'Meio Ambiente', '', 'meio-ambiente')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('5033a2f8-0aba-58d3-a29e-b755119ae6fe', 'Meio Ambiente', 'SEMMA', 'meio-ambiente')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('25f7c11a-5e22-5c95-b3c7-daffdb82f0e6', '5033a2f8-0aba-58d3-a29e-b755119ae6fe', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('25f7c11a-5e22-5c95-b3c7-daffdb82f0e6', '5033a2f8-0aba-58d3-a29e-b755119ae6fe', NULL, 'Sede', 'SEMMA', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Pesquisa e Planejamento Urbano
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('063ca411-e0b6-53c7-8b72-912714f8e290', 'Pesquisa e Planejamento Urbano', '', 'pesquisa-e-planejamento-urbano')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('063ca411-e0b6-53c7-8b72-912714f8e290', 'Pesquisa e Planejamento Urbano', 'SEPPU', 'pesquisa-e-planejamento-urbano')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('ff426485-c747-586a-bc34-00aaa8889ff0', '063ca411-e0b6-53c7-8b72-912714f8e290', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('ff426485-c747-586a-bc34-00aaa8889ff0', '063ca411-e0b6-53c7-8b72-912714f8e290', NULL, 'Sede', 'SEPPU', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Planejamento
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('232984a5-59a9-5865-afff-a17b7b335c4f', 'Planejamento', '', 'planejamento')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('232984a5-59a9-5865-afff-a17b7b335c4f', 'Planejamento', 'SEPLAN', 'planejamento')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('7e64cca2-cb6d-57cc-93c5-ec0e15493480', '232984a5-59a9-5865-afff-a17b7b335c4f', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('7e64cca2-cb6d-57cc-93c5-ec0e15493480', '232984a5-59a9-5865-afff-a17b7b335c4f', NULL, 'Sede', 'SEPLAN', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- PROCON
 INSERT INTO entidades (id, nome, sigla, slug) VALUES ('d7963656-57f8-55e8-864c-8c42151c29b1', 'PROCON', 'PROCON', 'procon')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('57a1246f-e74e-5015-b60a-55f26a8e0b46', 'd7963656-57f8-55e8-864c-8c42151c29b1', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('57a1246f-e74e-5015-b60a-55f26a8e0b46', 'd7963656-57f8-55e8-864c-8c42151c29b1', NULL, 'Sede', 'PROCON', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Procuradoria Geral
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('e0cff087-9697-524c-8ac4-60412b104db1', 'Procuradoria Geral', '', 'procuradoria-geral')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('e0cff087-9697-524c-8ac4-60412b104db1', 'Procuradoria Geral', 'PGM', 'procuradoria-geral')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('d19cc18b-ca2e-5a82-9031-a9d0cf3b6413', 'e0cff087-9697-524c-8ac4-60412b104db1', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('d19cc18b-ca2e-5a82-9031-a9d0cf3b6413', 'e0cff087-9697-524c-8ac4-60412b104db1', NULL, 'Sede', 'PGM', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Receita
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('9c2ff196-6de2-5314-903d-1011a1d8990a', 'Receita', '', 'receita')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('9c2ff196-6de2-5314-903d-1011a1d8990a', 'Receita', 'SEREC', 'receita')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('f7d2f509-c78a-5fc0-88f5-0514f4970736', '9c2ff196-6de2-5314-903d-1011a1d8990a', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('f7d2f509-c78a-5fc0-88f5-0514f4970736', '9c2ff196-6de2-5314-903d-1011a1d8990a', NULL, 'Sede', 'SEREC', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Segurança Pública
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('7a9a657c-9160-5180-8e48-08072827efbf', 'Segurança Pública', '', 'seguranca-publica')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('7a9a657c-9160-5180-8e48-08072827efbf', 'Segurança Pública', 'SESP', 'seguranca-publica')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('a1b3ead5-5b2a-5619-9391-36bad2d9f4c9', '7a9a657c-9160-5180-8e48-08072827efbf', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('a1b3ead5-5b2a-5619-9391-36bad2d9f4c9', '7a9a657c-9160-5180-8e48-08072827efbf', NULL, 'Sede', 'SESP', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- SINFRA
 INSERT INTO entidades (id, nome, sigla, slug) VALUES ('1f4990ea-8b47-5dcc-87dc-5c349088e67d', 'SINFRA', 'SINFRA', 'sinfra')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('8cb3a7f2-9002-5a97-a133-358a29a0ff97', '1f4990ea-8b47-5dcc-87dc-5c349088e67d', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('8cb3a7f2-9002-5a97-a133-358a29a0ff97', '1f4990ea-8b47-5dcc-87dc-5c349088e67d', NULL, 'Sede', 'SINFRA', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Transportes e Trânsito
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('5bf1edc1-bd04-5b96-acb9-1462c481a2e9', 'Transportes e Trânsito', '', 'transportes-e-transito')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('5bf1edc1-bd04-5b96-acb9-1462c481a2e9', 'Transportes e Trânsito', 'SETRAT', 'transportes-e-transito')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('883b3bae-b1d2-5337-a833-bd52c94a3e0d', '5bf1edc1-bd04-5b96-acb9-1462c481a2e9', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('883b3bae-b1d2-5337-a833-bd52c94a3e0d', '5bf1edc1-bd04-5b96-acb9-1462c481a2e9', NULL, 'Sede', 'SETRAT', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Unidade Central de Controle Interno
-INSERT INTO entidades (id, nome, sigla, slug) VALUES ('353d0ae0-ed0d-5160-a981-96f8ba56e557', 'Unidade Central de Controle Interno', '', 'unidade-central-de-controle-interno')
+INSERT INTO entidades (id, nome, sigla, slug) VALUES ('353d0ae0-ed0d-5160-a981-96f8ba56e557', 'Unidade Central de Controle Interno', 'UCCI', 'unidade-central-de-controle-interno')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('5b50f4f5-658a-5b24-962b-4a242888de40', '353d0ae0-ed0d-5160-a981-96f8ba56e557', NULL, 'Sede', 'SEDE', 'sede')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('5b50f4f5-658a-5b24-962b-4a242888de40', '353d0ae0-ed0d-5160-a981-96f8ba56e557', NULL, 'Sede', 'UCCI', 'sede')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 
 -- Secretaria Municipal de Educação
 INSERT INTO entidades (id, nome, sigla, slug) VALUES ('494a38e0-eb83-5695-a0a5-ed9a793fd1c0', 'Secretaria Municipal de Educação', 'SEMED', 'semed')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('0007e74f-60b3-5eef-a8be-2d706a7e6589', '494a38e0-eb83-5695-a0a5-ed9a793fd1c0', NULL, 'Secretaria Executiva', 'SEDE', 'secretaria-executiva')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('0007e74f-60b3-5eef-a8be-2d706a7e6589', '494a38e0-eb83-5695-a0a5-ed9a793fd1c0', NULL, 'Secretaria Executiva', 'SEMED', 'secretaria-executiva')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 INSERT INTO departamentos (id, unidade_id, nome, slug) VALUES ('aef0fcc4-35b4-5861-93b3-de33b1da59a8', '0007e74f-60b3-5eef-a8be-2d706a7e6589', 'Almoxarifado', 'almoxarifado')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, slug = EXCLUDED.slug;
@@ -402,7 +402,7 @@ INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('1d
 -- Secretaria Municipal de Saúde
 INSERT INTO entidades (id, nome, sigla, slug) VALUES ('9a74ba6a-74e1-51eb-be89-4ab4fd59af84', 'Secretaria Municipal de Saúde', 'SMS', 'sms')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('9b67e596-ca02-5710-bcbe-4364e012a65c', '9a74ba6a-74e1-51eb-be89-4ab4fd59af84', NULL, 'Sede da SMS', 'SEDE', 'sede-da-sms')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('9b67e596-ca02-5710-bcbe-4364e012a65c', '9a74ba6a-74e1-51eb-be89-4ab4fd59af84', NULL, 'Sede da SMS', 'SMS', 'sede-da-sms')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 INSERT INTO departamentos (id, unidade_id, nome, slug) VALUES ('c3793892-8de6-5954-8d41-8357f1c1fb9e', '9b67e596-ca02-5710-bcbe-4364e012a65c', 'Ações Programáticas de Saúde', 'acoes-programaticas-de-saude')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, slug = EXCLUDED.slug;
@@ -666,7 +666,7 @@ INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('5b
 -- Secretaria Municipal de Promoção e Assistência Social
 INSERT INTO entidades (id, nome, sigla, slug) VALUES ('57a95844-3d87-5f0a-95ef-34349a9d7474', 'Secretaria Municipal de Promoção e Assistência Social', 'SEMPRAS', 'sempras')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
-INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('3c1286a9-ef0e-5418-b029-fc7d77b1be17', '57a95844-3d87-5f0a-95ef-34349a9d7474', NULL, 'Sede da SEMPRAS', 'SEDE', 'sede-da-sempras')
+INSERT INTO unidades (id, entidade_id, parent_id, nome, sigla, slug) VALUES ('3c1286a9-ef0e-5418-b029-fc7d77b1be17', '57a95844-3d87-5f0a-95ef-34349a9d7474', NULL, 'Sede da SEMPRAS', 'SEMPRAS', 'sede-da-sempras')
   ON CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, nome = EXCLUDED.nome, sigla = EXCLUDED.sigla, slug = EXCLUDED.slug;
 INSERT INTO departamentos (id, unidade_id, nome, slug) VALUES ('78855ca1-2688-56f2-bf09-57d3da0c29b7', '3c1286a9-ef0e-5418-b029-fc7d77b1be17', 'Administrativo', 'administrativo')
   ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, slug = EXCLUDED.slug;

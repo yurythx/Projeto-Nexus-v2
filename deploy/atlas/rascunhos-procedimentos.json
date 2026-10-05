@@ -109,7 +109,7 @@
         },
         {
           "ordem": 4,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Ordenador de despesa",
           "atribuicoes_setor": "Autorizar a adesão e a contratação.",
           "prazo_sla_em_dias": 3,
@@ -345,7 +345,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/CONTABILIDADE",
+          "unidade_administrativa": "SEFIN/CONTABILIDADE",
           "nome_setor": "Contabilidade",
           "atribuicoes_setor": "Liquidar e pagar a despesa.",
           "prazo_sla_em_dias": 10,
@@ -469,7 +469,7 @@
         },
         {
           "ordem": 4,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Autoridade competente",
           "atribuicoes_setor": "Ratificar a inexigibilidade e autorizar a contratação.",
           "prazo_sla_em_dias": 3,
@@ -585,7 +585,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SIC",
+          "unidade_administrativa": "SEMAD/SIC",
           "nome_setor": "Serviço de Informação ao Cidadão",
           "atribuicoes_setor": "Registrar o pedido e encaminhar à unidade que detém a informação.",
           "prazo_sla_em_dias": 2,
@@ -633,7 +633,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SIC",
+          "unidade_administrativa": "SEMAD/SIC",
           "nome_setor": "Serviço de Informação ao Cidadão",
           "atribuicoes_setor": "Enviar a resposta ao cidadão e informar o prazo de recurso.",
           "prazo_sla_em_dias": 3,
@@ -956,7 +956,7 @@
         },
         {
           "ordem": 4,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Prefeito",
           "atribuicoes_setor": "Assinar o ato de aposentadoria e publicar.",
           "prazo_sla_em_dias": 10,
@@ -1009,7 +1009,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Autoridade instauradora",
           "atribuicoes_setor": "Instaurar o PAD e designar a comissão.",
           "prazo_sla_em_dias": 5,
@@ -1030,7 +1030,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "CPAD",
+          "unidade_administrativa": "SEGEP/CPAD",
           "nome_setor": "Comissão processante",
           "atribuicoes_setor": "Citar o servidor, instruir, colher a defesa e elaborar o relatório final.",
           "prazo_sla_em_dias": 60,
@@ -1096,7 +1096,7 @@
         },
         {
           "ordem": 4,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Autoridade julgadora",
           "atribuicoes_setor": "Julgar e aplicar a penalidade ou arquivar.",
           "prazo_sla_em_dias": 20,
@@ -1142,7 +1142,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "CAEP",
+          "unidade_administrativa": "SEGEP/CAEP",
           "nome_setor": "Comissão de avaliação",
           "atribuicoes_setor": "Consolidar as avaliações e emitir o parecer final.",
           "prazo_sla_em_dias": 20,
@@ -1306,7 +1306,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/CONTABILIDADE",
+          "unidade_administrativa": "SEFIN/CONTABILIDADE",
           "nome_setor": "Contabilidade",
           "atribuicoes_setor": "Empenhar e pagar as diárias.",
           "prazo_sla_em_dias": 5,
@@ -1360,7 +1360,7 @@
         },
         {
           "ordem": 4,
-          "unidade_administrativa": "SEFAZ/CONTABILIDADE",
+          "unidade_administrativa": "SEFIN/CONTABILIDADE",
           "nome_setor": "Contabilidade",
           "atribuicoes_setor": "Analisar a prestação de contas e aprovar ou pedir a devolução.",
           "prazo_sla_em_dias": 10,
@@ -1420,7 +1420,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/CONTABILIDADE",
+          "unidade_administrativa": "SEFIN/CONTABILIDADE",
           "nome_setor": "Contabilidade",
           "atribuicoes_setor": "Conferir o empenho, as retenções e a regularidade fiscal e liquidar.",
           "prazo_sla_em_dias": 5,
@@ -1453,7 +1453,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/TESOURARIA",
+          "unidade_administrativa": "SEFIN/TESOURARIA",
           "nome_setor": "Tesouraria",
           "atribuicoes_setor": "Pagar o credor obedecendo a ordem cronológica.",
           "prazo_sla_em_dias": 10,
@@ -1484,7 +1484,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento ao contribuinte",
           "atribuicoes_setor": "Receber o requerimento e emitir o extrato dos débitos.",
           "prazo_sla_em_dias": 2,
@@ -1511,7 +1511,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/DIVIDA",
+          "unidade_administrativa": "SEREC/DIVIDA",
           "nome_setor": "Dívida ativa",
           "atribuicoes_setor": "Simular as parcelas conforme a lei e lavrar o termo de confissão.",
           "prazo_sla_em_dias": 5,
@@ -1532,7 +1532,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/ARRECADACAO",
+          "unidade_administrativa": "SEREC/ARRECADACAO",
           "nome_setor": "Arrecadação",
           "atribuicoes_setor": "Emitir as guias e acompanhar o pagamento.",
           "prazo_sla_em_dias": 2,
@@ -1557,7 +1557,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento ao contribuinte",
           "atribuicoes_setor": "Receber o requerimento com os comprovantes.",
           "prazo_sla_em_dias": 2,
@@ -1590,7 +1590,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/CADASTRO",
+          "unidade_administrativa": "SEREC/CADASTRO",
           "nome_setor": "Cadastro imobiliário",
           "atribuicoes_setor": "Conferir o cadastro do imóvel e os requisitos.",
           "prazo_sla_em_dias": 15,
@@ -1617,7 +1617,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/TRIBUTARIO",
+          "unidade_administrativa": "SEREC/TRIBUTARIO",
           "nome_setor": "Julgamento tributário",
           "atribuicoes_setor": "Decidir o pedido e lançar a isenção no cadastro.",
           "prazo_sla_em_dias": 15,
@@ -1642,7 +1642,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/LICENCIAMENTO",
+          "unidade_administrativa": "SEREC/LICENCIAMENTO",
           "nome_setor": "Licenciamento econômico",
           "atribuicoes_setor": "Receber o pedido, conferir a inscrição municipal e a consulta de uso do solo.",
           "prazo_sla_em_dias": 5,
@@ -1675,7 +1675,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/FISCALIZACAO",
+          "unidade_administrativa": "SEREC/FISCALIZACAO",
           "nome_setor": "Fiscalização",
           "atribuicoes_setor": "Vistoriar o estabelecimento quando a atividade exigir.",
           "prazo_sla_em_dias": 10,
@@ -1702,7 +1702,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/LICENCIAMENTO",
+          "unidade_administrativa": "SEREC/LICENCIAMENTO",
           "nome_setor": "Licenciamento econômico",
           "atribuicoes_setor": "Emitir o alvará após o pagamento da taxa.",
           "prazo_sla_em_dias": 3,
@@ -1727,7 +1727,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento ao contribuinte",
           "atribuicoes_setor": "Receber o pedido e consultar a situação fiscal.",
           "prazo_sla_em_dias": 1,
@@ -1748,7 +1748,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/DIVIDA",
+          "unidade_administrativa": "SEREC/DIVIDA",
           "nome_setor": "Dívida ativa",
           "atribuicoes_setor": "Analisar pendências apontadas (parcelamento, suspensão de exigibilidade).",
           "prazo_sla_em_dias": 5,
@@ -1769,7 +1769,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento ao contribuinte",
           "atribuicoes_setor": "Emitir a certidão.",
           "prazo_sla_em_dias": 1,
@@ -1795,7 +1795,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "OUVIDORIA",
+          "unidade_administrativa": "UCCI/OUVIDORIA",
           "nome_setor": "Ouvidoria-Geral",
           "atribuicoes_setor": "Registrar a manifestação, preservar a identidade do manifestante e encaminhar.",
           "prazo_sla_em_dias": 3,
@@ -1837,7 +1837,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "OUVIDORIA",
+          "unidade_administrativa": "UCCI/OUVIDORIA",
           "nome_setor": "Ouvidoria-Geral",
           "atribuicoes_setor": "Avaliar a resposta, responder ao manifestante e encerrar.",
           "prazo_sla_em_dias": 5,
@@ -2341,7 +2341,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "CMAS",
+          "unidade_administrativa": "SEMPRAS/CMAS",
           "nome_setor": "Secretaria executiva do CMAS",
           "atribuicoes_setor": "Receber o pedido de inscrição com estatuto, atas e plano de ação.",
           "prazo_sla_em_dias": 5,
@@ -2374,7 +2374,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SMPAS/VIGILANCIA",
+          "unidade_administrativa": "SEMPRAS/VIGILANCIA",
           "nome_setor": "Vigilância socioassistencial",
           "atribuicoes_setor": "Visitar a entidade e emitir o parecer técnico.",
           "prazo_sla_em_dias": 30,
@@ -2401,7 +2401,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "CMAS",
+          "unidade_administrativa": "SEMPRAS/CMAS",
           "nome_setor": "Plenária do CMAS",
           "atribuicoes_setor": "Deliberar a inscrição e publicar a resolução.",
           "prazo_sla_em_dias": 30,
@@ -2426,7 +2426,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "VISA",
+          "unidade_administrativa": "SMS/VISA",
           "nome_setor": "Vigilância sanitária",
           "atribuicoes_setor": "Receber o pedido e cadastrar o estabelecimento.",
           "prazo_sla_em_dias": 5,
@@ -2453,7 +2453,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "VISA",
+          "unidade_administrativa": "SMS/VISA",
           "nome_setor": "Inspeção sanitária",
           "atribuicoes_setor": "Inspecionar o estabelecimento e lavrar o auto.",
           "prazo_sla_em_dias": 30,
@@ -2480,7 +2480,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "VISA",
+          "unidade_administrativa": "SMS/VISA",
           "nome_setor": "Vigilância sanitária",
           "atribuicoes_setor": "Emitir a licença (alvará) sanitária.",
           "prazo_sla_em_dias": 5,

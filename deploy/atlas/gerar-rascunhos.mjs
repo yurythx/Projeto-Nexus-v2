@@ -27,7 +27,7 @@ const procedimentos = [
     { u: "SECRETARIA", s: "Setor demandante", a: "Formalizar a demanda e justificar a vantagem da adesão.", p: 5, d: [["Documento de Formalização da Demanda (DFD)", 1], ["Pesquisa de preços", 1], ["Justificativa de vantajosidade", 1]], segue: "Demanda formalizada" },
     { u: "SEMAD/COMPRAS", s: "Compras", a: "Solicitar a anuência do órgão gerenciador e do fornecedor e conferir a ata.", p: 10, d: [["Cópia da Ata de Registro de Preços", 1, "X"], ["Ofício de anuência do órgão gerenciador", 1, "X"], ["Aceite do fornecedor", 1, "X"]], segue: "Anuências recebidas", dil: ["Justificativa insuficiente", "Complementar a justificativa de vantajosidade", 1] },
     { u: "PGM", s: "Procuradoria", a: "Emitir parecer jurídico sobre a adesão.", p: 7, d: [["Parecer jurídico", 1, "D", "I"]], segue: "Parecer favorável", dil: ["Parecer com ressalvas", "Sanear os apontamentos do parecer", 2] },
-    { u: "GABINETE", s: "Ordenador de despesa", a: "Autorizar a adesão e a contratação.", p: 3, d: [["Despacho de autorização", 1, "D", "I"]], segue: "Adesão autorizada" },
+    { u: "GAB", s: "Ordenador de despesa", a: "Autorizar a adesão e a contratação.", p: 3, d: [["Despacho de autorização", 1, "D", "I"]], segue: "Adesão autorizada" },
     { u: "SEMAD/CONTRATOS", s: "Contratos", a: "Formalizar o contrato e publicar o extrato.", p: 5, d: [["Contrato", 1, "D", "C"], ["Extrato publicado", 1, "X"]] },
   ]),
   P("ADM.CON.005", "Formalização de contrato administrativo e termos aditivos", "Elaborar, assinar e publicar o contrato administrativo ou o termo aditivo (prazo, valor ou objeto) depois da contratação autorizada.", "Secretarias municipais", "2.0.02.02.12", [
@@ -39,13 +39,13 @@ const procedimentos = [
   P("ADM.CON.006", "Fiscalização e acompanhamento de contrato", "Acompanhar a execução do contrato pelo fiscal designado, com relatórios periódicos e atesto para pagamento.", "Fiscais de contrato", "2.0.02.02.15", [
     { u: "SECRETARIA", s: "Fiscal do contrato", a: "Acompanhar a execução, registrar ocorrências e emitir o relatório mensal.", p: 30, d: [["Relatório mensal do fiscal", 1, "D", "I"], ["Registro de ocorrências", 0]], segue: "Execução conforme" },
     { u: "SECRETARIA", s: "Gestor do contrato", a: "Atestar a nota fiscal e encaminhar para pagamento ou notificar o contratado.", p: 5, d: [["Nota fiscal atestada", 1, "X", "I"], ["Notificação ao contratado", 0]], segue: "Nota atestada", dil: ["Inexecução ou falha", "Notificar o contratado e registrar a ocorrência", 1] },
-    { u: "SEFAZ/CONTABILIDADE", s: "Contabilidade", a: "Liquidar e pagar a despesa.", p: 10, d: [["Nota de liquidação", 1], ["Ordem de pagamento", 1]] },
+    { u: "SEFIN/CONTABILIDADE", s: "Contabilidade", a: "Liquidar e pagar a despesa.", p: 10, d: [["Nota de liquidação", 1], ["Ordem de pagamento", 1]] },
   ]),
   P("ADM.CMP.007", "Contratação por inexigibilidade de licitação", "Contratar diretamente quando a competição é inviável (fornecedor exclusivo, notória especialização, credenciamento — art. 74 da Lei 14.133/2021).", "Secretarias municipais", "2.0.02.01.03", [
     { u: "SECRETARIA", s: "Setor demandante", a: "Formalizar a demanda, o estudo técnico preliminar e a justificativa da inviabilidade de competição.", p: 7, d: [["Documento de Formalização da Demanda (DFD)", 1], ["Estudo Técnico Preliminar (ETP)", 1], ["Termo de Referência", 1], ["Comprovação de exclusividade ou notória especialização", 1, "X"]], segue: "Instrução completa" },
     { u: "SEMAD/COMPRAS", s: "Compras", a: "Justificar o preço e conferir a habilitação do contratado.", p: 7, d: [["Justificativa de preço", 1], ["Documentos de habilitação", 1, "X"]], segue: "Preço justificado", dil: ["Instrução incompleta", "Complementar a instrução", 1] },
     { u: "PGM", s: "Procuradoria", a: "Emitir parecer jurídico.", p: 7, d: [["Parecer jurídico", 1, "D", "I"]], segue: "Parecer favorável" },
-    { u: "GABINETE", s: "Autoridade competente", a: "Ratificar a inexigibilidade e autorizar a contratação.", p: 3, d: [["Ato de ratificação", 1, "D", "I"], ["Publicação do ato", 1, "X"]] },
+    { u: "GAB", s: "Autoridade competente", a: "Ratificar a inexigibilidade e autorizar a contratação.", p: 3, d: [["Ato de ratificação", 1, "D", "I"], ["Publicação do ato", 1, "X"]] },
   ]),
   P("ADM.FRO.008", "Infração de trânsito de veículo oficial", "Identificar o condutor responsável por infração com veículo oficial, apresentar defesa quando cabível e ressarcir a multa.", "Condutores e gestores de frota", "2.0.01.02.15", [
     { u: "SEMAD/FROTAS", s: "Gestão de frotas", a: "Receber a notificação, identificar o condutor pelo diário de bordo e indicá-lo ao órgão de trânsito.", p: 10, d: [["Notificação de autuação", 1, "X"], ["Diário de bordo do período", 1, "X"], ["Formulário de indicação de condutor", 1, "X", "C"]], segue: "Condutor identificado" },
@@ -53,9 +53,9 @@ const procedimentos = [
     { u: "SEGEP/FOLHA", s: "Folha de pagamento", a: "Descontar em folha o valor da multa, quando devido.", p: 30, d: [["Comprovante de desconto", 1]] },
   ]),
   P("ADM.SIC.009", "Pedido de acesso à informação (LAI)", "Atender o pedido de acesso à informação no prazo da Lei 12.527/2011 (20 dias, prorrogáveis por mais 10), com recurso à autoridade superior.", "Cidadãos", "2.0.03.02.00", [
-    { u: "SIC", s: "Serviço de Informação ao Cidadão", a: "Registrar o pedido e encaminhar à unidade que detém a informação.", p: 2, d: [["Formulário de pedido de informação", 1, "X"]], segue: "Pedido encaminhado" },
+    { u: "SEMAD/SIC", s: "Serviço de Informação ao Cidadão", a: "Registrar o pedido e encaminhar à unidade que detém a informação.", p: 2, d: [["Formulário de pedido de informação", 1, "X"]], segue: "Pedido encaminhado" },
     { u: "SECRETARIA", s: "Unidade detentora", a: "Localizar a informação ou justificar o sigilo/indisponibilidade.", p: 15, d: [["Resposta da unidade", 1, "D", "I"]], segue: "Resposta pronta", dil: ["Pedido genérico ou incompreensível", "Pedir ao cidadão que esclareça o pedido", 1] },
-    { u: "SIC", s: "Serviço de Informação ao Cidadão", a: "Enviar a resposta ao cidadão e informar o prazo de recurso.", p: 3, d: [["Carta resposta ao pedido de informação", 1, "D", "I"]] },
+    { u: "SEMAD/SIC", s: "Serviço de Informação ao Cidadão", a: "Enviar a resposta ao cidadão e informar o prazo de recurso.", p: 3, d: [["Carta resposta ao pedido de informação", 1, "D", "I"]] },
   ]),
 
   // ------------------------------------------------------------- Gestão de pessoas (2.0.05–2.0.08)
@@ -78,18 +78,18 @@ const procedimentos = [
     { u: "SEGEP/RH", s: "Recursos Humanos", a: "Receber o requerimento e emitir a certidão de tempo de contribuição e o histórico funcional.", p: 20, d: [["Requerimento de aposentadoria", 1, "D", "I"], ["Certidão de tempo de contribuição", 1, "D", "I"], ["Ficha financeira", 1]], segue: "Tempo certificado" },
     { u: "IMPRO", s: "Instituto de Previdência (IMPRO)", a: "Calcular os proventos e conferir os requisitos.", p: 30, d: [["Cálculo de proventos", 1, "D", "C"]], segue: "Requisitos atendidos", dil: ["Tempo ou documento faltante", "Averbar o tempo ou juntar o documento", 1] },
     { u: "PGM", s: "Procuradoria", a: "Emitir parecer jurídico.", p: 15, d: [["Parecer jurídico", 1, "D", "I"]], segue: "Parecer favorável" },
-    { u: "GABINETE", s: "Prefeito", a: "Assinar o ato de aposentadoria e publicar.", p: 10, d: [["Portaria de aposentadoria", 1, "D", "I"], ["Publicação no Diário Oficial", 1, "X"]], segue: "Ato publicado" },
+    { u: "GAB", s: "Prefeito", a: "Assinar o ato de aposentadoria e publicar.", p: 10, d: [["Portaria de aposentadoria", 1, "D", "I"], ["Publicação no Diário Oficial", 1, "X"]], segue: "Ato publicado" },
     { u: "IMPRO", s: "Instituto de Previdência (IMPRO)", a: "Encaminhar o ato ao Tribunal de Contas para registro.", p: 30, d: [["Ofício ao TCE", 1, "D", "I"]] },
   ]),
   P("RH.PAD.005", "Processo Administrativo Disciplinar (PAD)", "Apurar infração disciplinar de servidor com comissão, ampla defesa e contraditório, conforme o estatuto.", "Servidores municipais", "2.0.05.02.04", [
-    { u: "GABINETE", s: "Autoridade instauradora", a: "Instaurar o PAD e designar a comissão.", p: 5, d: [["Portaria de instauração", 1, "D", "I"]], segue: "Comissão designada" },
-    { u: "CPAD", s: "Comissão processante", a: "Citar o servidor, instruir, colher a defesa e elaborar o relatório final.", p: 60, d: [["Termo de citação", 1, "D", "C"], ["Termos de depoimento", 1, "D", "C"], ["Defesa escrita", 1, "X"], ["Relatório final da comissão", 1, "D", "C"]], segue: "Relatório concluído" },
+    { u: "GAB", s: "Autoridade instauradora", a: "Instaurar o PAD e designar a comissão.", p: 5, d: [["Portaria de instauração", 1, "D", "I"]], segue: "Comissão designada" },
+    { u: "SEGEP/CPAD", s: "Comissão processante", a: "Citar o servidor, instruir, colher a defesa e elaborar o relatório final.", p: 60, d: [["Termo de citação", 1, "D", "C"], ["Termos de depoimento", 1, "D", "C"], ["Defesa escrita", 1, "X"], ["Relatório final da comissão", 1, "D", "C"]], segue: "Relatório concluído" },
     { u: "PGM", s: "Procuradoria", a: "Emitir parecer sobre a regularidade do processo.", p: 15, d: [["Parecer jurídico", 1, "D", "I"]], segue: "Processo regular", dil: ["Nulidade ou vício", "Refazer o ato viciado", 2] },
-    { u: "GABINETE", s: "Autoridade julgadora", a: "Julgar e aplicar a penalidade ou arquivar.", p: 20, d: [["Decisão de julgamento", 1, "D", "I"]] },
+    { u: "GAB", s: "Autoridade julgadora", a: "Julgar e aplicar a penalidade ou arquivar.", p: 20, d: [["Decisão de julgamento", 1, "D", "I"]] },
   ], { nivel: "RESTRITO", hipotese: "LAI, art. 31 (informação pessoal) e estatuto dos servidores" }),
   P("RH.EST.006", "Avaliação de estágio probatório", "Avaliar o servidor nomeado durante o estágio probatório e homologar a estabilidade.", "Servidores em estágio probatório", "2.0.08.01.02", [
     { u: "SECRETARIA", s: "Chefia imediata", a: "Preencher as avaliações periódicas com ciência do servidor.", p: 30, d: [["Avaliação de estágio probatório", 1, "D", "C"]], segue: "Avaliações concluídas" },
-    { u: "CAEP", s: "Comissão de avaliação", a: "Consolidar as avaliações e emitir o parecer final.", p: 20, d: [["Parecer da comissão", 1, "D", "C"]], segue: "Parecer emitido", dil: ["Avaliação incompleta", "Completar as avaliações periódicas", 1] },
+    { u: "SEGEP/CAEP", s: "Comissão de avaliação", a: "Consolidar as avaliações e emitir o parecer final.", p: 20, d: [["Parecer da comissão", 1, "D", "C"]], segue: "Parecer emitido", dil: ["Avaliação incompleta", "Completar as avaliações periódicas", 1] },
     { u: "SEGEP/RH", s: "Recursos Humanos", a: "Homologar o estágio probatório e registrar na pasta funcional.", p: 10, d: [["Homologação do estágio probatório", 1, "D", "I"]] },
   ]),
   P("RH.CON.007", "Posse de aprovado em concurso público", "Convocar o aprovado, conferir os documentos e a aptidão médica e dar posse no cargo.", "Aprovados em concurso público", "2.0.08.00.14", [
@@ -101,41 +101,41 @@ const procedimentos = [
   // ------------------------------------------------------------- Fazenda (3.0)
   P("FAZ.DIA.001", "Concessão e prestação de contas de diárias", "Conceder diárias para viagem a serviço e receber a prestação de contas no retorno.", "Servidores municipais", "3.0.01.00.05", [
     { u: "SECRETARIA", s: "Chefia imediata", a: "Solicitar as diárias com a justificativa e o roteiro da viagem.", p: 3, d: [["Solicitação de diárias", 1, "D", "I"]], segue: "Viagem autorizada" },
-    { u: "SEFAZ/CONTABILIDADE", s: "Contabilidade", a: "Empenhar e pagar as diárias.", p: 5, d: [["Nota de empenho", 1], ["Ordem de pagamento", 1]], segue: "Diárias pagas" },
+    { u: "SEFIN/CONTABILIDADE", s: "Contabilidade", a: "Empenhar e pagar as diárias.", p: 5, d: [["Nota de empenho", 1], ["Ordem de pagamento", 1]], segue: "Diárias pagas" },
     { u: "SECRETARIA", s: "Servidor", a: "Prestar contas em até 5 dias do retorno, com os comprovantes.", p: 5, d: [["Relatório de viagem", 1, "D", "I"], ["Comprovantes de deslocamento", 1, "X"]], segue: "Contas prestadas" },
-    { u: "SEFAZ/CONTABILIDADE", s: "Contabilidade", a: "Analisar a prestação de contas e aprovar ou pedir a devolução.", p: 10, d: [["Parecer sobre a prestação de contas", 1, "D", "I"]], dil: ["Comprovação insuficiente", "Complementar a prestação de contas ou devolver o valor", 3] },
+    { u: "SEFIN/CONTABILIDADE", s: "Contabilidade", a: "Analisar a prestação de contas e aprovar ou pedir a devolução.", p: 10, d: [["Parecer sobre a prestação de contas", 1, "D", "I"]], dil: ["Comprovação insuficiente", "Complementar a prestação de contas ou devolver o valor", 3] },
   ]),
   P("FAZ.DES.002", "Liquidação e pagamento de despesa", "Liquidar a despesa empenhada a partir do atesto e pagar o credor, na ordem cronológica.", "Fornecedores e secretarias", "3.0.01.00.02", [
     { u: "SECRETARIA", s: "Gestor do contrato", a: "Atestar o recebimento do bem ou serviço e encaminhar a nota fiscal.", p: 5, d: [["Nota fiscal atestada", 1, "X", "I"], ["Termo de recebimento", 0, "D", "I"]], segue: "Nota atestada" },
-    { u: "SEFAZ/CONTABILIDADE", s: "Contabilidade", a: "Conferir o empenho, as retenções e a regularidade fiscal e liquidar.", p: 5, d: [["Nota de liquidação", 1], ["Certidões de regularidade", 1, "X"]], segue: "Despesa liquidada", dil: ["Nota com erro ou certidão vencida", "Corrigir a nota ou atualizar as certidões", 1] },
-    { u: "SEFAZ/TESOURARIA", s: "Tesouraria", a: "Pagar o credor obedecendo a ordem cronológica.", p: 10, d: [["Ordem de pagamento", 1], ["Comprovante bancário", 1]] },
+    { u: "SEFIN/CONTABILIDADE", s: "Contabilidade", a: "Conferir o empenho, as retenções e a regularidade fiscal e liquidar.", p: 5, d: [["Nota de liquidação", 1], ["Certidões de regularidade", 1, "X"]], segue: "Despesa liquidada", dil: ["Nota com erro ou certidão vencida", "Corrigir a nota ou atualizar as certidões", 1] },
+    { u: "SEFIN/TESOURARIA", s: "Tesouraria", a: "Pagar o credor obedecendo a ordem cronológica.", p: 10, d: [["Ordem de pagamento", 1], ["Comprovante bancário", 1]] },
   ]),
   P("FAZ.PAR.003", "Parcelamento de débitos municipais", "Firmar acordo de parcelamento de tributos e da dívida ativa, com confissão de dívida.", "Contribuintes", "3.0.02.00.03", [
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o requerimento e emitir o extrato dos débitos.", p: 2, d: [["Requerimento de parcelamento", 1, "X", "I"], ["Extrato de débitos", 1]], segue: "Débitos apurados" },
-    { u: "SEFAZ/DIVIDA", s: "Dívida ativa", a: "Simular as parcelas conforme a lei e lavrar o termo de confissão.", p: 5, d: [["Termo de confissão de dívida", 1, "D", "C"]], segue: "Termo assinado" },
-    { u: "SEFAZ/ARRECADACAO", s: "Arrecadação", a: "Emitir as guias e acompanhar o pagamento.", p: 2, d: [["Guias de pagamento", 1]] },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o requerimento e emitir o extrato dos débitos.", p: 2, d: [["Requerimento de parcelamento", 1, "X", "I"], ["Extrato de débitos", 1]], segue: "Débitos apurados" },
+    { u: "SEREC/DIVIDA", s: "Dívida ativa", a: "Simular as parcelas conforme a lei e lavrar o termo de confissão.", p: 5, d: [["Termo de confissão de dívida", 1, "D", "C"]], segue: "Termo assinado" },
+    { u: "SEREC/ARRECADACAO", s: "Arrecadação", a: "Emitir as guias e acompanhar o pagamento.", p: 2, d: [["Guias de pagamento", 1]] },
   ]),
   P("FAZ.IPT.004", "Isenção de IPTU", "Reconhecer a isenção de IPTU prevista em lei (ex.: aposentado, imóvel único) a pedido do contribuinte.", "Contribuintes", "3.0.02.01.01", [
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o requerimento com os comprovantes.", p: 2, d: [["Requerimento de isenção", 1, "X", "I"], ["Comprovantes do requisito legal", 1, "X"], ["Matrícula ou documento do imóvel", 1, "X"]], segue: "Requerimento instruído" },
-    { u: "SEFAZ/CADASTRO", s: "Cadastro imobiliário", a: "Conferir o cadastro do imóvel e os requisitos.", p: 15, d: [["Informação do cadastro imobiliário", 1, "D", "I"]], segue: "Requisitos conferidos", dil: ["Documento faltante", "Pedir o documento ao contribuinte", 1] },
-    { u: "SEFAZ/TRIBUTARIO", s: "Julgamento tributário", a: "Decidir o pedido e lançar a isenção no cadastro.", p: 15, d: [["Decisão administrativa", 1, "D", "I"]] },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o requerimento com os comprovantes.", p: 2, d: [["Requerimento de isenção", 1, "X", "I"], ["Comprovantes do requisito legal", 1, "X"], ["Matrícula ou documento do imóvel", 1, "X"]], segue: "Requerimento instruído" },
+    { u: "SEREC/CADASTRO", s: "Cadastro imobiliário", a: "Conferir o cadastro do imóvel e os requisitos.", p: 15, d: [["Informação do cadastro imobiliário", 1, "D", "I"]], segue: "Requisitos conferidos", dil: ["Documento faltante", "Pedir o documento ao contribuinte", 1] },
+    { u: "SEREC/TRIBUTARIO", s: "Julgamento tributário", a: "Decidir o pedido e lançar a isenção no cadastro.", p: 15, d: [["Decisão administrativa", 1, "D", "I"]] },
   ]),
   P("FAZ.ALV.005", "Alvará de funcionamento", "Licenciar o funcionamento de atividade econômica, com consulta de uso do solo e vistorias exigidas.", "Empresas e profissionais autônomos", "3.0.03.00.04", [
-    { u: "SEFAZ/LICENCIAMENTO", s: "Licenciamento econômico", a: "Receber o pedido, conferir a inscrição municipal e a consulta de uso do solo.", p: 5, d: [["Requerimento de alvará", 1, "X", "I"], ["Contrato social ou CNPJ", 1, "X"], ["Certidão de uso do solo", 1, "X"]], segue: "Pedido instruído" },
-    { u: "SEFAZ/FISCALIZACAO", s: "Fiscalização", a: "Vistoriar o estabelecimento quando a atividade exigir.", p: 10, d: [["Relatório de vistoria", 0, "D", "I"]], segue: "Vistoria favorável", dil: ["Irregularidade na vistoria", "Sanar a irregularidade apontada", 1] },
-    { u: "SEFAZ/LICENCIAMENTO", s: "Licenciamento econômico", a: "Emitir o alvará após o pagamento da taxa.", p: 3, d: [["Alvará de funcionamento", 1, "D", "I"]] },
+    { u: "SEREC/LICENCIAMENTO", s: "Licenciamento econômico", a: "Receber o pedido, conferir a inscrição municipal e a consulta de uso do solo.", p: 5, d: [["Requerimento de alvará", 1, "X", "I"], ["Contrato social ou CNPJ", 1, "X"], ["Certidão de uso do solo", 1, "X"]], segue: "Pedido instruído" },
+    { u: "SEREC/FISCALIZACAO", s: "Fiscalização", a: "Vistoriar o estabelecimento quando a atividade exigir.", p: 10, d: [["Relatório de vistoria", 0, "D", "I"]], segue: "Vistoria favorável", dil: ["Irregularidade na vistoria", "Sanar a irregularidade apontada", 1] },
+    { u: "SEREC/LICENCIAMENTO", s: "Licenciamento econômico", a: "Emitir o alvará após o pagamento da taxa.", p: 3, d: [["Alvará de funcionamento", 1, "D", "I"]] },
   ]),
   P("FAZ.CND.006", "Certidão negativa de débitos municipais", "Emitir certidão negativa (ou positiva com efeito de negativa) de débitos do contribuinte.", "Contribuintes", "3.0.02.00.00", [
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o pedido e consultar a situação fiscal.", p: 1, d: [["Requerimento de certidão", 1, "X"]], segue: "Sem pendências" },
-    { u: "SEFAZ/DIVIDA", s: "Dívida ativa", a: "Analisar pendências apontadas (parcelamento, suspensão de exigibilidade).", p: 5, d: [["Informação sobre pendências", 0, "D", "I"]], segue: "Situação definida" },
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Emitir a certidão.", p: 1, d: [["Certidão negativa de débitos", 1, "D", "I"]] },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o pedido e consultar a situação fiscal.", p: 1, d: [["Requerimento de certidão", 1, "X"]], segue: "Sem pendências" },
+    { u: "SEREC/DIVIDA", s: "Dívida ativa", a: "Analisar pendências apontadas (parcelamento, suspensão de exigibilidade).", p: 5, d: [["Informação sobre pendências", 0, "D", "I"]], segue: "Situação definida" },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Emitir a certidão.", p: 1, d: [["Certidão negativa de débitos", 1, "D", "I"]] },
   ]),
 
   // ------------------------------------------------------------- Controle interno (4.0)
   P("CTR.OUV.001", "Manifestação de ouvidoria", "Receber, encaminhar e responder reclamação, denúncia, sugestão ou elogio do cidadão (Lei 13.460/2017).", "Cidadãos", "4.0.01.02.00", [
-    { u: "OUVIDORIA", s: "Ouvidoria-Geral", a: "Registrar a manifestação, preservar a identidade do manifestante e encaminhar.", p: 3, d: [["Formulário de manifestação", 1, "X"]], segue: "Manifestação encaminhada" },
+    { u: "UCCI/OUVIDORIA", s: "Ouvidoria-Geral", a: "Registrar a manifestação, preservar a identidade do manifestante e encaminhar.", p: 3, d: [["Formulário de manifestação", 1, "X"]], segue: "Manifestação encaminhada" },
     { u: "SECRETARIA", s: "Unidade responsável", a: "Apurar e responder à ouvidoria.", p: 20, d: [["Resposta da unidade", 1, "D", "I"]], segue: "Resposta recebida" },
-    { u: "OUVIDORIA", s: "Ouvidoria-Geral", a: "Avaliar a resposta, responder ao manifestante e encerrar.", p: 5, d: [["Resposta ao manifestante", 1, "D", "I"]], dil: ["Resposta incompleta", "Complementar a resposta", 2] },
+    { u: "UCCI/OUVIDORIA", s: "Ouvidoria-Geral", a: "Avaliar a resposta, responder ao manifestante e encerrar.", p: 5, d: [["Resposta ao manifestante", 1, "D", "I"]], dil: ["Resposta incompleta", "Complementar a resposta", 2] },
   ], { nivel: "RESTRITO", hipotese: "Lei 13.460/2017, art. 10, §7º (identidade do manifestante)" }),
 
   // ------------------------------------------------------------- Habitação e urbanismo (6.0)
@@ -172,16 +172,16 @@ const procedimentos = [
 
   // ------------------------------------------------------------- Assistência social (10.0)
   P("SAS.OSC.001", "Inscrição de entidade (OSC) no Conselho de Assistência Social", "Inscrever a organização da sociedade civil no CMAS para atuar na política de assistência social.", "Organizações da sociedade civil", "10.0.02.00.00", [
-    { u: "CMAS", s: "Secretaria executiva do CMAS", a: "Receber o pedido de inscrição com estatuto, atas e plano de ação.", p: 5, d: [["Requerimento de inscrição", 1, "X", "I"], ["Estatuto e ata de eleição da diretoria", 1, "X"], ["Plano de ação", 1, "X"]], segue: "Pedido instruído" },
-    { u: "SMPAS/VIGILANCIA", s: "Vigilância socioassistencial", a: "Visitar a entidade e emitir o parecer técnico.", p: 30, d: [["Relatório de visita técnica", 1, "D", "C"]], segue: "Parecer emitido", dil: ["Documentação incompleta", "Complementar a documentação", 1] },
-    { u: "CMAS", s: "Plenária do CMAS", a: "Deliberar a inscrição e publicar a resolução.", p: 30, d: [["Resolução do CMAS", 1, "D", "C"]] },
+    { u: "SEMPRAS/CMAS", s: "Secretaria executiva do CMAS", a: "Receber o pedido de inscrição com estatuto, atas e plano de ação.", p: 5, d: [["Requerimento de inscrição", 1, "X", "I"], ["Estatuto e ata de eleição da diretoria", 1, "X"], ["Plano de ação", 1, "X"]], segue: "Pedido instruído" },
+    { u: "SEMPRAS/VIGILANCIA", s: "Vigilância socioassistencial", a: "Visitar a entidade e emitir o parecer técnico.", p: 30, d: [["Relatório de visita técnica", 1, "D", "C"]], segue: "Parecer emitido", dil: ["Documentação incompleta", "Complementar a documentação", 1] },
+    { u: "SEMPRAS/CMAS", s: "Plenária do CMAS", a: "Deliberar a inscrição e publicar a resolução.", p: 30, d: [["Resolução do CMAS", 1, "D", "C"]] },
   ]),
 
   // ------------------------------------------------------------- Saúde (12.0)
   P("SAU.VSA.001", "Licença sanitária de estabelecimento", "Licenciar estabelecimento sujeito à vigilância sanitária, com inspeção (Código Sanitário Municipal).", "Estabelecimentos de interesse da saúde", "12.0.10.02.03", [
-    { u: "VISA", s: "Vigilância sanitária", a: "Receber o pedido e cadastrar o estabelecimento.", p: 5, d: [["Requerimento de licença sanitária", 1, "X", "I"], ["Responsável técnico (quando exigido)", 0, "X"]], segue: "Cadastro feito" },
-    { u: "VISA", s: "Inspeção sanitária", a: "Inspecionar o estabelecimento e lavrar o auto.", p: 30, d: [["Auto de inspeção", 1, "D", "C"]], segue: "Inspeção favorável", dil: ["Irregularidade sanitária", "Corrigir as exigências do auto de notificação e pedir nova inspeção", 1] },
-    { u: "VISA", s: "Vigilância sanitária", a: "Emitir a licença (alvará) sanitária.", p: 5, d: [["Licença sanitária", 1, "D", "I"]] },
+    { u: "SMS/VISA", s: "Vigilância sanitária", a: "Receber o pedido e cadastrar o estabelecimento.", p: 5, d: [["Requerimento de licença sanitária", 1, "X", "I"], ["Responsável técnico (quando exigido)", 0, "X"]], segue: "Cadastro feito" },
+    { u: "SMS/VISA", s: "Inspeção sanitária", a: "Inspecionar o estabelecimento e lavrar o auto.", p: 30, d: [["Auto de inspeção", 1, "D", "C"]], segue: "Inspeção favorável", dil: ["Irregularidade sanitária", "Corrigir as exigências do auto de notificação e pedir nova inspeção", 1] },
+    { u: "SMS/VISA", s: "Vigilância sanitária", a: "Emitir a licença (alvará) sanitária.", p: 5, d: [["Licença sanitária", 1, "D", "I"]] },
   ]),
   P("SAU.TFD.001", "Tratamento Fora do Domicílio (TFD)", "Autorizar o deslocamento do paciente do SUS para tratamento em outro município quando não houver oferta local.", "Usuários do SUS", "12.0.06.01.08", [
     { u: "SMS/TFD", s: "Setor de TFD", a: "Receber o laudo médico e o pedido do paciente.", p: 3, d: [["Laudo médico de TFD", 1, "X", "I"], ["Documentos pessoais e cartão SUS", 1, "X"]], segue: "Pedido instruído" },

@@ -28,29 +28,29 @@ const procedimentos = [
   // ------------------------------------------------------------- Administração (2.0)
   P("ADM.CEM.010", "Concessão de jazigo em cemitério municipal", "Conceder o direito de uso de jazigo em cemitério municipal, com o pagamento das taxas.", "Cidadãos", "2.0.01.03.04", [
     { u: "SEMAD/CEMITERIOS", s: "Administração dos cemitérios", a: "Receber o pedido e verificar a disponibilidade de jazigo.", p: 3, d: [["Requerimento de concessão de jazigo", 1, "X", "I"], ["Certidão de óbito (quando houver)", 0, "X"]], segue: "Jazigo disponível" },
-    { u: "SEFAZ/ARRECADACAO", s: "Arrecadação", a: "Emitir a guia das taxas.", p: 2, d: [["Guia de pagamento", 1]], segue: "Taxa paga" },
+    { u: "SEREC/ARRECADACAO", s: "Arrecadação", a: "Emitir a guia das taxas.", p: 2, d: [["Guia de pagamento", 1]], segue: "Taxa paga" },
     { u: "SEMAD/CEMITERIOS", s: "Administração dos cemitérios", a: "Lavrar o termo de concessão e registrar no livro do cemitério.", p: 5, d: [["Termo de concessão de uso", 1, "D", "C"]] },
   ]),
   P("ADM.PRO.011", "Requerimento geral ao protocolo", "Receber e encaminhar requerimento que não tem procedimento próprio, até a unidade competente responder.", "Cidadãos e servidores", "2.0.03.00.46", [
-    { u: "PROTOCOLO", s: "Protocolo geral", a: "Registrar o requerimento, autuar e encaminhar à unidade competente.", p: 1, d: [["Requerimento", 1, "X", "I"], ["Documentos anexos", 0, "X"]], segue: "Processo autuado" },
+    { u: "SEMAD/PROTOCOLO", s: "Protocolo geral", a: "Registrar o requerimento, autuar e encaminhar à unidade competente.", p: 1, d: [["Requerimento", 1, "X", "I"], ["Documentos anexos", 0, "X"]], segue: "Processo autuado" },
     { u: "SECRETARIA", s: "Unidade competente", a: "Analisar e decidir o pedido.", p: 15, d: [["Despacho decisório", 1, "D", "I"]], segue: "Pedido decidido", dil: ["Unidade não competente", "Devolver ao protocolo para novo encaminhamento", 1] },
-    { u: "PROTOCOLO", s: "Protocolo geral", a: "Dar ciência ao requerente e arquivar.", p: 3, d: [["Comunicação ao requerente", 1, "D", "I"]] },
+    { u: "SEMAD/PROTOCOLO", s: "Protocolo geral", a: "Dar ciência ao requerente e arquivar.", p: 3, d: [["Comunicação ao requerente", 1, "D", "I"]] },
   ]),
   P("ADM.DOC.012", "Eliminação de documentos", "Eliminar documentos com prazo de guarda cumprido e destinação \"eliminação\" na TTDD, com aprovação da CCPAD e publicação do edital de ciência.", "Unidades administrativas", "2.0.03.01.05", [
     { u: "SECRETARIA", s: "Unidade produtora", a: "Levantar os documentos com prazo cumprido e preencher a listagem de eliminação.", p: 30, d: [["Listagem de eliminação de documentos", 1, "D", "I"]], segue: "Listagem pronta" },
-    { u: "CCPAD", s: "Comissão Permanente de Avaliação de Documentos", a: "Conferir a listagem contra a TTDD e aprovar.", p: 30, d: [["Parecer da CCPAD", 1, "D", "C"]], segue: "Listagem aprovada", dil: ["Divergência com a TTDD", "Corrigir a listagem", 1] },
-    { u: "CCPAD", s: "Comissão Permanente de Avaliação de Documentos", a: "Publicar o edital de ciência de eliminação e aguardar o prazo.", p: 45, d: [["Edital de ciência de eliminação", 1, "X"]], segue: "Prazo do edital cumprido" },
+    { u: "SEMAD/CCPAD", s: "Comissão Permanente de Avaliação de Documentos", a: "Conferir a listagem contra a TTDD e aprovar.", p: 30, d: [["Parecer da CCPAD", 1, "D", "C"]], segue: "Listagem aprovada", dil: ["Divergência com a TTDD", "Corrigir a listagem", 1] },
+    { u: "SEMAD/CCPAD", s: "Comissão Permanente de Avaliação de Documentos", a: "Publicar o edital de ciência de eliminação e aguardar o prazo.", p: 45, d: [["Edital de ciência de eliminação", 1, "X"]], segue: "Prazo do edital cumprido" },
     { u: "SECRETARIA", s: "Unidade produtora", a: "Eliminar os documentos e lavrar o termo de eliminação.", p: 15, d: [["Termo de eliminação de documentos", 1, "D", "C"]] },
   ]),
 
   // ------------------------------------------------------------- Tecnologia da informação (2.0.04.01)
   P("TI.ACE.001", "Acesso a sistemas, rede e e-mail corporativo", "Criar, alterar ou revogar o acesso do servidor aos sistemas municipais, à rede e ao e-mail corporativo.", "Servidores municipais", "2.0.04.01.03", [
     chefia("Solicitar o acesso e indicar o perfil necessário à função.", [["Requerimento de acesso", 1, "D", "I"], ["Termo de responsabilidade de uso", 1, "D", "I"]]),
-    { u: "TI", s: "Tecnologia da Informação", a: "Criar a conta com o perfil mínimo necessário e registrar.", p: 3, d: [["Registro de concessão de acesso", 1, "D", "I"]], segue: "Acesso criado", dil: ["Perfil incompatível com a função", "Rever o perfil solicitado", 1] },
+    { u: "SEMAD/TI", s: "Tecnologia da Informação", a: "Criar a conta com o perfil mínimo necessário e registrar.", p: 3, d: [["Registro de concessão de acesso", 1, "D", "I"]], segue: "Acesso criado", dil: ["Perfil incompatível com a função", "Rever o perfil solicitado", 1] },
   ]),
   P("TI.SUP.002", "Suporte técnico e manutenção de equipamento", "Atender chamado de suporte ou manutenção de equipamento de informática.", "Servidores municipais", "2.0.04.01.09", [
     { u: "SECRETARIA", s: "Unidade solicitante", a: "Abrir o chamado descrevendo o problema e o patrimônio do equipamento.", p: 1, d: [["Ordem de serviço / chamado", 1, "D", "I"]], segue: "Chamado aberto" },
-    { u: "TI", s: "Suporte técnico", a: "Diagnosticar e resolver ou encaminhar à manutenção externa.", p: 5, d: [["Laudo técnico", 0, "D", "I"]], segue: "Atendimento concluído" },
+    { u: "SEMAD/TI", s: "Suporte técnico", a: "Diagnosticar e resolver ou encaminhar à manutenção externa.", p: 5, d: [["Laudo técnico", 0, "D", "I"]], segue: "Atendimento concluído" },
     { u: "SECRETARIA", s: "Unidade solicitante", a: "Confirmar a solução e encerrar o chamado.", p: 2, d: [] },
   ]),
 
@@ -61,12 +61,12 @@ const procedimentos = [
   ]),
   P("RH.FOL.009", "Folha de pagamento complementar", "Pagar valores devidos fora da folha normal (diferenças, verbas atrasadas).", "Servidores municipais", "2.0.06.00.06", [
     rhRecebe("Apurar os valores devidos e montar o demonstrativo.", [["Demonstrativo de cálculo", 1, "D", "I"]], "Valores apurados"),
-    { u: "SEFAZ/CONTABILIDADE", s: "Contabilidade", a: "Verificar a dotação e empenhar.", p: 5, d: [["Nota de empenho", 1]], segue: "Despesa empenhada" },
+    { u: "SEFIN/CONTABILIDADE", s: "Contabilidade", a: "Verificar a dotação e empenhar.", p: 5, d: [["Nota de empenho", 1]], segue: "Despesa empenhada" },
     folha("Processar a folha complementar e o pagamento."),
   ]),
   P("RH.RES.010", "Rescisão e verbas rescisórias", "Calcular e pagar as verbas devidas na saída do servidor (exoneração, término de contrato, falecimento).", "Ex-servidores e dependentes", "2.0.06.00.04", [
     rhRecebe("Receber o ato de desligamento e apurar férias, 13º e demais verbas.", [["Ato de desligamento", 1, "X"], ["Termo de rescisão", 1, "D", "C"]], "Verbas apuradas"),
-    { u: "SEFAZ/CONTABILIDADE", s: "Contabilidade", a: "Empenhar e pagar as verbas rescisórias.", p: 10, d: [["Nota de empenho", 1], ["Ordem de pagamento", 1]] },
+    { u: "SEFIN/CONTABILIDADE", s: "Contabilidade", a: "Empenhar e pagar as verbas rescisórias.", p: 10, d: [["Nota de empenho", 1], ["Ordem de pagamento", 1]] },
   ], PESSOAL),
   P("RH.VTR.011", "Vale-transporte (adesão e desistência)", "Conceder ou cancelar o vale-transporte, com desconto na folha conforme a lei.", "Servidores municipais", "2.0.06.01.00", [
     rhRecebe("Receber a declaração com o itinerário e os meios de transporte.", [["Requerimento de vale-transporte", 1, "D", "I"], ["Declaração de itinerário", 1, "D", "I"]]),
@@ -124,7 +124,7 @@ const procedimentos = [
   P("RH.COM.023", "Nomeação e exoneração de cargo em comissão", "Nomear ou exonerar servidor de cargo em comissão, com verificação de vedações (nepotismo, ficha limpa).", "Secretarias municipais", "2.0.08.02.00", [
     { u: "SECRETARIA", s: "Secretário", a: "Indicar o nome para o cargo vago.", p: 3, d: [["Requerimento de nomeação/exoneração", 1, "D", "I"]], segue: "Indicação feita" },
     rhRecebe("Conferir a vaga, os documentos e as declarações de vedação.", [["Declaração de não parentesco", 1, "X", "I"], ["Certidões negativas", 1, "X"]], "Requisitos atendidos"),
-    { u: "GABINETE", s: "Prefeito", a: "Assinar e publicar o decreto ou a portaria.", p: 5, d: [["Ato de nomeação/exoneração", 1, "D", "I"]] },
+    { u: "GAB", s: "Prefeito", a: "Assinar e publicar o decreto ou a portaria.", p: 5, d: [["Ato de nomeação/exoneração", 1, "D", "I"]] },
   ]),
   P("RH.TMP.024", "Contratação temporária por excepcional interesse público", "Contratar pessoal por tempo determinado, nos casos previstos em lei, a partir de processo seletivo ou justificativa.", "Secretarias municipais", "2.0.08.02.03", [
     { u: "SECRETARIA", s: "Secretaria solicitante", a: "Justificar a necessidade temporária e indicar o cadastro de reserva.", p: 5, d: [["Requerimento de contratação temporária", 1, "D", "I"], ["Justificativa de excepcional interesse público", 1, "D", "I"]], segue: "Necessidade justificada" },
@@ -138,71 +138,71 @@ const procedimentos = [
   P("RH.SEL.026", "Processo seletivo simplificado", "Planejar e realizar processo seletivo para contratação temporária, com edital, recursos e homologação.", "Candidatos e secretarias", "2.0.08.03.00", [
     { u: "SEGEP/RH", s: "Comissão do processo seletivo", a: "Planejar, publicar o edital e receber as inscrições.", p: 30, d: [["Edital do processo seletivo", 1, "D", "C"], ["Lista de inscritos", 1]], segue: "Inscrições encerradas" },
     { u: "SEGEP/RH", s: "Comissão do processo seletivo", a: "Avaliar, publicar o resultado e julgar os recursos.", p: 30, d: [["Resultado parcial", 1, "D", "C"], ["Decisão dos recursos", 0, "D", "C"]], segue: "Recursos julgados" },
-    { u: "GABINETE", s: "Prefeito", a: "Homologar o resultado final.", p: 5, d: [["Homologação do resultado", 1, "D", "I"]] },
+    { u: "GAB", s: "Prefeito", a: "Homologar o resultado final.", p: 5, d: [["Homologação do resultado", 1, "D", "I"]] },
   ]),
 
   // ------------------------------------------------------------- Fazenda (3.0)
   P("FAZ.FIS.007", "Ação fiscal tributária", "Fiscalizar o contribuinte, lavrar o auto de infração quando houver débito e encerrar a ação fiscal.", "Contribuintes", "3.0.03.01.23", [
-    { u: "SEFAZ/FISCALIZACAO", s: "Fiscalização", a: "Emitir a ordem de serviço e o termo de início de fiscalização.", p: 5, d: [["Ordem de serviço", 1, "D", "I"], ["Termo de início de fiscalização", 1, "D", "I"]], segue: "Fiscalização iniciada" },
-    { u: "SEFAZ/FISCALIZACAO", s: "Auditor fiscal", a: "Levantar os documentos e apurar o débito.", p: 60, d: [["Levantamento fiscal", 1, "D", "I"], ["Auto de infração e multa", 0, "D", "I"]], segue: "Apuração concluída" },
-    { u: "SEFAZ/FISCALIZACAO", s: "Fiscalização", a: "Notificar o contribuinte e lavrar o termo de conclusão.", p: 5, d: [["Termo de conclusão de fiscalização", 1, "D", "I"]] },
+    { u: "SEREC/FISCALIZACAO", s: "Fiscalização", a: "Emitir a ordem de serviço e o termo de início de fiscalização.", p: 5, d: [["Ordem de serviço", 1, "D", "I"], ["Termo de início de fiscalização", 1, "D", "I"]], segue: "Fiscalização iniciada" },
+    { u: "SEREC/FISCALIZACAO", s: "Auditor fiscal", a: "Levantar os documentos e apurar o débito.", p: 60, d: [["Levantamento fiscal", 1, "D", "I"], ["Auto de infração e multa", 0, "D", "I"]], segue: "Apuração concluída" },
+    { u: "SEREC/FISCALIZACAO", s: "Fiscalização", a: "Notificar o contribuinte e lavrar o termo de conclusão.", p: 5, d: [["Termo de conclusão de fiscalização", 1, "D", "I"]] },
   ]),
   P("FAZ.ISS.008", "Recurso contra lançamento de ISSQN", "Julgar a impugnação ou o recurso do contribuinte contra lançamento ou auto de infração de ISSQN.", "Contribuintes", "3.0.03.01.13", [
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o recurso no prazo e juntar o lançamento.", p: 2, d: [["Recurso do contribuinte", 1, "X", "I"]], segue: "Recurso tempestivo" },
-    { u: "SEFAZ/FISCALIZACAO", s: "Auditor autuante", a: "Contestar ou rever o lançamento.", p: 15, d: [["Informação fiscal", 1, "D", "I"]], segue: "Informação prestada" },
-    { u: "SEFAZ/TRIBUTARIO", s: "Julgamento tributário", a: "Julgar e notificar o contribuinte.", p: 30, d: [["Decisão de primeira instância", 1, "D", "I"]] },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o recurso no prazo e juntar o lançamento.", p: 2, d: [["Recurso do contribuinte", 1, "X", "I"]], segue: "Recurso tempestivo" },
+    { u: "SEREC/FISCALIZACAO", s: "Auditor autuante", a: "Contestar ou rever o lançamento.", p: 15, d: [["Informação fiscal", 1, "D", "I"]], segue: "Informação prestada" },
+    { u: "SEREC/TRIBUTARIO", s: "Julgamento tributário", a: "Julgar e notificar o contribuinte.", p: 30, d: [["Decisão de primeira instância", 1, "D", "I"]] },
   ]),
   P("FAZ.JUL.009", "Consulta tributária", "Responder formalmente à consulta do contribuinte sobre a aplicação da legislação tributária municipal.", "Contribuintes", "3.0.03.02.05", [
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber a consulta com a descrição do fato.", p: 2, d: [["Petição de consulta", 1, "X", "I"]], segue: "Consulta recebida" },
-    { u: "SEFAZ/TRIBUTARIO", s: "Julgamento tributário", a: "Analisar e emitir a resposta à consulta.", p: 30, d: [["Resposta à consulta", 1, "D", "I"]] },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber a consulta com a descrição do fato.", p: 2, d: [["Petição de consulta", 1, "X", "I"]], segue: "Consulta recebida" },
+    { u: "SEREC/TRIBUTARIO", s: "Julgamento tributário", a: "Analisar e emitir a resposta à consulta.", p: 30, d: [["Resposta à consulta", 1, "D", "I"]] },
   ]),
   P("FAZ.FPM.010", "Recurso sobre o índice do FPM", "Solicitar à Procuradoria a interposição de recurso contra o índice ou a distribuição do Fundo de Participação dos Municípios.", "Gestão fazendária", "3.0.03.03.01", [
-    { u: "SEFAZ/RECEITA", s: "Receita", a: "Analisar o índice publicado e levantar os dados divergentes.", p: 10, d: [["Nota técnica do índice", 1, "D", "I"]], segue: "Divergência confirmada" },
+    { u: "SEREC/RECEITA", s: "Receita", a: "Analisar o índice publicado e levantar os dados divergentes.", p: 10, d: [["Nota técnica do índice", 1, "D", "I"]], segue: "Divergência confirmada" },
     { u: "PGM", s: "Procuradoria", a: "Interpor o recurso no órgão competente.", p: 10, d: [["Recurso administrativo", 1, "D", "I"]] },
   ]),
   P("FAZ.CAD.011", "Atualização do cadastro imobiliário (proprietário e endereço)", "Atualizar o nome do proprietário ou o endereço de correspondência no cadastro imobiliário.", "Contribuintes", "3.0.04.00.05", [
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o pedido com o documento de propriedade.", p: 2, d: [["Requerimento de atualização cadastral", 1, "X", "I"], ["Matrícula ou escritura", 1, "X"]], segue: "Pedido instruído" },
-    { u: "SEFAZ/CADASTRO", s: "Cadastro imobiliário", a: "Conferir e atualizar o cadastro.", p: 10, d: [["Boletim de cadastro imobiliário", 1, "D", "I"]] },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o pedido com o documento de propriedade.", p: 2, d: [["Requerimento de atualização cadastral", 1, "X", "I"], ["Matrícula ou escritura", 1, "X"]], segue: "Pedido instruído" },
+    { u: "SEREC/CADASTRO", s: "Cadastro imobiliário", a: "Conferir e atualizar o cadastro.", p: 10, d: [["Boletim de cadastro imobiliário", 1, "D", "I"]] },
   ]),
   P("FAZ.VVE.012", "Certidão de valor venal", "Emitir certidão do valor venal do imóvel para fins de ITBI, financiamento ou inventário.", "Contribuintes", "3.0.04.00.07", [
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o pedido.", p: 1, d: [["Requerimento de certidão", 1, "X", "I"]], segue: "Pedido recebido" },
-    { u: "SEFAZ/CADASTRO", s: "Cadastro imobiliário", a: "Emitir a certidão.", p: 5, d: [["Certidão de valor venal", 1, "D", "I"]] },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento ao contribuinte", a: "Receber o pedido.", p: 1, d: [["Requerimento de certidão", 1, "X", "I"]], segue: "Pedido recebido" },
+    { u: "SEREC/CADASTRO", s: "Cadastro imobiliário", a: "Emitir a certidão.", p: 5, d: [["Certidão de valor venal", 1, "D", "I"]] },
   ]),
   P("FAZ.CUS.013", "Certidão de uso do solo (controle urbano)", "Emitir certidão de uso do solo do imóvel conforme o zoneamento.", "Proprietários e empresas", "3.0.04.01.06", [
-    { u: "SEFAZ/ATENDIMENTO", s: "Atendimento", a: "Receber o pedido com a localização do imóvel e a atividade.", p: 1, d: [["Requerimento de certidão de uso do solo", 1, "X", "I"]], segue: "Pedido recebido" },
-    { u: "SEFAZ/CONTROLE_URBANO", s: "Controle urbano", a: "Verificar o zoneamento e emitir a certidão.", p: 10, d: [["Certidão de uso do solo", 1, "D", "I"]] },
+    { u: "SEREC/ATENDIMENTO", s: "Atendimento", a: "Receber o pedido com a localização do imóvel e a atividade.", p: 1, d: [["Requerimento de certidão de uso do solo", 1, "X", "I"]], segue: "Pedido recebido" },
+    { u: "SEREC/CONTROLE_URBANO", s: "Controle urbano", a: "Verificar o zoneamento e emitir a certidão.", p: 10, d: [["Certidão de uso do solo", 1, "D", "I"]] },
   ]),
   P("FAZ.ORC.014", "Suplementação orçamentária", "Abrir crédito suplementar ou especial para despesa sem dotação suficiente.", "Secretarias municipais", "3.0.05.00.08", [
     { u: "SECRETARIA", s: "Secretaria solicitante", a: "Justificar a necessidade e indicar a fonte de recurso.", p: 3, d: [["Solicitação de suplementação", 1, "D", "I"]], segue: "Pedido justificado" },
     { u: "SEPLAN/ORCAMENTO", s: "Orçamento", a: "Verificar a disponibilidade e minutar o decreto.", p: 5, d: [["Minuta de decreto de crédito", 1, "D", "I"]], segue: "Crédito viável", dil: ["Fonte insuficiente", "Indicar outra fonte de recurso", 1] },
-    { u: "GABINETE", s: "Prefeito", a: "Assinar e publicar o decreto.", p: 3, d: [["Decreto de abertura de crédito", 1, "D", "I"]] },
+    { u: "GAB", s: "Prefeito", a: "Assinar e publicar o decreto.", p: 3, d: [["Decreto de abertura de crédito", 1, "D", "I"]] },
   ]),
   P("PAT.BAI.001", "Baixa de bem patrimonial", "Dar baixa de bem móvel inservível, extraviado ou alienado, com laudo e autorização.", "Secretarias municipais", "3.0.05.01.01", [
     { u: "SECRETARIA", s: "Unidade detentora", a: "Solicitar a baixa com o número de patrimônio e o motivo.", p: 3, d: [["Solicitação de baixa", 1, "D", "I"], ["Boletim de ocorrência (extravio)", 0, "X"]], segue: "Pedido instruído" },
-    { u: "SEFAZ/PATRIMONIO", s: "Comissão de patrimônio", a: "Vistoriar e emitir o laudo de inservibilidade.", p: 15, d: [["Laudo de avaliação", 1, "D", "C"]], segue: "Baixa recomendada" },
-    { u: "SEFAZ/PATRIMONIO", s: "Patrimônio", a: "Registrar a baixa e destinar o bem.", p: 5, d: [["Termo de baixa", 1, "D", "I"]] },
+    { u: "SEFIN/PATRIMONIO", s: "Comissão de patrimônio", a: "Vistoriar e emitir o laudo de inservibilidade.", p: 15, d: [["Laudo de avaliação", 1, "D", "C"]], segue: "Baixa recomendada" },
+    { u: "SEFIN/PATRIMONIO", s: "Patrimônio", a: "Registrar a baixa e destinar o bem.", p: 5, d: [["Termo de baixa", 1, "D", "I"]] },
   ]),
   P("PAT.TRA.002", "Transferência de bem patrimonial", "Transferir a carga de bem móvel entre unidades, atualizando o responsável.", "Secretarias municipais", "3.0.05.01.04", [
     { u: "SECRETARIA", s: "Unidade cedente", a: "Solicitar a transferência indicando a unidade recebedora.", p: 2, d: [["Solicitação de transferência", 1, "D", "I"]], segue: "Pedido feito" },
-    { u: "SEFAZ/PATRIMONIO", s: "Patrimônio", a: "Emitir o termo de transferência de responsabilidade.", p: 5, d: [["Termo de transferência", 1, "D", "C"]] },
+    { u: "SEFIN/PATRIMONIO", s: "Patrimônio", a: "Emitir o termo de transferência de responsabilidade.", p: 5, d: [["Termo de transferência", 1, "D", "C"]] },
   ]),
   P("PAT.INC.003", "Incorporação de bem permanente", "Incorporar ao patrimônio o bem adquirido, doado ou cedido, com plaqueta e termo de responsabilidade.", "Secretarias municipais", "3.0.05.01.15", [
-    { u: "SEFAZ/PATRIMONIO", s: "Patrimônio", a: "Conferir a nota fiscal ou o termo de doação e emplaquetar.", p: 5, d: [["Nota fiscal ou termo de doação", 1, "X"], ["Ficha de cadastro do bem", 1, "D", "I"]], segue: "Bem cadastrado" },
+    { u: "SEFIN/PATRIMONIO", s: "Patrimônio", a: "Conferir a nota fiscal ou o termo de doação e emplaquetar.", p: 5, d: [["Nota fiscal ou termo de doação", 1, "X"], ["Ficha de cadastro do bem", 1, "D", "I"]], segue: "Bem cadastrado" },
     { u: "SECRETARIA", s: "Unidade recebedora", a: "Assinar o termo de responsabilidade.", p: 3, d: [["Termo de responsabilidade", 1, "D", "I"]] },
   ]),
 
   // ------------------------------------------------------------- Controle interno (4.0)
   P("CTR.AUD.002", "Auditoria interna", "Planejar e executar auditoria em unidade ou processo, com relatório e plano de providências.", "Unidades administrativas", "4.0.01.01.00", [
-    { u: "CONTROLADORIA", s: "Controladoria", a: "Planejar a auditoria e comunicar a unidade auditada.", p: 10, d: [["Plano de auditoria", 1, "D", "I"], ["Ofício de comunicação", 1, "D", "I"]], segue: "Auditoria iniciada" },
-    { u: "CONTROLADORIA", s: "Equipe de auditoria", a: "Executar os testes e emitir o relatório preliminar.", p: 45, d: [["Relatório preliminar", 1, "D", "C"]], segue: "Relatório emitido" },
+    { u: "UCCI", s: "Controladoria", a: "Planejar a auditoria e comunicar a unidade auditada.", p: 10, d: [["Plano de auditoria", 1, "D", "I"], ["Ofício de comunicação", 1, "D", "I"]], segue: "Auditoria iniciada" },
+    { u: "UCCI", s: "Equipe de auditoria", a: "Executar os testes e emitir o relatório preliminar.", p: 45, d: [["Relatório preliminar", 1, "D", "C"]], segue: "Relatório emitido" },
     { u: "SECRETARIA", s: "Unidade auditada", a: "Manifestar-se sobre os achados.", p: 15, d: [["Manifestação da unidade", 1, "D", "I"]], segue: "Manifestação recebida" },
-    { u: "CONTROLADORIA", s: "Controladoria", a: "Emitir o relatório final e o plano de providências.", p: 15, d: [["Relatório final de auditoria", 1, "D", "C"]] },
+    { u: "UCCI", s: "Controladoria", a: "Emitir o relatório final e o plano de providências.", p: 15, d: [["Relatório final de auditoria", 1, "D", "C"]] },
   ], restrito("LAI, art. 7º, §3º (documento preparatório até a conclusão)")),
 
   // ------------------------------------------------------------- Habitação (6.0)
   P("HAB.ITB.004", "Isenção de ITBI em programa habitacional", "Reconhecer a isenção de ITBI para beneficiário de programa habitacional de interesse social.", "Beneficiários de programas habitacionais", "6.0.01.00.00", [
     { u: "SEHAB/PROGRAMAS", s: "Programas habitacionais", a: "Confirmar o enquadramento do beneficiário no programa.", p: 5, d: [["Requerimento de isenção de ITBI", 1, "X", "I"], ["Declaração de enquadramento", 1, "D", "I"]], segue: "Beneficiário enquadrado" },
-    { u: "SEFAZ/TRIBUTARIO", s: "Julgamento tributário", a: "Reconhecer a isenção e emitir a guia zerada.", p: 10, d: [["Decisão de isenção", 1, "D", "I"]] },
+    { u: "SEREC/TRIBUTARIO", s: "Julgamento tributário", a: "Reconhecer a isenção e emitir a guia zerada.", p: 10, d: [["Decisão de isenção", 1, "D", "I"]] },
   ], PESSOAL),
   P("HAB.MCM.005", "Titulação de beneficiário de programa habitacional", "Emitir o título de propriedade ao beneficiário de programa habitacional (ex.: Minha Casa Minha Vida).", "Beneficiários de programas habitacionais", "6.0.01.00.04", [
     { u: "SEHAB/PROGRAMAS", s: "Programas habitacionais", a: "Conferir a ocupação e os requisitos do beneficiário.", p: 15, d: [["Cadastro do beneficiário", 1, "D", "I"], ["Documentos pessoais", 1, "X"]], segue: "Requisitos atendidos" },
@@ -235,8 +235,8 @@ const procedimentos = [
     { u: "SEMMA/LICENCIAMENTO", s: "Licenciamento ambiental", a: "Emitir a autorização com as condicionantes.", p: 5, d: [["Autorização de remoção/supressão", 1, "D", "I"], ["Termo de compensação ambiental", 0, "D", "C"]] },
   ]),
   P("MAM.REC.004", "Recurso ao Conselho de Meio Ambiente (CONSEMMA)", "Julgar em segunda instância o recurso contra auto de infração ambiental.", "Autuados", "8.0.01.03.02", [
-    { u: "CONSEMMA", s: "Secretaria executiva do CONSEMMA", a: "Receber o recurso no prazo e distribuir a um relator.", p: 5, d: [["Recurso administrativo", 1, "X", "I"]], segue: "Recurso distribuído" },
-    { u: "CONSEMMA", s: "Plenária do CONSEMMA", a: "Julgar o recurso e publicar a decisão.", p: 60, d: [["Voto do relator", 1, "D", "I"], ["Decisão do conselho", 1, "D", "C"]] },
+    { u: "SEMMA/CONSEMMA", s: "Secretaria executiva do CONSEMMA", a: "Receber o recurso no prazo e distribuir a um relator.", p: 5, d: [["Recurso administrativo", 1, "X", "I"]], segue: "Recurso distribuído" },
+    { u: "SEMMA/CONSEMMA", s: "Plenária do CONSEMMA", a: "Julgar o recurso e publicar a decisão.", p: 60, d: [["Voto do relator", 1, "D", "I"], ["Decisão do conselho", 1, "D", "C"]] },
   ]),
   P("AGR.SIM.001", "Registro no Serviço de Inspeção Municipal (SIM)", "Registrar estabelecimento produtor de alimentos de origem animal no SIM.", "Produtores rurais e agroindústrias", "8.0.02.01.02", [
     { u: "SEMAGRI/SIM", s: "Serviço de Inspeção Municipal", a: "Receber o pedido com a planta e o memorial do estabelecimento.", p: 5, d: [["Requerimento de registro no SIM", 1, "X", "I"], ["Planta e memorial técnico", 1, "X"]], segue: "Pedido instruído" },
@@ -261,30 +261,30 @@ const procedimentos = [
   P("DEC.INC.002", "Incentivo fiscal a empresa", "Conceder incentivo fiscal previsto na lei municipal de incentivo, com contrapartidas e acompanhamento.", "Empresas", "9.0.01.00.04", [
     { u: "SEDEC/ATENDIMENTO", s: "Sala do Empreendedor", a: "Receber o pedido com o projeto de investimento.", p: 5, d: [["Requerimento de incentivo fiscal", 1, "X", "I"], ["Projeto de investimento", 1, "X"]], segue: "Pedido instruído" },
     { u: "SEDEC/CONSELHO", s: "Conselho de desenvolvimento", a: "Analisar o projeto e as contrapartidas.", p: 30, d: [["Parecer do conselho", 1, "D", "C"]], segue: "Projeto aprovado" },
-    { u: "SEFAZ/TRIBUTARIO", s: "Julgamento tributário", a: "Conceder o benefício e registrar as condições.", p: 15, d: [["Termo de concessão de incentivo", 1, "D", "C"]] },
+    { u: "SEREC/TRIBUTARIO", s: "Julgamento tributário", a: "Conceder o benefício e registrar as condições.", p: 15, d: [["Termo de concessão de incentivo", 1, "D", "C"]] },
   ]),
   P("DEC.IND.003", "Concessão de área em distrito industrial", "Conceder área em distrito industrial a empresa, conforme o roteiro do conselho diretor (CODIP), com escritura após a implantação.", "Empresas", "9.0.01.02.00", [
     { u: "SEDEC/INDUSTRIA", s: "Indústria", a: "Receber o pedido com o projeto e o cronograma de implantação.", p: 5, d: [["Requerimento de área industrial", 1, "X", "I"], ["Projeto de implantação", 1, "X"]], segue: "Pedido instruído" },
-    { u: "CODIP", s: "Conselho Diretor (CODIP)", a: "Deliberar a concessão e as obrigações.", p: 30, d: [["Resolução do CODIP", 1, "D", "C"]], segue: "Concessão aprovada" },
+    { u: "SEDEC/CODIP", s: "Conselho Diretor (CODIP)", a: "Deliberar a concessão e as obrigações.", p: 30, d: [["Resolução do CODIP", 1, "D", "C"]], segue: "Concessão aprovada" },
     pgm("Contrato aprovado"),
     { u: "SEDEC/INDUSTRIA", s: "Indústria", a: "Firmar o contrato e acompanhar a implantação até a escritura.", p: 30, d: [["Contrato de concessão", 1, "D", "C"]] },
   ]),
 
   // ------------------------------------------------------------- Assistência social (10.0)
   P("SAS.CNV.002", "Convênio ou parceria na assistência social", "Firmar convênio ou parceria com outro ente ou com organização para executar ação socioassistencial.", "Entes e organizações parceiras", "10.0.01.00.03", [
-    { u: "SMPAS/GESTAO", s: "Gestão do SUAS", a: "Elaborar o plano de trabalho e a justificativa.", p: 15, d: [["Plano de trabalho", 1, "D", "C"], ["Justificativa da parceria", 1, "D", "I"]], segue: "Plano aprovado" },
+    { u: "SEMPRAS/GESTAO", s: "Gestão do SUAS", a: "Elaborar o plano de trabalho e a justificativa.", p: 15, d: [["Plano de trabalho", 1, "D", "C"], ["Justificativa da parceria", 1, "D", "I"]], segue: "Plano aprovado" },
     pgm("Minuta aprovada", ["Ajustes na minuta", "Ajustar o plano ou a minuta", 1]),
-    { u: "GABINETE", s: "Prefeito", a: "Assinar o termo e publicar o extrato.", p: 5, d: [["Termo de convênio/parceria", 1, "D", "C"], ["Extrato publicado", 1, "X"]] },
+    { u: "GAB", s: "Prefeito", a: "Assinar o termo e publicar o extrato.", p: 5, d: [["Termo de convênio/parceria", 1, "D", "C"], ["Extrato publicado", 1, "X"]] },
   ]),
   P("SAS.CHA.003", "Chamamento público de OSC", "Selecionar organização da sociedade civil por chamamento público (Lei 13.019/2014).", "Organizações da sociedade civil", "10.0.03.00.06", [
-    { u: "SMPAS/GESTAO", s: "Gestão do SUAS", a: "Elaborar e publicar o edital de chamamento.", p: 15, d: [["Edital de chamamento público", 1, "D", "C"]], segue: "Edital publicado" },
-    { u: "SMPAS/COMISSAO", s: "Comissão de seleção", a: "Avaliar as propostas e publicar o resultado.", p: 30, d: [["Ata de julgamento", 1, "D", "C"], ["Resultado do chamamento", 1, "D", "C"]], segue: "Resultado homologado" },
-    { u: "SMPAS/GESTAO", s: "Gestão do SUAS", a: "Firmar o termo de colaboração ou fomento.", p: 15, d: [["Termo de colaboração/fomento", 1, "D", "C"]] },
+    { u: "SEMPRAS/GESTAO", s: "Gestão do SUAS", a: "Elaborar e publicar o edital de chamamento.", p: 15, d: [["Edital de chamamento público", 1, "D", "C"]], segue: "Edital publicado" },
+    { u: "SEMPRAS/COMISSAO", s: "Comissão de seleção", a: "Avaliar as propostas e publicar o resultado.", p: 30, d: [["Ata de julgamento", 1, "D", "C"], ["Resultado do chamamento", 1, "D", "C"]], segue: "Resultado homologado" },
+    { u: "SEMPRAS/GESTAO", s: "Gestão do SUAS", a: "Firmar o termo de colaboração ou fomento.", p: 15, d: [["Termo de colaboração/fomento", 1, "D", "C"]] },
   ]),
   P("SAS.BIL.004", "Bilhete único especial para pessoa com deficiência", "Conceder a gratuidade no transporte coletivo municipal à pessoa com deficiência e acompanhante, quando indicado.", "Pessoas com deficiência", "10.0.06.00.40", [
-    { u: "SMPAS/ATENDIMENTO", s: "Atendimento", a: "Receber o pedido com o laudo médico e os documentos.", p: 2, d: [["Requerimento de bilhete único especial", 1, "X", "I"], ["Laudo médico", 1, "X"]], segue: "Pedido instruído" },
-    { u: "SMPAS/AVALIACAO", s: "Avaliação social", a: "Avaliar os requisitos e a necessidade de acompanhante.", p: 15, d: [["Parecer social", 1, "D", "I"]], segue: "Benefício deferido" },
-    { u: "SMPAS/ATENDIMENTO", s: "Atendimento", a: "Solicitar a emissão do cartão e entregar ao beneficiário.", p: 15, d: [["Termo de entrega do cartão", 1, "X", "I"]] },
+    { u: "SEMPRAS/ATENDIMENTO", s: "Atendimento", a: "Receber o pedido com o laudo médico e os documentos.", p: 2, d: [["Requerimento de bilhete único especial", 1, "X", "I"], ["Laudo médico", 1, "X"]], segue: "Pedido instruído" },
+    { u: "SEMPRAS/AVALIACAO", s: "Avaliação social", a: "Avaliar os requisitos e a necessidade de acompanhante.", p: 15, d: [["Parecer social", 1, "D", "I"]], segue: "Benefício deferido" },
+    { u: "SEMPRAS/ATENDIMENTO", s: "Atendimento", a: "Solicitar a emissão do cartão e entregar ao beneficiário.", p: 15, d: [["Termo de entrega do cartão", 1, "X", "I"]] },
   ], SAUDE),
 
   // ------------------------------------------------------------- Saúde (12.0)
@@ -309,16 +309,16 @@ const procedimentos = [
   ], SAUDE),
   P("SAU.PCF.006", "Prestação de contas do Fundo Municipal de Saúde", "Elaborar e apresentar a prestação de contas quadrimestral do Fundo Municipal de Saúde ao Conselho e ao Legislativo.", "Conselho Municipal de Saúde e Câmara", "12.0.01.08.03", [
     { u: "SMS/FUNDO", s: "Fundo Municipal de Saúde", a: "Consolidar a execução orçamentária e física do quadrimestre.", p: 20, d: [["Relatório Detalhado do Quadrimestre Anterior (RDQA)", 1, "D", "C"]], segue: "Relatório consolidado" },
-    { u: "CMS", s: "Conselho Municipal de Saúde", a: "Apreciar e deliberar sobre o relatório.", p: 30, d: [["Resolução do Conselho de Saúde", 1, "D", "C"]], segue: "Relatório apreciado" },
+    { u: "SMS/CMS", s: "Conselho Municipal de Saúde", a: "Apreciar e deliberar sobre o relatório.", p: 30, d: [["Resolução do Conselho de Saúde", 1, "D", "C"]], segue: "Relatório apreciado" },
     { u: "SMS/FUNDO", s: "Fundo Municipal de Saúde", a: "Apresentar em audiência pública na Câmara.", p: 15, d: [["Ata da audiência pública", 1, "X"]] },
   ]),
   P("SAU.DIU.007", "Inserção de DIU", "Atender a solicitação de método contraceptivo de longa duração (DIU) na rede municipal.", "Usuárias do SUS", "12.0.02.00.81", [
-    { u: "UBS", s: "Unidade Básica de Saúde", a: "Acolher a solicitação, orientar e encaminhar com os exames.", p: 7, d: [["Solicitação de DIU", 1, "D", "I"]], segue: "Encaminhada" },
+    { u: "SMS/UBS", s: "Unidade Básica de Saúde", a: "Acolher a solicitação, orientar e encaminhar com os exames.", p: 7, d: [["Solicitação de DIU", 1, "D", "I"]], segue: "Encaminhada" },
     { u: "SMS/SAUDE_MULHER", s: "Saúde da mulher", a: "Agendar e realizar o procedimento.", p: 30, d: [["Termo de consentimento", 1, "X", "I"], ["Registro do procedimento", 1, "D", "I"]] },
   ], SAUDE),
   P("SAU.CNS.008", "Cartão Nacional de Saúde", "Cadastrar ou atualizar o usuário no Cartão Nacional de Saúde (CNS).", "Usuários do SUS", "12.0.04.00.01", [
-    { u: "UBS", s: "Recepção da unidade", a: "Conferir os documentos e cadastrar ou atualizar no CADSUS.", p: 1, d: [["Documento de identificação", 1, "X"], ["Comprovante de endereço", 1, "X"]], segue: "Cadastro feito" },
-    { u: "UBS", s: "Recepção da unidade", a: "Entregar o número do CNS ao usuário.", p: 1, d: [] },
+    { u: "SMS/UBS", s: "Recepção da unidade", a: "Conferir os documentos e cadastrar ou atualizar no CADSUS.", p: 1, d: [["Documento de identificação", 1, "X"], ["Comprovante de endereço", 1, "X"]], segue: "Cadastro feito" },
+    { u: "SMS/UBS", s: "Recepção da unidade", a: "Entregar o número do CNS ao usuário.", p: 1, d: [] },
   ], SAUDE),
   P("SAU.PRO.009", "Cópia de prontuário", "Fornecer cópia do prontuário ao paciente ou ao representante legal, preservando o sigilo.", "Pacientes e representantes legais", "12.0.07.02.04", [
     { u: "SMS/ARQUIVO", s: "Arquivo médico", a: "Receber o pedido e conferir a legitimidade do solicitante.", p: 3, d: [["Requerimento de cópia de prontuário", 1, "X", "I"], ["Documento de identificação ou procuração", 1, "X"]], segue: "Solicitante legítimo" },
@@ -334,8 +334,8 @@ const procedimentos = [
     { u: "SMS/RH_MEDICOS", s: "RH dos médicos", a: "Ajustar a escala e informar a folha.", p: 5, d: [["Escala de plantões", 1, "D", "I"]] },
   ]),
   P("SAU.AGU.012", "Análise microbiológica de água", "Receber amostra e emitir laudo de análise microbiológica de água para consumo.", "Cidadãos, empresas e vigilância", "12.0.11.03.01", [
-    { u: "LACEN_AGUA", s: "Laboratório de análise de água", a: "Receber a amostra com a ficha de coleta.", p: 1, d: [["Solicitação de análise", 1, "X", "I"], ["Ficha de coleta", 1, "X"]], segue: "Amostra aceita" },
-    { u: "LACEN_AGUA", s: "Laboratório de análise de água", a: "Analisar e emitir o laudo.", p: 7, d: [["Laudo de análise microbiológica", 1, "D", "I"]] },
+    { u: "SMS/LACEN_AGUA", s: "Laboratório de análise de água", a: "Receber a amostra com a ficha de coleta.", p: 1, d: [["Solicitação de análise", 1, "X", "I"], ["Ficha de coleta", 1, "X"]], segue: "Amostra aceita" },
+    { u: "SMS/LACEN_AGUA", s: "Laboratório de análise de água", a: "Analisar e emitir o laudo.", p: 7, d: [["Laudo de análise microbiológica", 1, "D", "I"]] },
   ]),
 ];
 

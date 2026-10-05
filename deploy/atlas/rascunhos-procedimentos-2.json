@@ -37,7 +37,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/ARRECADACAO",
+          "unidade_administrativa": "SEREC/ARRECADACAO",
           "nome_setor": "Arrecadação",
           "atribuicoes_setor": "Emitir a guia das taxas.",
           "prazo_sla_em_dias": 2,
@@ -83,7 +83,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "PROTOCOLO",
+          "unidade_administrativa": "SEMAD/PROTOCOLO",
           "nome_setor": "Protocolo geral",
           "atribuicoes_setor": "Registrar o requerimento, autuar e encaminhar à unidade competente.",
           "prazo_sla_em_dias": 1,
@@ -137,7 +137,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "PROTOCOLO",
+          "unidade_administrativa": "SEMAD/PROTOCOLO",
           "nome_setor": "Protocolo geral",
           "atribuicoes_setor": "Dar ciência ao requerente e arquivar.",
           "prazo_sla_em_dias": 3,
@@ -183,7 +183,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "CCPAD",
+          "unidade_administrativa": "SEMAD/CCPAD",
           "nome_setor": "Comissão Permanente de Avaliação de Documentos",
           "atribuicoes_setor": "Conferir a listagem contra a TTDD e aprovar.",
           "prazo_sla_em_dias": 30,
@@ -210,7 +210,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "CCPAD",
+          "unidade_administrativa": "SEMAD/CCPAD",
           "nome_setor": "Comissão Permanente de Avaliação de Documentos",
           "atribuicoes_setor": "Publicar o edital de ciência de eliminação e aguardar o prazo.",
           "prazo_sla_em_dias": 45,
@@ -283,7 +283,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "TI",
+          "unidade_administrativa": "SEMAD/TI",
           "nome_setor": "Tecnologia da Informação",
           "atribuicoes_setor": "Criar a conta com o perfil mínimo necessário e registrar.",
           "prazo_sla_em_dias": 3,
@@ -337,7 +337,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "TI",
+          "unidade_administrativa": "SEMAD/TI",
           "nome_setor": "Suporte técnico",
           "atribuicoes_setor": "Diagnosticar e resolver ou encaminhar à manutenção externa.",
           "prazo_sla_em_dias": 5,
@@ -448,7 +448,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/CONTABILIDADE",
+          "unidade_administrativa": "SEFIN/CONTABILIDADE",
           "nome_setor": "Contabilidade",
           "atribuicoes_setor": "Verificar a dotação e empenhar.",
           "prazo_sla_em_dias": 5,
@@ -514,7 +514,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/CONTABILIDADE",
+          "unidade_administrativa": "SEFIN/CONTABILIDADE",
           "nome_setor": "Contabilidade",
           "atribuicoes_setor": "Empenhar e pagar as verbas rescisórias.",
           "prazo_sla_em_dias": 10,
@@ -1279,7 +1279,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Prefeito",
           "atribuicoes_setor": "Assinar e publicar o decreto ou a portaria.",
           "prazo_sla_em_dias": 5,
@@ -1483,7 +1483,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Prefeito",
           "atribuicoes_setor": "Homologar o resultado final.",
           "prazo_sla_em_dias": 5,
@@ -1508,7 +1508,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/FISCALIZACAO",
+          "unidade_administrativa": "SEREC/FISCALIZACAO",
           "nome_setor": "Fiscalização",
           "atribuicoes_setor": "Emitir a ordem de serviço e o termo de início de fiscalização.",
           "prazo_sla_em_dias": 5,
@@ -1535,7 +1535,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/FISCALIZACAO",
+          "unidade_administrativa": "SEREC/FISCALIZACAO",
           "nome_setor": "Auditor fiscal",
           "atribuicoes_setor": "Levantar os documentos e apurar o débito.",
           "prazo_sla_em_dias": 60,
@@ -1562,7 +1562,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/FISCALIZACAO",
+          "unidade_administrativa": "SEREC/FISCALIZACAO",
           "nome_setor": "Fiscalização",
           "atribuicoes_setor": "Notificar o contribuinte e lavrar o termo de conclusão.",
           "prazo_sla_em_dias": 5,
@@ -1587,7 +1587,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento ao contribuinte",
           "atribuicoes_setor": "Receber o recurso no prazo e juntar o lançamento.",
           "prazo_sla_em_dias": 2,
@@ -1608,7 +1608,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/FISCALIZACAO",
+          "unidade_administrativa": "SEREC/FISCALIZACAO",
           "nome_setor": "Auditor autuante",
           "atribuicoes_setor": "Contestar ou rever o lançamento.",
           "prazo_sla_em_dias": 15,
@@ -1629,7 +1629,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/TRIBUTARIO",
+          "unidade_administrativa": "SEREC/TRIBUTARIO",
           "nome_setor": "Julgamento tributário",
           "atribuicoes_setor": "Julgar e notificar o contribuinte.",
           "prazo_sla_em_dias": 30,
@@ -1654,7 +1654,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento ao contribuinte",
           "atribuicoes_setor": "Receber a consulta com a descrição do fato.",
           "prazo_sla_em_dias": 2,
@@ -1675,7 +1675,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/TRIBUTARIO",
+          "unidade_administrativa": "SEREC/TRIBUTARIO",
           "nome_setor": "Julgamento tributário",
           "atribuicoes_setor": "Analisar e emitir a resposta à consulta.",
           "prazo_sla_em_dias": 30,
@@ -1700,7 +1700,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/RECEITA",
+          "unidade_administrativa": "SEREC/RECEITA",
           "nome_setor": "Receita",
           "atribuicoes_setor": "Analisar o índice publicado e levantar os dados divergentes.",
           "prazo_sla_em_dias": 10,
@@ -1746,7 +1746,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento ao contribuinte",
           "atribuicoes_setor": "Receber o pedido com o documento de propriedade.",
           "prazo_sla_em_dias": 2,
@@ -1773,7 +1773,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/CADASTRO",
+          "unidade_administrativa": "SEREC/CADASTRO",
           "nome_setor": "Cadastro imobiliário",
           "atribuicoes_setor": "Conferir e atualizar o cadastro.",
           "prazo_sla_em_dias": 10,
@@ -1798,7 +1798,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento ao contribuinte",
           "atribuicoes_setor": "Receber o pedido.",
           "prazo_sla_em_dias": 1,
@@ -1819,7 +1819,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/CADASTRO",
+          "unidade_administrativa": "SEREC/CADASTRO",
           "nome_setor": "Cadastro imobiliário",
           "atribuicoes_setor": "Emitir a certidão.",
           "prazo_sla_em_dias": 5,
@@ -1844,7 +1844,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/ATENDIMENTO",
+          "unidade_administrativa": "SEREC/ATENDIMENTO",
           "nome_setor": "Atendimento",
           "atribuicoes_setor": "Receber o pedido com a localização do imóvel e a atividade.",
           "prazo_sla_em_dias": 1,
@@ -1865,7 +1865,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/CONTROLE_URBANO",
+          "unidade_administrativa": "SEREC/CONTROLE_URBANO",
           "nome_setor": "Controle urbano",
           "atribuicoes_setor": "Verificar o zoneamento e emitir a certidão.",
           "prazo_sla_em_dias": 10,
@@ -1938,7 +1938,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Prefeito",
           "atribuicoes_setor": "Assinar e publicar o decreto.",
           "prazo_sla_em_dias": 3,
@@ -1990,7 +1990,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/PATRIMONIO",
+          "unidade_administrativa": "SEFIN/PATRIMONIO",
           "nome_setor": "Comissão de patrimônio",
           "atribuicoes_setor": "Vistoriar e emitir o laudo de inservibilidade.",
           "prazo_sla_em_dias": 15,
@@ -2011,7 +2011,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/PATRIMONIO",
+          "unidade_administrativa": "SEFIN/PATRIMONIO",
           "nome_setor": "Patrimônio",
           "atribuicoes_setor": "Registrar a baixa e destinar o bem.",
           "prazo_sla_em_dias": 5,
@@ -2057,7 +2057,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/PATRIMONIO",
+          "unidade_administrativa": "SEFIN/PATRIMONIO",
           "nome_setor": "Patrimônio",
           "atribuicoes_setor": "Emitir o termo de transferência de responsabilidade.",
           "prazo_sla_em_dias": 5,
@@ -2082,7 +2082,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SEFAZ/PATRIMONIO",
+          "unidade_administrativa": "SEFIN/PATRIMONIO",
           "nome_setor": "Patrimônio",
           "atribuicoes_setor": "Conferir a nota fiscal ou o termo de doação e emplaquetar.",
           "prazo_sla_em_dias": 5,
@@ -2135,7 +2135,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "CONTROLADORIA",
+          "unidade_administrativa": "UCCI",
           "nome_setor": "Controladoria",
           "atribuicoes_setor": "Planejar a auditoria e comunicar a unidade auditada.",
           "prazo_sla_em_dias": 10,
@@ -2162,7 +2162,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "CONTROLADORIA",
+          "unidade_administrativa": "UCCI",
           "nome_setor": "Equipe de auditoria",
           "atribuicoes_setor": "Executar os testes e emitir o relatório preliminar.",
           "prazo_sla_em_dias": 45,
@@ -2204,7 +2204,7 @@
         },
         {
           "ordem": 4,
-          "unidade_administrativa": "CONTROLADORIA",
+          "unidade_administrativa": "UCCI",
           "nome_setor": "Controladoria",
           "atribuicoes_setor": "Emitir o relatório final e o plano de providências.",
           "prazo_sla_em_dias": 15,
@@ -2257,7 +2257,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SEFAZ/TRIBUTARIO",
+          "unidade_administrativa": "SEREC/TRIBUTARIO",
           "nome_setor": "Julgamento tributário",
           "atribuicoes_setor": "Reconhecer a isenção e emitir a guia zerada.",
           "prazo_sla_em_dias": 10,
@@ -2704,7 +2704,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "CONSEMMA",
+          "unidade_administrativa": "SEMMA/CONSEMMA",
           "nome_setor": "Secretaria executiva do CONSEMMA",
           "atribuicoes_setor": "Receber o recurso no prazo e distribuir a um relator.",
           "prazo_sla_em_dias": 5,
@@ -2725,7 +2725,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "CONSEMMA",
+          "unidade_administrativa": "SEMMA/CONSEMMA",
           "nome_setor": "Plenária do CONSEMMA",
           "atribuicoes_setor": "Julgar o recurso e publicar a decisão.",
           "prazo_sla_em_dias": 60,
@@ -3060,7 +3060,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SEFAZ/TRIBUTARIO",
+          "unidade_administrativa": "SEREC/TRIBUTARIO",
           "nome_setor": "Julgamento tributário",
           "atribuicoes_setor": "Conceder o benefício e registrar as condições.",
           "prazo_sla_em_dias": 15,
@@ -3112,7 +3112,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "CODIP",
+          "unidade_administrativa": "SEDEC/CODIP",
           "nome_setor": "Conselho Diretor (CODIP)",
           "atribuicoes_setor": "Deliberar a concessão e as obrigações.",
           "prazo_sla_em_dias": 30,
@@ -3179,7 +3179,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SMPAS/GESTAO",
+          "unidade_administrativa": "SEMPRAS/GESTAO",
           "nome_setor": "Gestão do SUAS",
           "atribuicoes_setor": "Elaborar o plano de trabalho e a justificativa.",
           "prazo_sla_em_dias": 15,
@@ -3233,7 +3233,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "GABINETE",
+          "unidade_administrativa": "GAB",
           "nome_setor": "Prefeito",
           "atribuicoes_setor": "Assinar o termo e publicar o extrato.",
           "prazo_sla_em_dias": 5,
@@ -3264,7 +3264,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SMPAS/GESTAO",
+          "unidade_administrativa": "SEMPRAS/GESTAO",
           "nome_setor": "Gestão do SUAS",
           "atribuicoes_setor": "Elaborar e publicar o edital de chamamento.",
           "prazo_sla_em_dias": 15,
@@ -3285,7 +3285,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SMPAS/COMISSAO",
+          "unidade_administrativa": "SEMPRAS/COMISSAO",
           "nome_setor": "Comissão de seleção",
           "atribuicoes_setor": "Avaliar as propostas e publicar o resultado.",
           "prazo_sla_em_dias": 30,
@@ -3312,7 +3312,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SMPAS/GESTAO",
+          "unidade_administrativa": "SEMPRAS/GESTAO",
           "nome_setor": "Gestão do SUAS",
           "atribuicoes_setor": "Firmar o termo de colaboração ou fomento.",
           "prazo_sla_em_dias": 15,
@@ -3338,7 +3338,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "SMPAS/ATENDIMENTO",
+          "unidade_administrativa": "SEMPRAS/ATENDIMENTO",
           "nome_setor": "Atendimento",
           "atribuicoes_setor": "Receber o pedido com o laudo médico e os documentos.",
           "prazo_sla_em_dias": 2,
@@ -3365,7 +3365,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "SMPAS/AVALIACAO",
+          "unidade_administrativa": "SEMPRAS/AVALIACAO",
           "nome_setor": "Avaliação social",
           "atribuicoes_setor": "Avaliar os requisitos e a necessidade de acompanhante.",
           "prazo_sla_em_dias": 15,
@@ -3386,7 +3386,7 @@
         },
         {
           "ordem": 3,
-          "unidade_administrativa": "SMPAS/ATENDIMENTO",
+          "unidade_administrativa": "SEMPRAS/ATENDIMENTO",
           "nome_setor": "Atendimento",
           "atribuicoes_setor": "Solicitar a emissão do cartão e entregar ao beneficiário.",
           "prazo_sla_em_dias": 15,
@@ -3692,7 +3692,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "CMS",
+          "unidade_administrativa": "SMS/CMS",
           "nome_setor": "Conselho Municipal de Saúde",
           "atribuicoes_setor": "Apreciar e deliberar sobre o relatório.",
           "prazo_sla_em_dias": 30,
@@ -3739,7 +3739,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "UBS",
+          "unidade_administrativa": "SMS/UBS",
           "nome_setor": "Unidade Básica de Saúde",
           "atribuicoes_setor": "Acolher a solicitação, orientar e encaminhar com os exames.",
           "prazo_sla_em_dias": 7,
@@ -3792,7 +3792,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "UBS",
+          "unidade_administrativa": "SMS/UBS",
           "nome_setor": "Recepção da unidade",
           "atribuicoes_setor": "Conferir os documentos e cadastrar ou atualizar no CADSUS.",
           "prazo_sla_em_dias": 1,
@@ -3819,7 +3819,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "UBS",
+          "unidade_administrativa": "SMS/UBS",
           "nome_setor": "Recepção da unidade",
           "atribuicoes_setor": "Entregar o número do CNS ao usuário.",
           "prazo_sla_em_dias": 1
@@ -4009,7 +4009,7 @@
       "etapas": [
         {
           "ordem": 1,
-          "unidade_administrativa": "LACEN_AGUA",
+          "unidade_administrativa": "SMS/LACEN_AGUA",
           "nome_setor": "Laboratório de análise de água",
           "atribuicoes_setor": "Receber a amostra com a ficha de coleta.",
           "prazo_sla_em_dias": 1,
@@ -4036,7 +4036,7 @@
         },
         {
           "ordem": 2,
-          "unidade_administrativa": "LACEN_AGUA",
+          "unidade_administrativa": "SMS/LACEN_AGUA",
           "nome_setor": "Laboratório de análise de água",
           "atribuicoes_setor": "Analisar e emitir o laudo.",
           "prazo_sla_em_dias": 7,
