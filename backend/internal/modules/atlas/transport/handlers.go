@@ -41,6 +41,7 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	r.Get("/atlas/ttdd/{codigo}/historico", h.HistoricoTTDD)
 	r.Get("/atlas/ttdd/{codigo}/modelos", h.ModelosDaSerie)
 	r.Get("/atlas/workflows", h.ListPublic)
+	r.Get("/atlas/workflows/secretarias", h.SecretariasPublic)
 	r.Get("/atlas/workflows/{id}", h.GetPublic)
 	r.Get("/atlas/modelos", h.ListModelosPublic)
 	r.Get("/atlas/modelos/{id}", h.GetModelo)
@@ -61,6 +62,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router, chatLimiter httpserver.Limiter) 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtlasManage))
 		r.Get("/atlas/admin/workflows", h.ListAdmin)
+		r.Get("/atlas/admin/workflows/secretarias", h.SecretariasAdmin)
 		r.Get("/atlas/admin/workflows/exportar", h.ExportarProcedimentos)
 		r.Get("/atlas/admin/cobertura", h.Cobertura)
 		r.Post("/atlas/admin/workflows/importacao/simular", h.SimularImportacao)
@@ -204,12 +206,27 @@ func (h *Handlers) HistoricoTTDD(w http.ResponseWriter, r *http.Request) {
 	httputil.WriteOK(w, hist)
 }
 
+// list lê os filtros: ?q=, ?codigo_ttdd= (série exata), ?prefixo_ttdd=
+// (órgão, função ou subfunção — ex.: 2.0 = a secretaria), ?codigo_processual=
+// e, só para a gestão, ?situacao= e ?ultima=true (a versão mais recente de
+// cada código).
 func (h *Handlers) list(w http.ResponseWriter, r *http.Request, incluirInativos bool) {
 	p := httputil.Page(r, h.maxPageSize)
-	items, total, err := h.svc.List(r.Context(), domain.Filter{
+	f := domain.Filter{
 		Query: httputil.Query(r, "q", 200), CodigoTTDD: httputil.Query(r, "codigo_ttdd", 32),
 		CodigoProcessual: httputil.Query(r, "codigo_processual", 64), IncluirInativos: incluirInativos,
-	}, p)
+		PrefixoTTDD: httputil.Query(r, "prefixo_ttdd", 32), Situacao: strings.ToUpper(httputil.Query(r, "situacao", 16)),
+		Ultima: httputil.Query(r, "ultima", 5) == "true",
+	}
+	if f.PrefixoTTDD != "" && !domain.CodigoTTDDValido(f.PrefixoTTDD) {
+		h.fail(w, r, apperrors.BadRequest("prefixo TTDD inválido (ex.: 2.0, 2.0.01 ou 2.0.01.00)"))
+		return
+	}
+	if f.Situacao != "" && !domain.SituacaoValida(f.Situacao) {
+		h.fail(w, r, apperrors.BadRequest("situação inválida (RASCUNHO, EM_VALIDACAO ou HOMOLOGADO)"))
+		return
+	}
+	items, total, err := h.svc.List(r.Context(), f, p)
 	if err != nil {
 		h.fail(w, r, err)
 		return
@@ -219,6 +236,24 @@ func (h *Handlers) list(w http.ResponseWriter, r *http.Request, incluirInativos 
 
 func (h *Handlers) ListPublic(w http.ResponseWriter, r *http.Request) { h.list(w, r, false) }
 func (h *Handlers) ListAdmin(w http.ResponseWriter, r *http.Request)  { h.list(w, r, true) }
+
+// secretarias: procedimentos por secretaria (órgão da TTDD).
+func (h *Handlers) secretarias(w http.ResponseWriter, r *http.Request, gestao bool) {
+	out, err := h.svc.ProcedimentosPorOrgao(r.Context(), gestao)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+func (h *Handlers) SecretariasPublic(w http.ResponseWriter, r *http.Request) {
+	h.secretarias(w, r, false)
+}
+
+func (h *Handlers) SecretariasAdmin(w http.ResponseWriter, r *http.Request) {
+	h.secretarias(w, r, true)
+}
 
 func (h *Handlers) get(w http.ResponseWriter, r *http.Request, incluirInativo bool) {
 	id, err := httputil.UUIDParam(r, "id")

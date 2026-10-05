@@ -282,6 +282,14 @@ func (fr *faultRepo) DesligarModeloSerie(ctx context.Context, db database.DBTX, 
 	return fr.inner.DesligarModeloSerie(ctx, db, codigo, modeloID)
 }
 
+func (fr *faultRepo) ProcedimentosPorOrgao(ctx context.Context, db database.DBTX) ([]domain.ProcedimentosOrgao, error) {
+	if err := fr.hook("ProcedimentosPorOrgao"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.ProcedimentosPorOrgao(ctx, db)
+}
+
 func (fr *faultRepo) Cobertura(ctx context.Context, db database.DBTX) (domain.Cobertura, error) {
 	if err := fr.hook("Cobertura"); err != nil {
 		return domain.Cobertura{}, err

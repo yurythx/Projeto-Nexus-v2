@@ -453,6 +453,15 @@ type Filter struct {
 	CodigoProcessual string
 	// IncluirInativos: só a gestão (atlas:manage) vê os desativados.
 	IncluirInativos bool
+	// PrefixoTTDD: procedimentos enquadrados no órgão, na função ou na
+	// subfunção (ex.: "2.0" = todos da Administração).
+	PrefixoTTDD string
+	// Situacao: RASCUNHO, EM_VALIDACAO ou HOMOLOGADO (só com IncluirInativos).
+	Situacao string
+	// Ultima: só a versão mais recente de cada código — onde está o rascunho
+	// da revisão (só com IncluirInativos; a consulta pública já mostra só a
+	// versão em vigor).
+	Ultima bool
 }
 
 // Repository é a persistência do Atlas.
@@ -460,6 +469,8 @@ type Repository interface {
 	ListTTDD(ctx context.Context, db database.DBTX, f FiltroTTDD, p pagination.Params) ([]ClassificacaoTTDD, int64, error)
 	GetTTDD(ctx context.Context, db database.DBTX, codigo string) (ClassificacaoTTDD, error)
 	EstruturaTTDD(ctx context.Context, db database.DBTX) ([]EstruturaTTDD, error)
+	// ProcedimentosPorOrgao conta os procedimentos de cada órgão da TTDD.
+	ProcedimentosPorOrgao(ctx context.Context, db database.DBTX) ([]ProcedimentosOrgao, error)
 	// Candidatos devolve os procedimentos ativos (completos) que casam com
 	// algum termo da pergunta — base do assistente sobre fluxos (ADR 023).
 	Candidatos(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]Workflow, error)

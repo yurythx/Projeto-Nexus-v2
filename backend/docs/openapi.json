@@ -1233,6 +1233,34 @@
         "type": "object",
         "x-nexus-generated": true
       },
+      "AtlasProcedimentosOrgao": {
+        "properties": {
+          "em_validacao": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "prefixo": {
+            "type": "string"
+          },
+          "publicados": {
+            "type": "integer"
+          },
+          "rascunhos": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "em_validacao",
+          "nome",
+          "prefixo",
+          "publicados",
+          "rascunhos"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "AtlasResposta": {
         "properties": {
           "answer": {
@@ -7724,6 +7752,36 @@
               "type": "string"
             },
             "x-nexus-generated": true
+          },
+          {
+            "in": "query",
+            "name": "prefixo_ttdd",
+            "required": false,
+            "schema": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "x-nexus-generated": true
+          },
+          {
+            "in": "query",
+            "name": "situacao",
+            "required": false,
+            "schema": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "x-nexus-generated": true
+          },
+          {
+            "in": "query",
+            "name": "ultima",
+            "required": false,
+            "schema": {
+              "maxLength": 5,
+              "type": "string"
+            },
+            "x-nexus-generated": true
           }
         ],
         "responses": {
@@ -8002,6 +8060,64 @@
           }
         ],
         "summary": "Atlas — Procedimentos e Temporalidade — Criar /atlas/admin/workflows/importacao/simular",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/admin/workflows/secretarias": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getAtlasAdminWorkflowsSecretarias",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtlasProcedimentosOrgao"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/workflows/secretarias",
         "tags": [
           "atlas"
         ]
@@ -9268,6 +9384,36 @@
               "type": "string"
             },
             "x-nexus-generated": true
+          },
+          {
+            "in": "query",
+            "name": "prefixo_ttdd",
+            "required": false,
+            "schema": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "x-nexus-generated": true
+          },
+          {
+            "in": "query",
+            "name": "situacao",
+            "required": false,
+            "schema": {
+              "maxLength": 16,
+              "type": "string"
+            },
+            "x-nexus-generated": true
+          },
+          {
+            "in": "query",
+            "name": "ultima",
+            "required": false,
+            "schema": {
+              "maxLength": 5,
+              "type": "string"
+            },
+            "x-nexus-generated": true
           }
         ],
         "responses": {
@@ -9312,6 +9458,53 @@
         },
         "security": [],
         "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/workflows",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/workflows/secretarias": {
+      "get": {
+        "operationId": "getAtlasWorkflowsSecretarias",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtlasProcedimentosOrgao"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/workflows/secretarias",
         "tags": [
           "atlas"
         ]

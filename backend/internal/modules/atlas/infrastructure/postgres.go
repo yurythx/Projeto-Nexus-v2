@@ -154,6 +154,23 @@ func (r *Repository) EstruturaTTDD(ctx context.Context, db database.DBTX) ([]dom
 	return out, wrap(rows.Err())
 }
 
+// ProcedimentosPorOrgao: uma linha por órgão da TTDD, mesmo sem
+// procedimento.
+func (r *Repository) ProcedimentosPorOrgao(ctx context.Context, db database.DBTX) ([]domain.ProcedimentosOrgao, error) {
+	out := []domain.ProcedimentosOrgao{}
+	err := coletar(ctx, db, `SELECT o.prefixo, o.nome, count(w.id) FILTER (WHERE w.ativo),
+		count(w.id) FILTER (WHERE w.situacao = 'EM_VALIDACAO' AND `+ultimaVersao+`),
+		count(w.id) FILTER (WHERE w.situacao = 'RASCUNHO' AND `+ultimaVersao+`)
+		FROM atlas_ttdd_orgaos o LEFT JOIN atlas_workflows w ON w.codigo_ttdd LIKE o.prefixo || '.%'
+		GROUP BY o.prefixo, o.nome ORDER BY split_part(o.prefixo, '.', 1)::int`, func(rows pgx.Rows) error {
+		var p domain.ProcedimentosOrgao
+		err := rows.Scan(&p.Prefixo, &p.Nome, &p.Publicados, &p.EmValidacao, &p.Rascunhos)
+		out = append(out, p)
+		return err
+	})
+	return out, err
+}
+
 // CandidatosTTDD: basta um termo da pergunta casar (OR); a relevância real é
 // medida no domínio (domain.RelevanciaTTDD).
 func (r *Repository) CandidatosTTDD(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]domain.ClassificacaoTTDD, error) {
@@ -233,10 +250,25 @@ func scanWorkflow(row pgx.Row, extra ...any) (domain.Workflow, error) {
 	return w, nil
 }
 
+// ultimaVersao: w é a versão mais recente do seu código.
+const ultimaVersao = `NOT EXISTS (SELECT 1 FROM atlas_workflows o WHERE o.codigo_processual = w.codigo_processual AND o.versao > w.versao)`
+
 func (r *Repository) List(ctx context.Context, db database.DBTX, f domain.Filter, p pagination.Params) ([]domain.Workflow, int64, error) {
 	conds, args := []string{}, []any{}
 	if !f.IncluirInativos {
 		conds = append(conds, "w.ativo")
+	} else {
+		if f.Ultima {
+			conds = append(conds, ultimaVersao)
+		}
+		if f.Situacao != "" {
+			args = append(args, f.Situacao)
+			conds = append(conds, fmt.Sprintf("w.situacao = $%d", len(args)))
+		}
+	}
+	if f.PrefixoTTDD != "" {
+		args = append(args, f.PrefixoTTDD)
+		conds = append(conds, fmt.Sprintf("(w.codigo_ttdd = $%d OR w.codigo_ttdd LIKE $%d || '.%%')", len(args), len(args)))
 	}
 	if f.CodigoTTDD != "" {
 		args = append(args, f.CodigoTTDD)

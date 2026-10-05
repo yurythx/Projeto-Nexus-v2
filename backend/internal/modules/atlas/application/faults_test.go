@@ -230,6 +230,9 @@ func TestEveryRepositoryFailureIsPropagated(t *testing.T) {
 				return err
 			}
 		},
+		"ProcedimentosPorOrgao": func() func(*application.Service) error {
+			return func(s *application.Service) error { _, err := s.ProcedimentosPorOrgao(ctx, true); return err }
+		},
 		"Cobertura": func() func(*application.Service) error {
 			return func(s *application.Service) error { _, err := s.Cobertura(ctx); return err }
 		},
@@ -344,6 +347,8 @@ func TestHandlersReportServiceFailures(t *testing.T) {
 		{http.MethodGet, "/atlas/workflows", ""},
 		{http.MethodGet, "/atlas/workflows/" + id, ""},
 		{http.MethodGet, "/atlas/admin/workflows", ""},
+		{http.MethodGet, "/atlas/workflows/secretarias", ""},
+		{http.MethodGet, "/atlas/admin/workflows/secretarias", ""},
 		{http.MethodPost, "/atlas/admin/workflows/" + id + "/ativar", ""},
 		{http.MethodPost, "/atlas/chat", `{"query":"pregão eletrônico"}`},
 		{http.MethodPost, "/atlas/admin/workflows", `{"codigo_processual":"X.Y","titulo":"t","objetivo":"o","publico_alvo":"p","nivel_acesso":"PUBLICO",

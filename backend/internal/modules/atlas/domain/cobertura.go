@@ -55,6 +55,17 @@ type LacunaSubfuncao struct {
 	Exemplos []string `json:"exemplos"`
 }
 
+// ProcedimentosOrgao: quantos procedimentos cada órgão (secretaria) da TTDD
+// tem. Rascunhos e em validação contam só a versão mais recente de cada
+// código e só aparecem para a gestão.
+type ProcedimentosOrgao struct {
+	Prefixo     string `json:"prefixo"`
+	Nome        string `json:"nome"`
+	Publicados  int    `json:"publicados"`
+	EmValidacao int    `json:"em_validacao"`
+	Rascunhos   int    `json:"rascunhos"`
+}
+
 // Cobertura é o painel.
 type Cobertura struct {
 	Totais         TotaisCobertura   `json:"totais"`

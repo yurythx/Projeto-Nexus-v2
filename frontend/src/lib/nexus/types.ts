@@ -710,6 +710,16 @@ export interface EstruturaTTDD extends OrgaoTTDD {
   }[];
 }
 
+/** Procedimentos de uma secretaria (órgão da TTDD). Rascunhos e em
+ * validação só vêm para a gestão (no público, zero). */
+export interface ProcedimentosOrgao {
+  prefixo: string;
+  nome: string;
+  publicados: number;
+  em_validacao: number;
+  rascunhos: number;
+}
+
 export interface EtapaDocumento {
   id: UUID;
   nome_documento: string;

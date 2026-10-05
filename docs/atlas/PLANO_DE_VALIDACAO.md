@@ -37,23 +37,35 @@ Regras:
 
 Passo a passo:
 
-1. **Importar os rascunhos.** Em Atlas → Importar, envie
-   `deploy/atlas/rascunhos-procedimentos.json` com **"Importar como
-   rascunho"** marcado (já vem marcado), clique em **Simular**, confira e
-   **Aplique**.
-2. **Registrar cada entrevista.** Na página do procedimento, cartão
+1. **Importar os rascunhos** (já feito em produção). Em Atlas → Importar,
+   envie `deploy/atlas/rascunhos-procedimentos.json` e
+   `rascunhos-procedimentos-2.json` com **"Importar como rascunho"**
+   marcado (já vem marcado), clique em **Simular**, confira e **Aplique**.
+2. **Preparar a entrevista pela secretaria.** No início do Atlas, em
+   **Procedimentos por secretaria**, abra a secretaria. A página mostra:
+   - os procedimentos dela agrupados pela função da TTDD (em geral, o
+     departamento);
+   - a situação de cada um, com filtro;
+   - os processos da TTDD que ainda não têm fluxo.
+
+   O botão **Caderno da entrevista** imprime de uma vez a capa, o sumário e
+   a ficha de cada procedimento, uma por página. Filtre por "Rascunho" para
+   levar só o que falta validar.
+3. **Registrar cada entrevista.** Na página do procedimento, cartão
    **Validação** → **Registrar entrevista**. Informe a data, o
    departamento, os participantes (pela **função**, não pelo nome), o que
    foi validado ou corrigido e as pendências. O primeiro registro muda o
    procedimento para **Em validação**.
-3. **Corrigir o fluxo.** Corrija pelo botão **Nova versão**. Para corrigir
+4. **Corrigir o fluxo.** Corrija pelo botão **Nova versão**. Ele já vem
+   marcado como rascunho, e a página da secretaria mostra sempre a versão
+   mais recente. Para corrigir
    vários de uma vez, baixe o arquivo em Atlas → Importar → "Baixar os
    procedimentos em vigor", edite e importe de novo como rascunho.
-4. **Ligar os modelos.** Ligue a cada documento o modelo padronizado: em
+5. **Ligar os modelos.** Ligue a cada documento o modelo padronizado: em
    **Detalhes** da peça, ou na biblioteca (Atlas → Modelos de documento).
-5. **Homologar.** Com o fluxo e os documentos validados, use **Homologar**
+6. **Homologar.** Com o fluxo e os documentos validados, use **Homologar**
    (pede confirmação).
-6. **Acompanhar.** Em **Atlas → Cobertura** (rascunhos, em validação, peças
+7. **Acompanhar.** Em **Atlas → Cobertura** (rascunhos, em validação, peças
    sem modelo, séries sem fluxo).
 
 As entrevistas ficam registradas pelo **código** do procedimento, então
@@ -62,8 +74,9 @@ correção é um novo registro.
 
 ## 3. Roteiro da entrevista
 
-Leve a **ficha de validação** impressa (cartão Validação → "Ficha de validação
-para imprimir"): ela traz o fluxo proposto item a item, com "confere /
+Leve a **ficha de validação** impressa. Para a secretaria inteira, use o
+**caderno da entrevista**, na página da secretaria. Para um procedimento só,
+use o cartão Validação → "Ficha de validação para imprimir". A ficha traz o fluxo proposto item a item, com "confere /
 corrigir", a tabela de padronização de cada documento e o fechamento com as
 assinaturas. Percorra-a com quem executa o processo e depois registre a
 entrevista no sistema.

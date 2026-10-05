@@ -1,11 +1,21 @@
 "use client";
 
-import { ArrowRight, Building2, ChartPie, FileClock, FileText, FileUp, Plus } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  ChartPie,
+  FileClock,
+  FileText,
+  FileUp,
+  Plus,
+  Workflow as IconeFluxo,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import { AtlasBusca } from "@/components/atlas/AtlasBusca";
+import { resumoProcedimentos } from "@/components/atlas/secretaria";
 import { NovoProcedimentoForm } from "@/components/atlas/NovoProcedimentoForm";
 import { WorkflowList } from "@/components/atlas/WorkflowList";
 import { DataState } from "@/components/nexus/DataState";
@@ -15,7 +25,7 @@ import { Button, buttonClass } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
 import { useNexus } from "@/lib/nexus/NexusProvider";
-import type { EstruturaTTDD, Workflow } from "@/lib/nexus/types";
+import type { EstruturaTTDD, ProcedimentosOrgao, Workflow } from "@/lib/nexus/types";
 
 /** Links antigos (?procedimento=, ?ttdd=) da Busca Global e do assistente
  * continuam valendo: redirecionam para as páginas próprias. */
@@ -61,6 +71,44 @@ function Secretarias() {
                 <span className="block text-xs text-muted">
                   <span className="font-mono">{o.prefixo}</span> · {o.total}{" "}
                   {o.total === 1 ? "série" : "séries"}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Atalhos por secretaria para os procedimentos — a página de cada uma é a
+ * base das entrevistas de validação. O público só vê as que têm procedimento
+ * publicado. */
+function ProcedimentosPorSecretaria({ gestao }: { gestao: boolean }) {
+  const resumo = useApiQuery<ProcedimentosOrgao[]>(
+    `v1/atlas/${gestao ? "admin/" : ""}workflows/secretarias`,
+  );
+  const orgaos = (resumo.data ?? []).filter(
+    (o) => o.publicados + (gestao ? o.em_validacao + o.rascunhos : 0) > 0,
+  );
+  if (orgaos.length === 0) return null;
+  return (
+    <section aria-labelledby="atlas-proc-secretarias">
+      <h2 id="atlas-proc-secretarias" className="text-lg font-bold text-foreground">
+        Procedimentos por secretaria
+      </h2>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {orgaos.map((o) => (
+          <li key={o.prefixo}>
+            <Link
+              href={`/atlas/secretarias/${encodeURIComponent(o.prefixo)}`}
+              className="flex h-full items-start gap-3 rounded-lg border border-surface-border bg-surface p-3 transition-colors hover:border-primary/50 hover:bg-surface-hover"
+            >
+              <IconeFluxo size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-primary" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">{o.nome}</span>
+                <span className="block text-xs text-muted">
+                  <span className="font-mono">{o.prefixo}</span> · {resumoProcedimentos(o, gestao)}
                 </span>
               </span>
             </Link>
@@ -140,6 +188,7 @@ function Inicio() {
       />
 
       <AtlasBusca />
+      <ProcedimentosPorSecretaria gestao={canManage} />
       <Procedimentos canManage={canManage} />
       <Secretarias />
 

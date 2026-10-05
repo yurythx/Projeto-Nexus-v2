@@ -336,6 +336,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/atlas/admin/workflows/secretarias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/workflows/secretarias
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getAtlasAdminWorkflowsSecretarias"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atlas/admin/workflows/{id}": {
         parameters: {
             query?: never;
@@ -682,6 +702,23 @@ export interface paths {
         };
         /** Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/workflows */
         get: operations["getAtlasWorkflows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/workflows/secretarias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/workflows/secretarias */
+        get: operations["getAtlasWorkflowsSecretarias"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3605,6 +3642,13 @@ export interface components {
             situacao: string;
             versao: number;
         };
+        AtlasProcedimentosOrgao: {
+            em_validacao: number;
+            nome: string;
+            prefixo: string;
+            publicados: number;
+            rascunhos: number;
+        };
         AtlasResposta: {
             answer: string;
             /** Format: date-time */
@@ -5791,6 +5835,9 @@ export interface operations {
                 q?: string;
                 codigo_ttdd?: string;
                 codigo_processual?: string;
+                prefixo_ttdd?: string;
+                situacao?: string;
+                ultima?: string;
             };
             header?: never;
             path?: never;
@@ -5927,6 +5974,33 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["AtlasImportacaoProcedimentos"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtlasAdminWorkflowsSecretarias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasProcedimentosOrgao"][];
                     };
                 };
             };
@@ -6529,6 +6603,9 @@ export interface operations {
                 q?: string;
                 codigo_ttdd?: string;
                 codigo_processual?: string;
+                prefixo_ttdd?: string;
+                situacao?: string;
+                ultima?: string;
             };
             header?: never;
             path?: never;
@@ -6545,6 +6622,31 @@ export interface operations {
                     "application/json": components["schemas"]["Envelope"] & {
                         data?: components["schemas"]["AtlasWorkflow"][];
                         meta?: components["schemas"]["PaginationMeta"];
+                    };
+                };
+            };
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtlasWorkflowsSecretarias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasProcedimentosOrgao"][];
                     };
                 };
             };

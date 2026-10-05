@@ -76,6 +76,22 @@ ainda não validado apareceria como fluxo oficial.
    início do descritor ("Processo", "Requerimento", "Solicitação",
    "Licença", "Certidão"…). A lista é atualizada sozinha conforme os
    procedimentos são criados.
+10. **Procedimentos por secretaria:** as entrevistas são feitas por
+    secretaria, então o Atlas organiza os procedimentos pelo órgão da TTDD,
+    como já fazia com a temporalidade.
+    - **API:** `GET /atlas/workflows/secretarias` (público, só publicados)
+      e `/atlas/admin/workflows/secretarias` (com rascunhos e em
+      validação).
+    - **Filtros da lista:** `prefixo_ttdd` e, para a gestão, `situacao`
+      e `ultima=true` (a versão mais recente de cada código, onde fica o
+      rascunho corrigido).
+    - **Página da secretaria:** `/atlas/secretarias/{prefixo}`, com os
+      procedimentos agrupados pela função, as lacunas da secretaria e o
+      **caderno da entrevista**, que junta as fichas de todos os
+      procedimentos para imprimir de uma vez.
+    - **Contagem:** os rascunhos e os procedimentos em validação contam só
+      a versão mais recente de cada código. Assim, um rascunho corrigido não
+      conta duas vezes.
 
 ## Consequências
 

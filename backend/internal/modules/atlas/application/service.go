@@ -109,6 +109,18 @@ func (s *Service) EstruturaTTDD(ctx context.Context) ([]domain.EstruturaTTDD, er
 	return s.repo.EstruturaTTDD(ctx, s.pool)
 }
 
+// ProcedimentosPorOrgao: procedimentos de cada secretaria (órgão da TTDD).
+// Rascunhos e em validação só aparecem para a gestão.
+func (s *Service) ProcedimentosPorOrgao(ctx context.Context, gestao bool) ([]domain.ProcedimentosOrgao, error) {
+	out, err := s.repo.ProcedimentosPorOrgao(ctx, s.pool)
+	if !gestao {
+		for i := range out {
+			out[i].EmValidacao, out[i].Rascunhos = 0, 0
+		}
+	}
+	return out, MapError(err)
+}
+
 // GetTTDD devolve uma classificação.
 func (s *Service) GetTTDD(ctx context.Context, codigo string) (domain.ClassificacaoTTDD, error) {
 	c, err := s.repo.GetTTDD(ctx, s.pool, codigo)
