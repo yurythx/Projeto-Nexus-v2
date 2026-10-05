@@ -57,6 +57,9 @@ ainda não validado apareceria como fluxo oficial.
    - `deploy/atlas/gerar-rascunhos.mjs` gera 28 rascunhos dos processos
      prioritários das secretarias, já conferidos contra a TTDD de produção
      por simulação.
+   - `deploy/atlas/gerar-rascunhos-2.mjs` gera a segunda leva, com 64
+     rascunhos para as subfunções que ainda não tinham fluxo. Depois dela,
+     restam 4 lacunas, deixadas para as entrevistas.
    - `docs/atlas/PLANO_DE_VALIDACAO.md` traz o roteiro de entrevista, o
      checklist de padronização dos documentos e o checklist antes de
      homologar.
