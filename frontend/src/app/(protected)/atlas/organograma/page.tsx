@@ -71,7 +71,11 @@ function Organograma() {
         title="Organograma da TTDD"
         description="As secretarias, as funções (em geral, os departamentos) e as subfunções da Tabela de Temporalidade, com as séries documentais e os procedimentos de cada uma. Clique numa função para ver os procedimentos dela ou numa subfunção para ver as séries."
         actions={
-          <Button onClick={() => window.print()} disabled={orgaos.length === 0}>
+          <Button
+            className="print:hidden"
+            onClick={() => window.print()}
+            disabled={orgaos.length === 0}
+          >
             <Printer size={16} aria-hidden="true" className="mr-1" /> Imprimir
           </Button>
         }

@@ -31,6 +31,11 @@ interface Bloco {
 const LARGURA = 100;
 const ALTURA = 60;
 const pct = (v: number, total: number) => `${(v / total) * 100}%`;
+/** Altura do título do bloco: ~2 linhas (1 unidade ≈ 11 px na tela cheia),
+ * no máximo 35% de um bloco baixo. */
+const TITULO = 3.4;
+/** Abaixo disso o bloco interno mostra só o código (o nome fica na dica). */
+const cabeNome = (r: { w: number; h: number }) => r.w >= 7 && r.h >= 3;
 
 const classeFaixa = (subfuncoes: SubfuncaoOrganograma[], gestao: boolean) =>
   FAIXAS[faixaCobertura(cobertura(subfuncoes, gestao))].classe;
@@ -97,8 +102,9 @@ export function OrganogramaBlocos({
     <figure className="flex flex-col gap-3 [print-color-adjust:exact]">
       <div className="relative aspect-[5/3] w-full overflow-hidden rounded-lg border border-surface-border">
         {externos.map(({ item: b, ...r }) => {
-          // Os filhos ocupam o bloco abaixo do título (80% da altura).
-          const area = { x: 0, y: 0, w: r.w, h: r.h * 0.8 };
+          // Os filhos ocupam o bloco abaixo do título.
+          const titulo = Math.min(TITULO, r.h * 0.35);
+          const area = { x: 0, y: 0, w: r.w, h: r.h - titulo };
           const internos = squarify(ordenar(b.filhos), area);
           return (
             <section
@@ -115,12 +121,13 @@ export function OrganogramaBlocos({
               <Link
                 href={b.href}
                 title={`${b.codigo} ${b.titulo} — ${b.descricao}`}
-                className="absolute inset-x-0 top-0 block h-[20%] truncate px-1 text-[11px] font-bold leading-tight text-foreground hover:underline"
+                style={{ height: pct(titulo, r.h) }}
+                className="absolute inset-x-0 top-0 block overflow-hidden px-1 text-[11px] font-bold leading-tight text-foreground hover:underline"
               >
                 <span className="font-mono font-normal">{b.codigo}</span> {b.titulo}
                 <span className="block truncate font-normal text-muted">{b.descricao}</span>
               </Link>
-              <div className="absolute inset-x-0 bottom-0 h-[80%]">
+              <div className="absolute inset-x-0 bottom-0" style={{ height: pct(area.h, r.h) }}>
                 {internos.map(({ item: f, ...q }) => (
                   <Link
                     key={f.chave}
@@ -135,7 +142,8 @@ export function OrganogramaBlocos({
                       height: pct(q.h, area.h),
                     }}
                   >
-                    <span className="font-mono">{f.codigo.split(".").slice(-1)[0]}</span> {f.titulo}
+                    <span className="font-mono">{f.codigo.split(".").slice(-1)[0]}</span>
+                    {cabeNome(q) && ` ${f.titulo}`}
                   </Link>
                 ))}
               </div>
