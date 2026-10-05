@@ -762,6 +762,49 @@
         "type": "object",
         "x-nexus-generated": true
       },
+      "AtlasFuncaoOrganograma": {
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "em_validacao": {
+            "type": "integer"
+          },
+          "lacunas": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "publicados": {
+            "type": "integer"
+          },
+          "rascunhos": {
+            "type": "integer"
+          },
+          "series": {
+            "type": "integer"
+          },
+          "subfuncoes": {
+            "items": {
+              "$ref": "#/components/schemas/AtlasSubfuncaoOrganograma"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "codigo",
+          "em_validacao",
+          "lacunas",
+          "nome",
+          "publicados",
+          "rascunhos",
+          "series",
+          "subfuncoes"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "AtlasFuncaoTTDD": {
         "properties": {
           "codigo": {
@@ -1098,6 +1141,49 @@
         "type": "object",
         "x-nexus-generated": true
       },
+      "AtlasOrgaoOrganograma": {
+        "properties": {
+          "em_validacao": {
+            "type": "integer"
+          },
+          "funcoes": {
+            "items": {
+              "$ref": "#/components/schemas/AtlasFuncaoOrganograma"
+            },
+            "type": "array"
+          },
+          "lacunas": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "prefixo": {
+            "type": "string"
+          },
+          "publicados": {
+            "type": "integer"
+          },
+          "rascunhos": {
+            "type": "integer"
+          },
+          "series": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "em_validacao",
+          "funcoes",
+          "lacunas",
+          "nome",
+          "prefixo",
+          "publicados",
+          "rascunhos",
+          "series"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
       "AtlasOrgaoTTDD": {
         "properties": {
           "data_publicacao": {
@@ -1363,6 +1449,46 @@
         },
         "required": [
           "situacao"
+        ],
+        "type": "object",
+        "x-nexus-generated": true
+      },
+      "AtlasSubfuncaoOrganograma": {
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "em_validacao": {
+            "type": "integer"
+          },
+          "lacunas": {
+            "type": "integer"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "publicados": {
+            "type": "integer"
+          },
+          "rascunhos": {
+            "type": "integer"
+          },
+          "series": {
+            "type": "integer"
+          },
+          "series_de_processo": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "codigo",
+          "em_validacao",
+          "lacunas",
+          "nome",
+          "publicados",
+          "rascunhos",
+          "series",
+          "series_de_processo"
         ],
         "type": "object",
         "x-nexus-generated": true
@@ -7434,6 +7560,64 @@
         ]
       }
     },
+    "/api/v1/atlas/admin/organograma": {
+      "get": {
+        "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
+        "operationId": "getAtlasAdminOrganograma",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtlasOrgaoOrganograma"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/organograma",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
     "/api/v1/atlas/admin/ttdd/carga/aplicar": {
       "post": {
         "description": "Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.",
@@ -9001,6 +9185,53 @@
         },
         "security": [],
         "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/modelos/{id}/arquivo",
+        "tags": [
+          "atlas"
+        ]
+      }
+    },
+    "/api/v1/atlas/organograma": {
+      "get": {
+        "operationId": "getAtlasOrganograma",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Envelope"
+                    },
+                    {
+                      "properties": {
+                        "data": {
+                          "items": {
+                            "$ref": "#/components/schemas/AtlasOrgaoOrganograma"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Sucesso — payload em `data`.",
+            "x-nexus-generated": true
+          },
+          "404": {
+            "$ref": "#/components/responses/ModuleDisabledOrNotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          }
+        },
+        "security": [],
+        "summary": "Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/organograma",
         "tags": [
           "atlas"
         ]

@@ -42,6 +42,7 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	r.Get("/atlas/ttdd/{codigo}/modelos", h.ModelosDaSerie)
 	r.Get("/atlas/workflows", h.ListPublic)
 	r.Get("/atlas/workflows/secretarias", h.SecretariasPublic)
+	r.Get("/atlas/organograma", h.OrganogramaPublic)
 	r.Get("/atlas/workflows/{id}", h.GetPublic)
 	r.Get("/atlas/modelos", h.ListModelosPublic)
 	r.Get("/atlas/modelos/{id}", h.GetModelo)
@@ -63,6 +64,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router, chatLimiter httpserver.Limiter) 
 		r.Use(auth.RequirePermission(h.logger, auth.PermAtlasManage))
 		r.Get("/atlas/admin/workflows", h.ListAdmin)
 		r.Get("/atlas/admin/workflows/secretarias", h.SecretariasAdmin)
+		r.Get("/atlas/admin/organograma", h.OrganogramaAdmin)
 		r.Get("/atlas/admin/workflows/exportar", h.ExportarProcedimentos)
 		r.Get("/atlas/admin/cobertura", h.Cobertura)
 		r.Post("/atlas/admin/workflows/importacao/simular", h.SimularImportacao)
@@ -253,6 +255,24 @@ func (h *Handlers) SecretariasPublic(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) SecretariasAdmin(w http.ResponseWriter, r *http.Request) {
 	h.secretarias(w, r, true)
+}
+
+// organograma: a TTDD por secretaria, função e subfunção, com contagens.
+func (h *Handlers) organograma(w http.ResponseWriter, r *http.Request, gestao bool) {
+	out, err := h.svc.Organograma(r.Context(), gestao)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	httputil.WriteOK(w, out)
+}
+
+func (h *Handlers) OrganogramaPublic(w http.ResponseWriter, r *http.Request) {
+	h.organograma(w, r, false)
+}
+
+func (h *Handlers) OrganogramaAdmin(w http.ResponseWriter, r *http.Request) {
+	h.organograma(w, r, true)
 }
 
 func (h *Handlers) get(w http.ResponseWriter, r *http.Request, incluirInativo bool) {

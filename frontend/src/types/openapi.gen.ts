@@ -172,6 +172,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/atlas/admin/organograma": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/admin/organograma
+         * @description Exige uma permissão específica (recurso:ação) declarada no manifesto do módulo — ver GET /api/v1/iam/permissions.
+         */
+        get: operations["getAtlasAdminOrganograma"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/atlas/admin/ttdd/carga/aplicar": {
         parameters: {
             query?: never;
@@ -583,6 +603,23 @@ export interface paths {
         };
         /** Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/modelos/{id}/arquivo */
         get: operations["getAtlasModelosIdArquivo"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/atlas/organograma": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Atlas — Procedimentos e Temporalidade — Listar/consultar /atlas/organograma */
+        get: operations["getAtlasOrganograma"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3518,6 +3555,16 @@ export interface components {
             tipo: string;
             titulo: string;
         };
+        AtlasFuncaoOrganograma: {
+            codigo: string;
+            em_validacao: number;
+            lacunas: number;
+            nome: string;
+            publicados: number;
+            rascunhos: number;
+            series: number;
+            subfuncoes: components["schemas"]["AtlasSubfuncaoOrganograma"][];
+        };
         AtlasFuncaoTTDD: {
             codigo: string;
             nome: string;
@@ -3607,6 +3654,16 @@ export interface components {
             tamanho: number;
             versao: number;
         };
+        AtlasOrgaoOrganograma: {
+            em_validacao: number;
+            funcoes: components["schemas"]["AtlasFuncaoOrganograma"][];
+            lacunas: number;
+            nome: string;
+            prefixo: string;
+            publicados: number;
+            rascunhos: number;
+            series: number;
+        };
         AtlasOrgaoTTDD: {
             /** Format: date-time */
             data_publicacao: string | null;
@@ -3672,6 +3729,16 @@ export interface components {
         AtlasSituacaoRequest: {
             /** @enum {string} */
             situacao: "RASCUNHO" | "EM_VALIDACAO";
+        };
+        AtlasSubfuncaoOrganograma: {
+            codigo: string;
+            em_validacao: number;
+            lacunas: number;
+            nome: string;
+            publicados: number;
+            rascunhos: number;
+            series: number;
+            series_de_processo: number;
         };
         AtlasSubfuncaoTTDD: {
             codigo: string;
@@ -5692,6 +5759,33 @@ export interface operations {
             429: components["responses"]["TooManyRequests"];
         };
     };
+    getAtlasAdminOrganograma: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasOrgaoOrganograma"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
     postAtlasAdminTtddCargaAplicar: {
         parameters: {
             query?: never;
@@ -6435,6 +6529,31 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["Success"];
+            404: components["responses"]["ModuleDisabledOrNotFound"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["TooManyRequests"];
+        };
+    };
+    getAtlasOrganograma: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sucesso — payload em `data`. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope"] & {
+                        data?: components["schemas"]["AtlasOrgaoOrganograma"][];
+                    };
+                };
+            };
             404: components["responses"]["ModuleDisabledOrNotFound"];
             422: components["responses"]["ValidationError"];
             429: components["responses"]["TooManyRequests"];

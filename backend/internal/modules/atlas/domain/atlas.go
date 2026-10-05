@@ -471,6 +471,8 @@ type Repository interface {
 	EstruturaTTDD(ctx context.Context, db database.DBTX) ([]EstruturaTTDD, error)
 	// ProcedimentosPorOrgao conta os procedimentos de cada órgão da TTDD.
 	ProcedimentosPorOrgao(ctx context.Context, db database.DBTX) ([]ProcedimentosOrgao, error)
+	// Organograma: secretaria → função → subfunção com séries e procedimentos.
+	Organograma(ctx context.Context, db database.DBTX) ([]OrgaoOrganograma, error)
 	// Candidatos devolve os procedimentos ativos (completos) que casam com
 	// algum termo da pergunta — base do assistente sobre fluxos (ADR 023).
 	Candidatos(ctx context.Context, db database.DBTX, pergunta string, limit int) ([]Workflow, error)

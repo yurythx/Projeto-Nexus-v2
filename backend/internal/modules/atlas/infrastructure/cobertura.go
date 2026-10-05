@@ -113,3 +113,43 @@ func coletar(ctx context.Context, db database.DBTX, sql string, ler func(pgx.Row
 	}
 	return wrap(rows.Err())
 }
+
+// Organograma: uma linha por subfunção da TTDD, com as séries vigentes, as
+// séries de processo e os procedimentos (pela série em que se enquadram). O
+// domínio soma as funções e os órgãos.
+func (r *Repository) Organograma(ctx context.Context, db database.DBTX) ([]domain.OrgaoOrganograma, error) {
+	out := []domain.OrgaoOrganograma{}
+	err := coletar(ctx, db, `SELECT org.prefixo, org.nome, f.codigo, f.nome, s.codigo, s.nome,
+		(SELECT count(*) FROM atlas_classificacao_ttdd c WHERE c.subfuncao_codigo = s.codigo AND c.revogada_em IS NULL),
+		(SELECT count(*) FROM atlas_classificacao_ttdd c WHERE c.subfuncao_codigo = s.codigo AND c.revogada_em IS NULL
+			AND c.descritor ~* `+serieDeProcesso+`),
+		count(w.id) FILTER (WHERE w.ativo),
+		count(w.id) FILTER (WHERE w.situacao = 'EM_VALIDACAO' AND `+ultimaVersao+`),
+		count(w.id) FILTER (WHERE w.situacao = 'RASCUNHO' AND `+ultimaVersao+`),
+		count(DISTINCT w.codigo_processual)
+		FROM atlas_ttdd_orgaos org
+		JOIN atlas_ttdd_funcoes f ON f.orgao_prefixo = org.prefixo
+		JOIN atlas_ttdd_subfuncoes s ON s.funcao_codigo = f.codigo
+		LEFT JOIN atlas_classificacao_ttdd x ON x.subfuncao_codigo = s.codigo
+		LEFT JOIN atlas_workflows w ON w.codigo_ttdd = x.codigo
+		GROUP BY org.prefixo, org.nome, f.codigo, f.nome, s.codigo, s.nome
+		ORDER BY string_to_array(s.codigo, '.')::int[]`, func(rows pgx.Rows) error {
+		var prefixo, orgao, fCod, fNome string
+		var sub domain.SubfuncaoOrganograma
+		if err := rows.Scan(&prefixo, &orgao, &fCod, &fNome, &sub.Codigo, &sub.Nome, &sub.Series, &sub.SeriesDeProcesso,
+			&sub.Publicados, &sub.EmValidacao, &sub.Rascunhos, &sub.Procedimentos); err != nil {
+			return err
+		}
+		if len(out) == 0 || out[len(out)-1].Prefixo != prefixo {
+			out = append(out, domain.OrgaoOrganograma{Prefixo: prefixo, Nome: orgao, Funcoes: []domain.FuncaoOrganograma{}})
+		}
+		o := &out[len(out)-1]
+		if len(o.Funcoes) == 0 || o.Funcoes[len(o.Funcoes)-1].Codigo != fCod {
+			o.Funcoes = append(o.Funcoes, domain.FuncaoOrganograma{Codigo: fCod, Nome: fNome, Subfuncoes: []domain.SubfuncaoOrganograma{}})
+		}
+		f := &o.Funcoes[len(o.Funcoes)-1]
+		f.Subfuncoes = append(f.Subfuncoes, sub)
+		return nil
+	})
+	return out, err
+}

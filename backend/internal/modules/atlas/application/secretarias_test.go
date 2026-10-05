@@ -136,9 +136,57 @@ func TestSecretariasHTTP(t *testing.T) {
 		!strings.Contains(rec.Body.String(), `"situacao":"RASCUNHO"`) {
 		t.Fatalf("lista da secretaria: %d %s", rec.Code, rec.Body.String())
 	}
+	for _, path := range []string{"/atlas/organograma", "/atlas/admin/organograma"} {
+		if rec := get(path); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"subfuncoes":[{`) {
+			t.Fatalf("%s: %d %s", path, rec.Code, rec.Body.String())
+		}
+	}
 	for _, q := range []string{"prefixo_ttdd=abc", "situacao=PUBLICADO"} {
 		if rec := get("/atlas/admin/workflows?" + q); rec.Code != http.StatusBadRequest {
 			t.Errorf("%s: %d", q, rec.Code)
 		}
+	}
+}
+
+// Organograma: a subfunção da série vigente conta o publicado e o rascunho
+// (só a gestão vê o rascunho); os totais sobem para a função e o órgão.
+func TestOrganograma(t *testing.T) {
+	e := &env{t: t, pool: dbtest.Pool(t)}
+	ctx := context.Background()
+	s := e.real()
+	e.workflow(true)
+	e.rascunho(s, itemArquivo(codigoNovo(), "Rascunho do organograma", ""))
+
+	sub := func(gestao bool) (domain.OrgaoOrganograma, domain.SubfuncaoOrganograma) {
+		t.Helper()
+		out, err := s.Organograma(ctx, gestao)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, o := range out {
+			for _, f := range o.Funcoes {
+				for _, sf := range f.Subfuncoes {
+					if sf.Codigo == "2.0.02.00" {
+						return o, sf
+					}
+				}
+			}
+		}
+		t.Fatalf("subfunção 2.0.02.00 fora do organograma")
+		return domain.OrgaoOrganograma{}, domain.SubfuncaoOrganograma{}
+	}
+	og, g := sub(true)
+	if g.Series < 1 || g.Publicados < 1 || g.Rascunhos < 1 || g.Lacunas != 0 || g.Nome == "" {
+		t.Fatalf("gestão: %+v", g)
+	}
+	soma := 0
+	for _, f := range og.Funcoes {
+		soma += f.Series
+	}
+	if og.Prefixo != "2.0" || og.Series != soma || og.Rascunhos < g.Rascunhos {
+		t.Fatalf("totais do órgão: %+v (soma das funções %d)", og.ContagemOrganograma, soma)
+	}
+	if _, p := sub(false); p.Rascunhos != 0 || p.EmValidacao != 0 || p.Publicados != g.Publicados {
+		t.Fatalf("público: %+v", p)
 	}
 }

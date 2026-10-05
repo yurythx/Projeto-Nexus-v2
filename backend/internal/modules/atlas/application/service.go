@@ -121,6 +121,16 @@ func (s *Service) ProcedimentosPorOrgao(ctx context.Context, gestao bool) ([]dom
 	return out, MapError(err)
 }
 
+// Organograma da TTDD com as contagens de cada nível. Rascunhos e em
+// validação só para a gestão.
+func (s *Service) Organograma(ctx context.Context, gestao bool) ([]domain.OrgaoOrganograma, error) {
+	out, err := s.repo.Organograma(ctx, s.pool)
+	if err != nil {
+		return nil, MapError(err)
+	}
+	return domain.MontarOrganograma(out, gestao), nil
+}
+
 // GetTTDD devolve uma classificação.
 func (s *Service) GetTTDD(ctx context.Context, codigo string) (domain.ClassificacaoTTDD, error) {
 	c, err := s.repo.GetTTDD(ctx, s.pool, codigo)

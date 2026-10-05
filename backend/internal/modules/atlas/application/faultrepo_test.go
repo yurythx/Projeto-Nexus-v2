@@ -290,6 +290,14 @@ func (fr *faultRepo) ProcedimentosPorOrgao(ctx context.Context, db database.DBTX
 	return fr.inner.ProcedimentosPorOrgao(ctx, db)
 }
 
+func (fr *faultRepo) Organograma(ctx context.Context, db database.DBTX) ([]domain.OrgaoOrganograma, error) {
+	if err := fr.hook("Organograma"); err != nil {
+		return nil, err
+	}
+	defer fr.post(ctx, db)
+	return fr.inner.Organograma(ctx, db)
+}
+
 func (fr *faultRepo) Cobertura(ctx context.Context, db database.DBTX) (domain.Cobertura, error) {
 	if err := fr.hook("Cobertura"); err != nil {
 		return domain.Cobertura{}, err

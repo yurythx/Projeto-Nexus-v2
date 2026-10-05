@@ -7,6 +7,7 @@ import {
   FileClock,
   FileText,
   FileUp,
+  Network,
   Plus,
   Workflow as IconeFluxo,
 } from "lucide-react";
@@ -164,6 +165,9 @@ function Inicio() {
           <div className="flex flex-wrap gap-2">
             <Link href="/atlas/ttdd" className={buttonClass("secondary")}>
               <FileClock size={16} aria-hidden="true" /> Tabela de Temporalidade
+            </Link>
+            <Link href="/atlas/organograma" className={buttonClass("secondary")}>
+              <Network size={16} aria-hidden="true" /> Organograma
             </Link>
             <Link href="/atlas/modelos" className={buttonClass("secondary")}>
               <FileText size={16} aria-hidden="true" /> Modelos de documento

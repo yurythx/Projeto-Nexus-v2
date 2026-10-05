@@ -720,6 +720,35 @@ export interface ProcedimentosOrgao {
   rascunhos: number;
 }
 
+/** Contagens de um nó do organograma da TTDD. Rascunhos e em validação só
+ * vêm para a gestão; lacunas são subfunções com série de processo e nenhum
+ * procedimento (para o público: nenhum publicado). */
+export interface ContagemOrganograma {
+  series: number;
+  publicados: number;
+  em_validacao: number;
+  rascunhos: number;
+  lacunas: number;
+}
+
+export interface SubfuncaoOrganograma extends ContagemOrganograma {
+  codigo: string;
+  nome: string;
+  series_de_processo: number;
+}
+
+export interface FuncaoOrganograma extends ContagemOrganograma {
+  codigo: string;
+  nome: string;
+  subfuncoes: SubfuncaoOrganograma[];
+}
+
+export interface OrgaoOrganograma extends ContagemOrganograma {
+  prefixo: string;
+  nome: string;
+  funcoes: FuncaoOrganograma[];
+}
+
 export interface EtapaDocumento {
   id: UUID;
   nome_documento: string;
