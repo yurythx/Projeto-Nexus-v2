@@ -3,6 +3,10 @@
 Para: equipe de gestão documental e quem conduzirá as entrevistas nos
 departamentos.
 
+> O que ficou para depois (siglas a confirmar, cruzamento da TTDD com o
+> cadastro de unidades, lacunas, débitos técnicos) está em
+> [Alterações planejadas](PENDENCIAS.md).
+
 ## 1. Objetivo
 
 Validar com cada departamento **como os processos tramitam de verdade** e

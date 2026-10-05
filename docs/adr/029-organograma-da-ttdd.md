@@ -55,6 +55,7 @@ já existem procedimentos e onde não existem.
 - O organograma é o da **TTDD** (funcional), não o do cadastro de unidades
   (o do AD, com as siglas). Os dois podem divergir: na TTDD, por exemplo, a
   Administração e a Gestão de Pessoas são um só órgão. Cruzar as duas
-  estruturas é trabalho para depois das entrevistas.
+  estruturas é trabalho para depois das entrevistas: proposta no item 1.6
+  de [Alterações planejadas](../atlas/PENDENCIAS.md).
 - Os números se atualizam sozinhos com os procedimentos criados e
   homologados, sem nova carga.

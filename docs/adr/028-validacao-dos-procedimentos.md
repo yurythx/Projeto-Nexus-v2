@@ -97,6 +97,8 @@ ainda não validado apareceria como fluxo oficial.
 
 ## Consequências
 
+- O que ficou provisório ou para depois está em
+  [Alterações planejadas](../atlas/PENDENCIAS.md).
 - Os fluxos podem ser levantados, corrigidos e padronizados sem nunca
   aparecer como oficiais antes da homologação.
 - **Siglas das unidades:** a sede de cada órgão levava a sigla "SEDE", e
