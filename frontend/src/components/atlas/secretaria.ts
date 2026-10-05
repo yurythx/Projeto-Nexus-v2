@@ -1,5 +1,5 @@
-import { useApiPage, withQuery } from "@/lib/api/swr";
-import type { ProcedimentosOrgao, Workflow } from "@/lib/nexus/types";
+import { useApiPage, useApiQuery, withQuery } from "@/lib/api/swr";
+import type { EstruturaTTDD, ProcedimentosOrgao, Workflow } from "@/lib/nexus/types";
 
 /** Resumo dos procedimentos de uma secretaria: publicados e, para a gestão,
  * os que estão em validação ou em rascunho. */
@@ -48,15 +48,37 @@ const POR_PAGINA = 100;
 /** Lista dos procedimentos da secretaria. A gestão vê a versão mais recente
  * de cada código (onde está o rascunho em revisão) e pode filtrar pela
  * situação; o público vê só os publicados. */
-export function useProcedimentosDaSecretaria(prefixo: string, gestao: boolean, situacao: string) {
+export function useProcedimentosDaSecretaria(
+  prefixo: string,
+  gestao: boolean,
+  situacao: string,
+  funcao = "",
+) {
+  // Com a função (ex.: 2.0.06), a API filtra pelo prefixo dela.
+  const alvo = funcao || prefixo;
   return useApiPage<Workflow>(
     gestao
       ? withQuery("v1/atlas/admin/workflows", {
-          prefixo_ttdd: prefixo,
+          prefixo_ttdd: alvo,
           ultima: true,
           situacao,
           page_size: POR_PAGINA,
         })
-      : withQuery("v1/atlas/workflows", { prefixo_ttdd: prefixo, page_size: POR_PAGINA }),
+      : withQuery("v1/atlas/workflows", { prefixo_ttdd: alvo, page_size: POR_PAGINA }),
   );
+}
+
+/** Funções da TTDD da secretaria (em geral, os departamentos): o filtro que
+ * divide a secretaria em entrevistas menores. */
+export function useFuncoes(prefixo: string): { codigo: string; nome: string }[] {
+  const estrutura = useApiQuery<EstruturaTTDD[]>("v1/atlas/ttdd/estrutura");
+  return (estrutura.data?.find((o) => o.prefixo === prefixo)?.funcoes ?? []).map((f) => ({
+    codigo: f.codigo,
+    nome: f.nome,
+  }));
+}
+
+/** A função da URL só vale se for desta secretaria. */
+export function funcaoDaSecretaria(prefixo: string, funcao: string | null): string {
+  return funcao?.startsWith(`${prefixo}.`) ? funcao : "";
 }

@@ -48,9 +48,16 @@ Passo a passo:
    - a situação de cada um, com filtro;
    - os processos da TTDD que ainda não têm fluxo.
 
+   O filtro **Função (departamento)** divide a secretaria em entrevistas
+   menores. Exemplo: "2.0.06 · Gestão de Pessoas" mostra só os
+   procedimentos e as lacunas do RH. Uma função sem nenhum fluxo também
+   aparece, para conversar sobre as lacunas dela.
+
    O botão **Caderno da entrevista** imprime de uma vez a capa, o sumário e
-   a ficha de cada procedimento, uma por página. Filtre por "Rascunho" para
-   levar só o que falta validar.
+   a ficha de cada procedimento, uma por página. O caderno respeita os
+   filtros: com a função e "Rascunho", leva só o que falta validar naquele
+   departamento. Assim o mapeamento pode ser feito por partes, em vários
+   encontros.
 3. **Registrar cada entrevista.** Na página do procedimento, cartão
    **Validação** → **Registrar entrevista**. Informe a data, o
    departamento, os participantes (pela **função**, não pelo nome), o que

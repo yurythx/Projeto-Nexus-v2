@@ -6,7 +6,13 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 import { FichaValidacao } from "@/components/atlas/FichaValidacao";
-import { porFuncao, SITUACOES, useProcedimentosDaSecretaria } from "@/components/atlas/secretaria";
+import {
+  funcaoDaSecretaria,
+  porFuncao,
+  SITUACOES,
+  useFuncoes,
+  useProcedimentosDaSecretaria,
+} from "@/components/atlas/secretaria";
 import { DataState } from "@/components/nexus/DataState";
 import { Button } from "@/components/ui/Button";
 import { useApiQuery, withQuery } from "@/lib/api/swr";
@@ -34,10 +40,13 @@ function Ficha({ id }: { id: string }) {
  * validação de cada procedimento, uma por página, para imprimir de uma vez. */
 function Caderno() {
   const { prefixo } = useParams<{ prefixo: string }>();
-  const situacao = useSearchParams().get("situacao") ?? "";
+  const params = useSearchParams();
+  const situacao = params.get("situacao") ?? "";
+  const funcao = funcaoDaSecretaria(prefixo, params.get("funcao"));
+  const nomeFuncao = useFuncoes(prefixo).find((f) => f.codigo === funcao)?.nome;
   const resumo = useApiQuery<ProcedimentosOrgao[]>("v1/atlas/admin/workflows/secretarias");
   const orgao = resumo.data?.find((o) => o.prefixo === prefixo);
-  const lista = useProcedimentosDaSecretaria(prefixo, true, situacao);
+  const lista = useProcedimentosDaSecretaria(prefixo, true, situacao, funcao);
   const items = lista.data?.items ?? [];
   const grupos = porFuncao(items);
   const filtro = SITUACOES.find((s) => s.value === situacao && s.value);
@@ -46,7 +55,10 @@ function Caderno() {
     <div className="mx-auto flex max-w-4xl flex-col gap-5 text-foreground">
       <div className="flex items-center justify-between gap-2 print:hidden">
         <Link
-          href={withQuery(`/atlas/secretarias/${encodeURIComponent(prefixo)}`, { situacao })}
+          href={withQuery(`/atlas/secretarias/${encodeURIComponent(prefixo)}`, {
+            situacao,
+            funcao,
+          })}
           className="inline-flex items-center gap-1 text-sm text-muted hover:text-foreground"
         >
           <ArrowLeft size={14} aria-hidden="true" /> Voltar à secretaria
@@ -65,6 +77,12 @@ function Caderno() {
         <header className="flex flex-col gap-2 border-b-2 border-foreground pb-3">
           <p className="text-xs uppercase tracking-wide">Caderno de validação dos procedimentos</p>
           <h1 className="text-2xl font-bold">{orgao?.nome ?? `Órgão ${prefixo}`}</h1>
+          {funcao && (
+            <p className="text-lg font-semibold">
+              Função {funcao}
+              {nomeFuncao && ` — ${nomeFuncao}`}
+            </p>
+          )}
           <p className="text-sm">
             TTDD {prefixo} · {items.length} {items.length === 1 ? "procedimento" : "procedimentos"}
             {filtro && ` · situação: ${filtro.label.toLowerCase()}`}

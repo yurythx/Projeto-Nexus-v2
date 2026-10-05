@@ -6,9 +6,11 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 import {
+  funcaoDaSecretaria,
   porFuncao,
   resumoProcedimentos,
   SITUACOES,
+  useFuncoes,
   useProcedimentosDaSecretaria,
 } from "@/components/atlas/secretaria";
 import { WorkflowList } from "@/components/atlas/WorkflowList";
@@ -22,6 +24,7 @@ import type { CoberturaAtlas, ProcedimentosOrgao } from "@/lib/nexus/types";
 
 /** Subfunções da secretaria com processo na TTDD e nenhum procedimento. */
 function Lacunas({ prefixo }: { prefixo: string }) {
+  // prefixo: a secretaria ou, com o filtro, a função.
   const cobertura = useApiQuery<CoberturaAtlas>("v1/atlas/admin/cobertura");
   const lacunas = (cobertura.data?.lacunas ?? []).filter((l) => l.codigo.startsWith(`${prefixo}.`));
   if (lacunas.length === 0) return null;
@@ -60,16 +63,28 @@ function Secretaria() {
   const { can } = useNexus();
   const gestao = can("atlas:manage");
   const situacao = gestao ? (params.get("situacao") ?? "") : "";
+  const funcao = funcaoDaSecretaria(prefixo, params.get("funcao"));
+  const funcoes = useFuncoes(prefixo);
+  const nomeFuncao = funcoes.find((f) => f.codigo === funcao)?.nome;
+  const filtrar = (mudanca: { situacao?: string; funcao?: string }) =>
+    router.replace(
+      withQuery(`/atlas/secretarias/${encodeURIComponent(prefixo)}`, {
+        situacao,
+        funcao,
+        ...mudanca,
+      }),
+    );
 
   const resumo = useApiQuery<ProcedimentosOrgao[]>(
     `v1/atlas/${gestao ? "admin/" : ""}workflows/secretarias`,
   );
   const orgao = resumo.data?.find((o) => o.prefixo === prefixo);
-  const lista = useProcedimentosDaSecretaria(prefixo, gestao, situacao);
+  const lista = useProcedimentosDaSecretaria(prefixo, gestao, situacao, funcao);
   const items = lista.data?.items ?? [];
   const total = lista.data?.meta?.total_items ?? 0;
   const caderno = withQuery(`/atlas/secretarias/${encodeURIComponent(prefixo)}/caderno`, {
     situacao,
+    funcao,
   });
 
   return (
@@ -81,7 +96,7 @@ function Secretaria() {
         <ArrowLeft size={14} aria-hidden="true" /> Atlas
       </Link>
       <PageHeader
-        eyebrow={`Secretaria · TTDD ${prefixo}`}
+        eyebrow={`Secretaria · TTDD ${prefixo}${nomeFuncao ? ` · ${nomeFuncao}` : ""}`}
         title={orgao?.nome ?? `Órgão ${prefixo}`}
         description={
           orgao
@@ -105,22 +120,29 @@ function Secretaria() {
         }
       />
 
-      {gestao && (
-        <div className="max-w-xs">
-          <Select
-            label="Situação"
-            options={SITUACOES}
-            value={situacao}
-            onChange={(e) =>
-              router.replace(
-                withQuery(`/atlas/secretarias/${encodeURIComponent(prefixo)}`, {
-                  situacao: e.target.value,
-                }),
-              )
-            }
-          />
-        </div>
-      )}
+      <div className="flex flex-wrap gap-4">
+        {funcoes.length > 0 && (
+          <div className="w-full max-w-md">
+            <Select
+              label="Função (departamento)"
+              placeholder="Todas as funções"
+              options={funcoes.map((f) => ({ value: f.codigo, label: `${f.codigo} · ${f.nome}` }))}
+              value={funcao}
+              onChange={(e) => filtrar({ funcao: e.target.value })}
+            />
+          </div>
+        )}
+        {gestao && (
+          <div className="w-full max-w-xs">
+            <Select
+              label="Situação"
+              options={SITUACOES}
+              value={situacao}
+              onChange={(e) => filtrar({ situacao: e.target.value })}
+            />
+          </div>
+        )}
+      </div>
 
       <DataState
         loading={lista.isLoading}
@@ -128,7 +150,9 @@ function Secretaria() {
         onRetry={() => void lista.mutate()}
         empty={items.length === 0}
         emptyTitle={
-          situacao ? "Nenhum procedimento nesta situação" : "Nenhum procedimento nesta secretaria"
+          situacao || funcao
+            ? "Nenhum procedimento com estes filtros"
+            : "Nenhum procedimento nesta secretaria"
         }
       >
         <div className="flex flex-col gap-6">
@@ -146,13 +170,14 @@ function Secretaria() {
           ))}
           {total > items.length && (
             <p className="text-sm text-muted">
-              Mostrando {items.length} de {total}. Filtre pela situação para ver os demais.
+              Mostrando {items.length} de {total}. Filtre pela função ou pela situação para ver os
+              demais.
             </p>
           )}
         </div>
       </DataState>
 
-      {gestao && <Lacunas prefixo={prefixo} />}
+      {gestao && <Lacunas prefixo={funcao || prefixo} />}
     </div>
   );
 }

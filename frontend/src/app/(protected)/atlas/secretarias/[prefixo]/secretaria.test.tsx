@@ -91,6 +91,17 @@ const detalhe = (w: Workflow) => ({
   ],
 });
 
+const ESTRUTURA = [
+  {
+    ...ORGAO,
+    total: 3,
+    funcoes: [
+      { codigo: "2.0.02", nome: "Gestão de Compras", total: 1, subfuncoes: [] },
+      { codigo: "2.0.06", nome: "Gestão de Pessoas", total: 2, subfuncoes: [] },
+    ],
+  },
+];
+
 describe("helpers da secretaria", () => {
   it("resumo: rascunhos e em validação só para a gestão; agrupamento pela função", () => {
     expect(resumoProcedimentos(ADM, true)).toBe("1 publicado · 1 em validação · 2 rascunhos");
@@ -196,6 +207,75 @@ describe("Atlas — procedimentos por secretaria", () => {
     expect(router.replace).toHaveBeenCalledWith("/atlas/secretarias/2.0?situacao=RASCUNHO");
   });
 
+  it("filtro por função: lista, lacunas e caderno só do departamento", async () => {
+    resetNavigation(
+      { prefixo: "2.0" },
+      "/atlas/secretarias/2.0",
+      "funcao=2.0.06&situacao=RASCUNHO",
+    );
+    const api = mockBackend({
+      ...identityRoutes({ permissions: ["atlas:manage"] }),
+      "GET v1/atlas/ttdd/estrutura": { data: ESTRUTURA },
+      "GET v1/atlas/admin/workflows/secretarias": { data: RESUMO },
+      "GET v1/atlas/admin/workflows": page([FERIAS]),
+      "GET v1/atlas/admin/cobertura": {
+        data: {
+          lacunas: [
+            {
+              codigo: "2.0.06.04",
+              nome: "INSS",
+              orgao: "Administração",
+              series: 1,
+              exemplos: ["Tempo de contribuição"],
+            },
+            {
+              codigo: "2.0.04.00",
+              nome: "Pesquisa",
+              orgao: "Administração",
+              series: 1,
+              exemplos: ["Projeto PAPIRO"],
+            },
+          ],
+        },
+      },
+    });
+    renderApp(<SecretariaPage />);
+
+    const funcao = await screen.findByLabelText("Função (departamento)");
+    expect(funcao).toHaveValue("2.0.06");
+    expect(screen.getByText(/Secretaria · TTDD 2.0 · Gestão de Pessoas/)).toBeInTheDocument();
+    const q = api.to("GET v1/atlas/admin/workflows").at(-1)?.query;
+    expect([q?.get("prefixo_ttdd"), q?.get("situacao")]).toEqual(["2.0.06", "RASCUNHO"]);
+    const lacunas = await screen.findByRole("list", { name: "Subfunções sem procedimento" });
+    expect(lacunas).toHaveTextContent("Tempo de contribuição");
+    expect(lacunas).not.toHaveTextContent("PAPIRO");
+    expect(await screen.findByRole("link", { name: /Caderno da entrevista/ })).toHaveAttribute(
+      "href",
+      "/atlas/secretarias/2.0/caderno?situacao=RASCUNHO&funcao=2.0.06",
+    );
+
+    // Trocar a função mantém a situação; "Todas" tira o filtro.
+    await userEvent.selectOptions(funcao, "2.0.02");
+    expect(router.replace).toHaveBeenLastCalledWith(
+      "/atlas/secretarias/2.0?situacao=RASCUNHO&funcao=2.0.02",
+    );
+    await userEvent.selectOptions(funcao, "");
+    expect(router.replace).toHaveBeenLastCalledWith("/atlas/secretarias/2.0?situacao=RASCUNHO");
+  });
+
+  it("função de outra secretaria na URL é ignorada; o público também filtra por função", async () => {
+    resetNavigation({ prefixo: "2.0" }, "/atlas/secretarias/2.0", "funcao=3.0.01");
+    const api = mockBackend({
+      ...identityRoutes({ permissions: [] }),
+      "GET v1/atlas/ttdd/estrutura": { data: ESTRUTURA },
+      "GET v1/atlas/workflows/secretarias": { data: PUBLICO },
+      "GET v1/atlas/workflows": page([COMPRAS]),
+    });
+    renderApp(<SecretariaPage />);
+    expect(await screen.findByLabelText("Função (departamento)")).toHaveValue("");
+    expect(api.to("GET v1/atlas/workflows").at(-1)?.query.get("prefixo_ttdd")).toBe("2.0");
+  });
+
   it("gestão: filtro na URL, nada encontrado e aviso de lista parcial", async () => {
     resetNavigation({ prefixo: "9.0" }, "/atlas/secretarias/9.0", "situacao=EM_VALIDACAO");
     const api = mockBackend({
@@ -208,7 +288,7 @@ describe("Atlas — procedimentos por secretaria", () => {
       "GET v1/atlas/admin/cobertura": { data: { lacunas: [] } },
     });
     renderApp(<SecretariaPage />);
-    expect(await screen.findByText("Nenhum procedimento nesta situação")).toBeInTheDocument();
+    expect(await screen.findByText("Nenhum procedimento com estes filtros")).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Órgão 9.0" })).toBeInTheDocument();
     expect(api.to("GET v1/atlas/admin/workflows").at(0)?.query.get("situacao")).toBe(
       "EM_VALIDACAO",
@@ -245,13 +325,18 @@ describe("Atlas — procedimentos por secretaria", () => {
   });
 
   it("caderno: capa, sumário por função e uma ficha por procedimento", async () => {
-    resetNavigation({ prefixo: "2.0" }, "/atlas/secretarias/2.0/caderno", "situacao=RASCUNHO");
+    resetNavigation(
+      { prefixo: "2.0" },
+      "/atlas/secretarias/2.0/caderno",
+      "situacao=RASCUNHO&funcao=2.0.06",
+    );
     const print = vi.fn();
     vi.stubGlobal("print", print);
     mockBackend({
       ...identityRoutes({ permissions: ["atlas:manage"] }),
       "GET v1/atlas/admin/workflows/secretarias": { data: RESUMO },
       "GET v1/atlas/admin/workflows": page([FERIAS, COMPRAS]),
+      "GET v1/atlas/ttdd/estrutura": { data: ESTRUTURA },
       "GET v1/atlas/admin/workflows/wf-1": { data: detalhe(FERIAS) },
       "GET v1/atlas/admin/workflows/wf-2": { data: detalhe(COMPRAS) },
     });
@@ -261,6 +346,7 @@ describe("Atlas — procedimentos por secretaria", () => {
       await screen.findByRole("heading", { level: 1, name: "Administração" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/2 procedimentos · situação: rascunho/)).toBeInTheDocument();
+    expect(await screen.findByText("Função 2.0.06 — Gestão de Pessoas")).toBeInTheDocument();
     const sumario = screen.getByRole("region", { name: "Sumário" });
     expect(sumario).toHaveTextContent("Gestão de Compras");
     expect(
@@ -279,7 +365,7 @@ describe("Atlas — procedimentos por secretaria", () => {
     expect(screen.getAllByRole("region", { name: "2. Etapa 1: Recursos Humanos" })).toHaveLength(2);
     expect(screen.getByRole("link", { name: /Voltar à secretaria/ })).toHaveAttribute(
       "href",
-      "/atlas/secretarias/2.0?situacao=RASCUNHO",
+      "/atlas/secretarias/2.0?situacao=RASCUNHO&funcao=2.0.06",
     );
     await userEvent.click(screen.getByRole("button", { name: /Imprimir caderno/ }));
     expect(print).toHaveBeenCalled();

@@ -86,7 +86,9 @@ ainda não validado apareceria como fluxo oficial.
       e `ultima=true` (a versão mais recente de cada código, onde fica o
       rascunho corrigido).
     - **Página da secretaria:** `/atlas/secretarias/{prefixo}`, com os
-      procedimentos agrupados pela função, as lacunas da secretaria e o
+      procedimentos agrupados pela função, filtros de **função**
+      (`?funcao=2.0.06`, que a API recebe como `prefixo_ttdd`) e de
+      situação, as lacunas da secretaria (ou da função) e o
       **caderno da entrevista**, que junta as fichas de todos os
       procedimentos para imprimir de uma vez.
     - **Contagem:** os rascunhos e os procedimentos em validação contam só
