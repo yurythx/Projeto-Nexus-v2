@@ -49,8 +49,9 @@ Passo a passo:
    - os processos da TTDD que ainda não têm fluxo.
 
    O filtro **Função (departamento)** divide a secretaria em entrevistas
-   menores. Exemplo: "2.0.06 · Gestão de Pessoas" mostra só os
-   procedimentos e as lacunas do RH. Uma função sem nenhum fluxo também
+   menores. Exemplo: o RH ocupa as funções 2.0.05 a 2.0.08 (recursos
+   humanos, folha, vida funcional, investidura); cada uma pode ser uma
+   entrevista, com os seus procedimentos e as suas lacunas. Uma função sem nenhum fluxo também
    aparece, para conversar sobre as lacunas dela.
 
    O botão **Caderno da entrevista** imprime de uma vez a capa, o sumário e
